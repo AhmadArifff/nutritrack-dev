@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NutriTrack | Weight Journey</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&amp;family=Nunito:wght@400;500;600&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-dim": "#cbdbf5",
+                        "on-primary-container": "#004b1e",
+                        "on-surface": "#0b1c30",
+                        "on-tertiary-container": "#76231b",
+                        "secondary": "#0058be",
+                        "inverse-on-surface": "#eaf1ff",
+                        "error-container": "#ffdad6",
+                        "primary-container": "#22c55e",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#9e4036",
+                        "energy-orange": "#f97316",
+                        "tertiary-fixed-dim": "#ffb4a9",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "surface-variant": "#d3e4fe",
+                        "on-tertiary-fixed": "#410001",
+                        "secondary-fixed": "#d8e2ff",
+                        "outline": "#6d7b6c",
+                        "card-light": "#ffffff",
+                        "inverse-surface": "#213145",
+                        "primary-fixed-dim": "#4ae176",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#bccbb9",
+                        "achievement-purple": "#a855f7",
+                        "on-tertiary-fixed-variant": "#7f2a21",
+                        "surface-container-low": "#eff4ff",
+                        "tertiary-fixed": "#ffdad5",
+                        "background": "#f8f9ff",
+                        "error-red": "#ef4444",
+                        "on-primary-fixed": "#002109",
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed": "#6bff8f",
+                        "on-surface-variant": "#3d4a3d",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#dce9ff",
+                        "card-dark": "#1e293b",
+                        "surface-container": "#e5eeff",
+                        "on-primary-fixed-variant": "#005321",
+                        "secondary-container": "#2170e4",
+                        "bg-light": "#f8fafc",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "on-background": "#0b1c30",
+                        "tertiary-container": "#ff8b7c",
+                        "on-error": "#ffffff",
+                        "mint-surface": "#f0fdf4",
+                        "warning-yellow": "#eab308",
+                        "inverse-primary": "#4ae176",
+                        "on-secondary-container": "#fefcff",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed-variant": "#004395",
+                        "surface-tint": "#006e2f",
+                        "on-secondary-fixed": "#001a42",
+                        "bg-dark": "#0f172a",
+                        "surface-bright": "#f8f9ff",
+                        "primary": "#006e2f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter-mobile": "16px",
+                        "card-padding": "20px",
+                        "gutter-desktop": "24px",
+                        "unit": "4px",
+                        "section-gap": "32px",
+                        "margin-page": "24px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Nunito"],
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg-mobile": ["Poppins"],
+                        "body-md": ["Nunito"],
+                        "headline-xl": ["Poppins"],
+                        "metrics-mono": ["JetBrains Mono"],
+                        "headline-md": ["Poppins"],
+                        "headline-lg": ["Poppins"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "1.25", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "metrics-mono": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.25", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+        .bmi-gauge-container {
+            perspective: 1000px;
+        }
+        .scale-interaction:active { transform: scale(0.98); }
+        .hover-lift:hover { transform: translateY(-4px); transition: transform 0.2s ease-out; }
+
+        /* Sidebar collapse / hide and mobile drawer */
+        aside#sidebar { transition: width 0.22s ease, transform 0.22s ease; }
+        aside#sidebar.collapsed { width: 72px; }
+        aside#sidebar .nav-label { display: inline; transition: opacity 0.15s ease; white-space: nowrap; }
+        aside#sidebar.collapsed .nav-label { opacity: 0; width: 0; display: none; }
+        aside#sidebar .logo-text { transition: opacity 0.15s ease; }
+        aside#sidebar.collapsed .logo-text { opacity: 0; display: none; }
+        main#mainContent { transition: margin-left 0.22s ease, width 0.22s ease; }
+        main#mainContent.main-collapsed { margin-left: 72px; }
+        /* fully hidden sidebar */
+        aside#sidebar.hidden-full { transform: translateX(-110%); width: 0 !important; }
+        main#mainContent.hidden-sidebar { margin-left: 0 !important; }
+        @media (min-width: 1280px) {
+            main#mainContent { width: calc(100% - 16rem); }
+            main#mainContent.main-collapsed { width: calc(100% - 72px); }
+            main#mainContent.hidden-sidebar { width: 100%; }
+        }
+
+        /* Upgrade card tweaks */
+        .upgrade-card { background: linear-gradient(135deg, rgba(33,112,228,0.08), rgba(33,112,228,0.14)); }
+        .upgrade-card .upgrade-content p { color: #072044; }
+        .upgrade-card .upgrade-illustration { right: -8px; bottom: -6px; color: rgba(0,0,0,0.06); }
+        .upgrade-card .upgrade-compact { display:none; }
+        aside#sidebar.collapsed .upgrade-content { display:none; }
+        aside#sidebar.collapsed .upgrade-compact { display:flex; }
+
+        /* Mobile drawer backdrop */
+        .mobile-drawer-backdrop { display:none; position:fixed; inset:0; background:rgba(2,6,23,0.5); z-index:40; }
+        .mobile-drawer-backdrop.active { display:block; }
+        @media (max-width: 1024px) {
+            aside#sidebar { transform: translateX(-110%); position:fixed; z-index:50; }
+            aside#sidebar.mobile-open { transform: translateX(0%); }
+            main#mainContent { margin-left: 0 !important; }
+        }
+    </style>
+<link rel="stylesheet" href="app-shell.css"/>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- Left Navigation Shell -->
+<aside id="sidebar" role="navigation" aria-label="Primary navigation" class="h-screen w-64 fixed left-0 top-0 z-50 bg-surface-container-low border-r border-outline-variant/20 shadow-md flex flex-col py-margin-page px-4 hidden xl:flex">
+<div class="mb-10 px-2 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="nutrition">nutrition</span>
+</div>
+<div class="logo-text">
+<h1 class="font-headline-md text-headline-md font-black text-primary">NutriTrack</h1>
+<p class="text-[10px] font-label-md uppercase tracking-widest text-on-surface-variant/60">Pro Companion</p>
+</div>
+<button id="collapseBtn" aria-expanded="true" aria-controls="sidebar" class="ml-auto hidden lg:inline-flex w-9 h-9 items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant" title="Toggle sidebar">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="dashboard.html">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md nav-label">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="logfood.html">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span class="font-label-md text-label-md nav-label">Log Food</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="mealplanner.html">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-label-md text-label-md nav-label">Meal Planner</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container text-on-primary-container rounded-xl font-bold shadow-sm" href="progress.html" aria-current="page">
+<span class="material-symbols-outlined" data-icon="insights" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="font-label-md text-label-md nav-label">Progress</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="nutrition.html">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md text-label-md nav-label">Nutrition</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="fooddatabase.html">
+<span class="material-symbols-outlined" data-icon="nutrition">nutrition</span>
+<span class="font-label-md text-label-md nav-label">Foods</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="community.html">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md nav-label">Community</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="profiledetail.html">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md nav-label">Profile</span>
+</a>
+</nav>
+<div class="mt-auto space-y-2">
+<div class="p-4 bg-gradient-to-br from-secondary-container/80 to-secondary/20 rounded-2xl mb-6 relative overflow-hidden upgrade-card" role="region" aria-label="Upgrade to premium">
+<div class="relative z-10 upgrade-content">
+<p class="text-on-secondary-container font-bold text-label-md mb-1">Upgrade to Premium</p>
+<p class="text-on-secondary-container/90 text-[12px] mb-3">Get personalized AI meal plans and deep analytics.</p>
+<button class="w-full bg-on-secondary-container text-white py-2 rounded-lg text-label-sm font-bold hover:scale-105 transition-transform shadow-md">Get Started</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-12 upgrade-illustration" aria-hidden="true">
+<span class="material-symbols-outlined text-6xl" data-icon="workspace_premium">workspace_premium</span>
+</div>
+<div class="upgrade-compact hidden absolute left-1/2 -translate-x-1/2 top-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">workspace_premium</span>
+</div>
+<button id="hideSidebarBtn" class="absolute top-2 left-2 w-8 h-8 rounded-full bg-white/30 hover:bg-white/50 text-on-secondary-container hidden lg:inline-flex items-center justify-center" title="Hide sidebar" aria-label="Hide sidebar">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors" href="helpcenter.html">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-md text-label-md nav-label">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-error-red transition-colors" href="login.html">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-md text-label-md nav-label">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main id="mainContent" class="flex-1 xl:ml-64 p-gutter-desktop max-w-[1200px] mx-auto w-full">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 px-gutter-desktop h-16 flex items-center justify-between">
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Weight Journey</h2>
+<p class="text-label-md text-on-surface-variant/60">You've lost 2.4kg in the last 30 days. Stay consistent!</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden md:block">
+<input class="bg-surface-container border-none rounded-full px-5 py-2 pl-12 focus:ring-2 focus:ring-primary w-64 text-label-md" placeholder="Search data..." type="text"/>
+<span class="material-symbols-outlined absolute left-4 top-2 text-on-surface-variant" data-icon="search">search</span>
+</div>
+<div class="flex gap-2">
+<a class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors text-on-surface-variant" href="notifikasi.html" aria-label="Open notifications">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</a>
+<a class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors text-on-surface-variant" href="pengaturan.html" aria-label="Open settings">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</a>
+</div>
+<a class="flex items-center gap-3 pl-4 border-l border-outline-variant" href="profiledetail.html" aria-label="Open profile detail">
+<img alt="User profile avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAckz7AJX85wWaXQtilqbC7uheJm8ujhKgbAUIWKetBroqupBgrwBiInvZ8PkEKJ6MvwB4SZH04OIEWqql0dffuNC8aplU0NR8lN6bKP1yIaFf-cCESl19Y5Q9EjnCezbl72JvF_mA9hB-t0U16gCRLOczeKWv9OzJMWBIA3tesoe1t3G6km3YkP699QqxD26McxQ_Rslmu96lxGU5eNiD5761uQ3Y47DsPrjSTFPv3jKBSD6l7aNjSQGGgiAbvs7IKMuR42xHaM-4"/>
+<div class="hidden lg:block text-left">
+<p class="text-label-md font-bold text-on-surface">Alex Carter</p>
+<p class="text-label-sm text-on-surface-variant">Pro Member</p>
+</div>
+</a>
+</div>
+</header>
+<!-- Header Section -->
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Weight Journey</h2>
+<p class="text-on-surface-variant font-body-md">You've lost 2.4kg in the last 30 days. Stay consistent!</p>
+</div>
+<!-- Top Grid: Analytics & Tracking -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-section-gap mb-section-gap">
+<!-- Main Chart Card -->
+<div class="lg:col-span-8 glass-card rounded-2xl p-card-padding shadow-md">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface">Progress Trends</h3>
+<div class="flex gap-2 bg-surface-container-low p-1 rounded-lg">
+<button class="px-3 py-1 text-label-sm font-bold bg-white shadow-sm rounded-md text-primary">1M</button>
+<button class="px-3 py-1 text-label-sm text-on-surface-variant hover:text-on-surface">3M</button>
+<button class="px-3 py-1 text-label-sm text-on-surface-variant hover:text-on-surface">6M</button>
+<button class="px-3 py-1 text-label-sm text-on-surface-variant hover:text-on-surface">1Y</button>
+</div>
+</div>
+<div class="h-64 w-full bg-surface-container-lowest/50 rounded-xl relative overflow-hidden flex items-end px-4 pb-4">
+<!-- Placeholder for Chart - Illustrating a smooth line path -->
+<svg class="w-full h-full text-primary drop-shadow-lg" viewbox="0 0 400 100">
+<defs>
+<lineargradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="currentColor" stop-opacity="0.3"></stop>
+<stop offset="100%" stop-color="currentColor" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0,80 C50,75 100,85 150,60 C200,35 250,45 300,30 C350,15 400,20 450,10 L450,100 L0,100 Z" fill="url(#chartGradient)"></path>
+<path d="M0,80 C50,75 100,85 150,60 C200,35 250,45 300,30 C350,15 400,20 450,10" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="3"></path>
+<circle cx="150" cy="60" fill="white" r="4" stroke="currentColor" stroke-width="2"></circle>
+<circle cx="300" cy="30" fill="white" r="4" stroke="currentColor" stroke-width="2"></circle>
+</svg>
+<div class="absolute top-4 right-4 flex flex-col items-end">
+<span class="text-metrics-mono text-primary font-bold">78.5 kg</span>
+<span class="text-label-sm text-on-surface-variant">Current</span>
+</div>
+</div>
+</div>
+<!-- Input Form & BMI Card -->
+<div class="lg:col-span-4 space-y-gutter-desktop">
+<!-- Log Weight Card -->
+<div class="glass-card rounded-2xl p-card-padding shadow-md bg-gradient-to-br from-white to-mint-surface">
+<h4 class="font-headline-md text-on-surface mb-4">Log Weight</h4>
+<form class="space-y-4">
+<div class="relative">
+<label class="block text-label-sm text-on-surface-variant mb-1 ml-1">Current Weight (kg)</label>
+<input class="w-full h-12 bg-white border-outline-variant/30 rounded-xl focus:ring-primary focus:border-primary px-4 font-metrics-mono text-lg" placeholder="00.0" step="0.1" type="number"/>
+</div>
+<button class="w-full py-3 bg-primary text-on-primary rounded-xl font-bold shadow-lg shadow-primary/20 scale-interaction hover:brightness-110 transition-all" type="submit">
+                                Record Progress
+                            </button>
+</form>
+</div>
+<!-- BMI 3D Gauge Card -->
+<div class="glass-card rounded-2xl p-card-padding shadow-md flex items-center justify-between overflow-hidden relative">
+<div class="z-10">
+<h4 class="text-label-md font-bold text-on-surface-variant uppercase tracking-wider mb-1">Current BMI</h4>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-lg text-secondary">23.8</span>
+<span class="text-label-sm text-on-surface-variant font-bold">Healthy</span>
+</div>
+</div>
+<div class="w-32 h-32 relative bmi-gauge-container">
+
+</div>
+</div>
+</div>
+</div>
+<!-- Middle Row: Prediction & Goals -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-desktop mb-section-gap">
+<div class="glass-card p-card-padding rounded-2xl shadow-sm hover-lift border-l-4 border-energy-orange">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-energy-orange">bolt</span>
+<span class="text-label-md font-bold text-on-surface-variant">Target Date</span>
+</div>
+<p class="font-headline-md text-on-surface">Oct 12, 2023</p>
+<p class="text-label-sm text-on-surface-variant">Based on your current pace</p>
+</div>
+<div class="glass-card p-card-padding rounded-2xl shadow-sm hover-lift border-l-4 border-achievement-purple">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-achievement-purple" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+<span class="text-label-md font-bold text-on-surface-variant">Next Milestone</span>
+</div>
+<p class="font-headline-md text-on-surface">-1.5 kg to go</p>
+<p class="text-label-sm text-on-surface-variant">75kg Goal Milestone</p>
+</div>
+<div class="glass-card p-card-padding rounded-2xl shadow-sm hover-lift border-l-4 border-secondary">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-secondary">calendar_today</span>
+<span class="text-label-md font-bold text-on-surface-variant">Consistency</span>
+</div>
+<p class="font-headline-md text-on-surface">12 Day Streak</p>
+<p class="text-label-sm text-on-surface-variant">Daily logging hero</p>
+</div>
+</div>
+<!-- Bottom Section: History & Photos -->
+<div class="grid grid-cols-1 gap-section-gap">
+<div class="glass-card rounded-2xl overflow-hidden shadow-sm">
+<div class="p-card-padding border-b border-outline-variant/20 flex justify-between items-center">
+<h3 class="font-headline-md text-on-surface">History &amp; Logs</h3>
+<button class="flex items-center gap-2 text-primary font-bold text-label-md hover:underline">
+                            View All <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<div class="divide-y divide-outline-variant/10">
+<!-- History Item 1 -->
+<div class="p-card-padding flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary font-bold">
+<span class="material-symbols-outlined">calendar_month</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Sep 28, 2023</p>
+<p class="text-label-sm text-on-surface-variant">Morning Entry • 7:15 AM</p>
+</div>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-right">
+<p class="font-metrics-mono text-lg font-bold text-on-surface">78.5 kg</p>
+<p class="text-label-sm text-error-red">-0.2 kg</p>
+</div>
+<div class="w-14 h-14 rounded-lg overflow-hidden border border-outline-variant/30 group-hover:scale-110 transition-transform cursor-zoom-in">
+<img alt="Progress photo" data-alt="A side profile fitness progress photo showing a person in athletic gear standing against a clean neutral wall. The lighting is soft and consistent, emphasizing body composition progress in a respectful and professional medical-fitness style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXiGaiImxr7Cbcjqbg6X0CMfs8IVqgiU8jVufW34uY5zWmk89TfJ1LQBL1uGl8CUdp0QQuzmH5up7_7aMmZ6__CeMHkHUpknpEaqIbfot_2rMx8zF7nghPbuF2ipnb6XWpTKTbUIm4QoAQqZOGCqKO4UlK0t-1CBDzVT051sgrvPKQqV5w_aXo-aIo6qJbytwgmW20wHRE-qY-2VbbKmgs_saFtXjqsZ3QaF5FrcccDMXy28rqpi465nP_WV51UpHtfG1GO-HAfC8"/>
+</div>
+</div>
+</div>
+<!-- History Item 2 -->
+<div class="p-card-padding flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary font-bold">
+<span class="material-symbols-outlined">calendar_month</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Sep 27, 2023</p>
+<p class="text-label-sm text-on-surface-variant">Morning Entry • 7:30 AM</p>
+</div>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-right">
+<p class="font-metrics-mono text-lg font-bold text-on-surface">78.7 kg</p>
+<p class="text-label-sm text-primary">+0.1 kg</p>
+</div>
+<div class="w-14 h-14 rounded-lg bg-surface-container flex items-center justify-center border border-dashed border-outline-variant/50 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">no_photography</span>
+</div>
+</div>
+</div>
+<!-- History Item 3 -->
+<div class="p-card-padding flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-container-low transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary font-bold">
+<span class="material-symbols-outlined">calendar_month</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Sep 26, 2023</p>
+<p class="text-label-sm text-on-surface-variant">Morning Entry • 7:20 AM</p>
+</div>
+</div>
+<div class="flex items-center gap-8">
+<div class="text-right">
+<p class="font-metrics-mono text-lg font-bold text-on-surface">78.6 kg</p>
+<p class="text-label-sm text-error-red">-0.4 kg</p>
+</div>
+<div class="w-14 h-14 rounded-lg overflow-hidden border border-outline-variant/30 group-hover:scale-110 transition-transform cursor-zoom-in">
+<img alt="Progress photo" data-alt="A close-up of a high-tech smart scale on a clean light-colored tiled floor. A person is stepping onto it, captured with a professional shallow depth of field. The image exudes a clean, modern, and precise health-tracking atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAu0YvYpYNWRq0AeV_DxagIvPymAdoVh55WX9xGn-8rGBRlCwpuuuuRj5HhDBEmfnMtdR4Bp36GbUAdzHEsGKpCp3CBxXb8eAU_OxtPhVHrZDu0tAHJ2VDkMefgJ-CVhYLHMlubW2k37TX6LrV8m_3WAXo5UVgemUEbXealQESdg3aaVwYGxC9RxIVQxFTVwaJqJ7eU2Eda2CerOOMWDt13D17WaGFs09e0iPNIRDmFIzTQb1yTQefN1MG61OE5Z71ySWVg_BPOEtY"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center scale-interaction xl:hidden z-50">
+<span class="material-symbols-outlined">add</span>
+</button>
+<script>
+        // Micro-interaction for form submission feedback
+        const weightForm = document.querySelector('form');
+        if (weightForm) {
+            weightForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const btn = weightForm.querySelector('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span>';
+                btn.classList.add('opacity-80');
+                
+                setTimeout(() => {
+                    btn.innerHTML = '<span class="material-symbols-outlined">check</span> Saved!';
+                    btn.classList.remove('bg-primary');
+                    btn.classList.add('bg-secondary');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('bg-secondary', 'opacity-80');
+                        btn.classList.add('bg-primary');
+                        weightForm.reset();
+                    }, 2000);
+                }, 1200);
+            });
+        }
+    </script>
+    <script>
+        // Sidebar collapse & hide toggles (keeps layout in sync with other pages)
+        (function(){
+            const sidebar = document.getElementById('sidebar');
+            const main = document.getElementById('mainContent');
+            const collapseBtn = document.getElementById('collapseBtn');
+            const hideBtn = document.getElementById('hideSidebarBtn');
+
+            if (collapseBtn && sidebar && main) {
+                collapseBtn.addEventListener('click', () => {
+                    const expanded = collapseBtn.getAttribute('aria-expanded') === 'true';
+                    if (expanded) {
+                        sidebar.classList.add('collapsed');
+                        main.classList.add('main-collapsed');
+                        collapseBtn.setAttribute('aria-expanded', 'false');
+                        const icon = collapseBtn.querySelector('.material-symbols-outlined');
+                        if (icon) icon.textContent = 'chevron_right';
+                    } else {
+                        sidebar.classList.remove('collapsed');
+                        main.classList.remove('main-collapsed');
+                        collapseBtn.setAttribute('aria-expanded', 'true');
+                        const icon = collapseBtn.querySelector('.material-symbols-outlined');
+                        if (icon) icon.textContent = 'chevron_left';
+                    }
+                });
+            }
+
+            if (hideBtn && sidebar && main) {
+                hideBtn.addEventListener('click', () => {
+                    sidebar.classList.toggle('hidden-full');
+                    main.classList.toggle('hidden-sidebar');
+                });
+            }
+        })();
+    
+
+        // Sidebar collapse & hide controls (shared shell)
+        (function(){
+            const sidebar = document.getElementById('sidebar');
+            const collapseBtn = document.getElementById('collapseBtn');
+            const hideBtn = document.getElementById('hideSidebarBtn');
+            const main = document.getElementById('mainContent');
+
+            if (collapseBtn && sidebar) {
+                collapseBtn.addEventListener('click', () => {
+                    const isCollapsed = sidebar.classList.toggle('collapsed');
+                    collapseBtn.setAttribute('aria-expanded', String(!isCollapsed));
+                    const icon = collapseBtn.querySelector('.material-symbols-outlined');
+                    if (icon) icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left';
+                    if (main) main.classList.toggle('main-collapsed', isCollapsed);
+                });
+            }
+
+            if (hideBtn && sidebar) {
+                hideBtn.addEventListener('click', () => {
+                    const hidden = sidebar.classList.toggle('hidden-full');
+                    if (main) main.classList.toggle('hidden-sidebar', hidden);
+                    hideBtn.setAttribute('aria-pressed', String(hidden));
+                });
+            }
+        })();
+    </script>
+</body></html>

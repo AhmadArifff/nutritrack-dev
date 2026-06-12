@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NutriTrack | Activity Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Nunito:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary-fixed-dim": "#ffb4a9",
+                    "on-tertiary-container": "#76231b",
+                    "secondary": "#0058be",
+                    "inverse-surface": "#213145",
+                    "tertiary": "#9e4036",
+                    "surface-container": "#e5eeff",
+                    "warning-yellow": "#eab308",
+                    "error-red": "#ef4444",
+                    "background": "#f8f9ff",
+                    "bg-dark": "#0f172a",
+                    "inverse-primary": "#4ae176",
+                    "achievement-purple": "#a855f7",
+                    "card-light": "#ffffff",
+                    "on-secondary-container": "#fefcff",
+                    "primary": "#006e2f",
+                    "on-background": "#0b1c30",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#005321",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-low": "#eff4ff",
+                    "surface-bright": "#f8f9ff",
+                    "surface-tint": "#006e2f",
+                    "surface": "#f8f9ff",
+                    "on-secondary-fixed-variant": "#004395",
+                    "tertiary-container": "#ff8b7c",
+                    "outline": "#6d7b6c",
+                    "surface-container-high": "#dce9ff",
+                    "primary-fixed-dim": "#4ae176",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed": "#d8e2ff",
+                    "card-dark": "#1e293b",
+                    "on-tertiary-fixed": "#410001",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-surface-variant": "#3d4a3d",
+                    "primary-container": "#22c55e",
+                    "primary-fixed": "#6bff8f",
+                    "on-tertiary-fixed-variant": "#7f2a21",
+                    "secondary-fixed-dim": "#adc6ff",
+                    "on-surface": "#0b1c30",
+                    "on-secondary": "#ffffff",
+                    "on-primary-fixed": "#002109",
+                    "bg-light": "#f8fafc",
+                    "outline-variant": "#bccbb9",
+                    "surface-dim": "#cbdbf5",
+                    "energy-orange": "#f97316",
+                    "on-secondary-fixed": "#001a42",
+                    "on-error-container": "#93000a",
+                    "mint-surface": "#f0fdf4",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#2170e4",
+                    "on-error": "#ffffff",
+                    "on-primary-container": "#004b1e",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-fixed": "#ffdad5",
+                    "error": "#ba1a1a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter-mobile": "16px",
+                    "section-gap": "32px",
+                    "unit": "4px",
+                    "gutter-desktop": "24px",
+                    "card-padding": "20px",
+                    "margin-page": "24px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Poppins"],
+                    "headline-lg": ["Poppins"],
+                    "headline-md": ["Poppins"],
+                    "label-sm": ["Inter"],
+                    "headline-lg-mobile": ["Poppins"],
+                    "body-md": ["Nunito"],
+                    "body-lg": ["Nunito"],
+                    "metrics-mono": ["JetBrains Mono"],
+                    "label-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.25", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "1.25", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "metrics-mono": ["16px", {"lineHeight": "1", "fontWeight": "500"}],
+                    "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scroll-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .active-ring {
+            box-shadow: 0 0 0 2px #22c55e;
+        }
+
+        /* Sidebar collapse / hide and mobile drawer */
+        aside#sidebar { transition: width 0.22s ease, transform 0.22s ease; }
+        aside#sidebar.collapsed { width: 72px; }
+        aside#sidebar .nav-label { display: inline; transition: opacity 0.15s ease; white-space: nowrap; }
+        aside#sidebar.collapsed .nav-label { opacity: 0; width: 0; display: none; }
+        aside#sidebar .logo-text { transition: opacity 0.15s ease; }
+        aside#sidebar.collapsed .logo-text { opacity: 0; display: none; }
+        main#mainContent { transition: margin-left 0.22s ease, width 0.22s ease; }
+        main#mainContent.main-collapsed { margin-left: 72px; }
+        aside#sidebar.hidden-full { transform: translateX(-110%); width: 0 !important; }
+        main#mainContent.hidden-sidebar { margin-left: 0 !important; }
+        @media (min-width: 1280px) {
+            main#mainContent { width: calc(100% - 16rem); }
+            main#mainContent.main-collapsed { width: calc(100% - 72px); }
+            main#mainContent.hidden-sidebar { width: 100%; }
+        }
+        .upgrade-card { background: linear-gradient(135deg, rgba(33,112,228,0.08), rgba(33,112,228,0.14)); }
+        .upgrade-card .upgrade-content p { color: #072044; }
+        .upgrade-card .upgrade-illustration { right: -8px; bottom: -6px; color: rgba(0,0,0,0.06); }
+        .upgrade-card .upgrade-compact { display:none; }
+        aside#sidebar.collapsed .upgrade-content { display:none; }
+        aside#sidebar.collapsed .upgrade-compact { display:flex; }
+        @media (max-width: 1024px) {
+            aside#sidebar { transform: translateX(-110%); position:fixed; z-index:50; }
+            aside#sidebar.mobile-open { transform: translateX(0%); }
+            main#mainContent { margin-left: 0 !important; }
+        }
+    </style>
+<link rel="stylesheet" href="app-shell.css"/>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden">
+<!-- Left Navigation Shell -->
+<aside id="sidebar" role="navigation" aria-label="Primary navigation" class="h-screen w-64 fixed left-0 top-0 z-50 bg-surface-container-low border-r border-outline-variant/20 shadow-md flex flex-col py-margin-page px-4 hidden xl:flex">
+<div class="mb-10 px-2 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="nutrition">nutrition</span>
+</div>
+<div class="logo-text">
+<h1 class="font-headline-md text-headline-md font-black text-primary">NutriTrack</h1>
+<p class="text-[10px] font-label-md uppercase tracking-widest text-on-surface-variant/60">Pro Companion</p>
+</div>
+<button id="collapseBtn" aria-expanded="true" aria-controls="sidebar" class="ml-auto hidden lg:inline-flex w-9 h-9 items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant" title="Toggle sidebar">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="dashboard.html">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md nav-label">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="logfood.html">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span class="font-label-md text-label-md nav-label">Log Food</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="mealplanner.html">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-label-md text-label-md nav-label">Meal Planner</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="progress.html">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-label-md text-label-md nav-label">Progress</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="nutrition.html">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md text-label-md nav-label">Nutrition</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="fooddatabase.html">
+<span class="material-symbols-outlined" data-icon="nutrition">nutrition</span>
+<span class="font-label-md text-label-md nav-label">Foods</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="community.html">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md nav-label">Community</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="profiledetail.html">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md nav-label">Profile</span>
+</a>
+</nav>
+<div class="mt-auto space-y-2">
+<div class="p-4 bg-gradient-to-br from-secondary-container/80 to-secondary/20 rounded-2xl mb-6 relative overflow-hidden upgrade-card" role="region" aria-label="Upgrade to premium">
+<div class="relative z-10 upgrade-content">
+<p class="text-on-secondary-container font-bold text-label-md mb-1">Upgrade to Premium</p>
+<p class="text-on-secondary-container/90 text-[12px] mb-3">Get personalized AI meal plans and deep analytics.</p>
+<button class="w-full bg-on-secondary-container text-white py-2 rounded-lg text-label-sm font-bold hover:scale-105 transition-transform shadow-md">Get Started</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-12 upgrade-illustration" aria-hidden="true">
+<span class="material-symbols-outlined text-6xl" data-icon="workspace_premium">workspace_premium</span>
+</div>
+<div class="upgrade-compact hidden absolute left-1/2 -translate-x-1/2 top-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">workspace_premium</span>
+</div>
+<button id="hideSidebarBtn" class="absolute top-2 left-2 w-8 h-8 rounded-full bg-white/30 hover:bg-white/50 text-on-secondary-container hidden lg:inline-flex items-center justify-center" title="Hide sidebar" aria-label="Hide sidebar">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors" href="helpcenter.html">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-md text-label-md nav-label">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-error-red transition-colors" href="login.html">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-md text-label-md nav-label">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main id="mainContent" class="flex-1 xl:ml-64 p-gutter-desktop max-w-[1200px] mx-auto w-full">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 px-gutter-desktop h-16 flex items-center justify-between">
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Notifications</h2>
+<p class="text-label-md text-on-surface-variant/60">Your wellness journey is 85% on track this week.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden md:block">
+<input class="bg-surface-container border-none rounded-full px-5 py-2 pl-12 focus:ring-2 focus:ring-primary w-64 text-label-md" placeholder="Search analytics..." type="text"/>
+<span class="material-symbols-outlined absolute left-4 top-2 text-on-surface-variant" data-icon="search">search</span>
+</div>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors text-on-surface-variant" onclick="toggleOverlay()" aria-label="Open notifications">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<a class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors text-on-surface-variant" href="pengaturan.html" aria-label="Open settings">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</a>
+</div>
+<a class="flex items-center gap-3 pl-4 border-l border-outline-variant" href="profiledetail.html" aria-label="Open profile detail">
+<img alt="User profile avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAckz7AJX85wWaXQtilqbC7uheJm8ujhKgbAUIWKetBroqupBgrwBiInvZ8PkEKJ6MvwB4SZH04OIEWqql0dffuNC8aplU0NR8lN6bKP1yIaFf-cCESl19Y5Q9EjnCezbl72JvF_mA9hB-t0U16gCRLOczeKWv9OzJMWBIA3tesoe1t3G6km3YkP699QqxD26McxQ_Rslmu96lxGU5eNiD5761uQ3Y47DsPrjSTFPv3jKBSD6l7aNjSQGGgiAbvs7IKMuR42xHaM-4"/>
+<div class="hidden lg:block text-left">
+<p class="text-label-md font-bold text-on-surface">Alex Carter</p>
+<p class="text-label-sm text-on-surface-variant">Pro Member</p>
+</div>
+</a>
+</div>
+</header>
+<div class="max-w-5xl mx-auto">
+<header class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Good Morning, Alex</h2>
+<p class="text-body-lg text-on-surface-variant">Your wellness journey is 85% on track this week.</p>
+</header>
+<!-- Dashboard Mockup (Subtle) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-40 select-none pointer-events-none">
+<div class="col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-outline-variant">
+<div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary">colorize</span>
+</div>
+<div class="h-4 w-24 bg-surface-variant rounded-full mb-2"></div>
+<div class="h-8 w-16 bg-primary/40 rounded-full"></div>
+</div>
+<div class="col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-outline-variant">
+<div class="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-secondary">water_drop</span>
+</div>
+<div class="h-4 w-24 bg-surface-variant rounded-full mb-2"></div>
+<div class="h-8 w-16 bg-secondary/40 rounded-full"></div>
+</div>
+<div class="col-span-1 bg-white p-6 rounded-3xl shadow-sm border border-outline-variant">
+<div class="w-12 h-12 bg-achievement-purple/20 rounded-full flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-achievement-purple">fitness_center</span>
+</div>
+<div class="h-4 w-24 bg-surface-variant rounded-full mb-2"></div>
+<div class="h-8 w-16 bg-achievement-purple/40 rounded-full"></div>
+</div>
+</div>
+</div>
+</main>
+<!-- Activity Hub Overlay (The Drawer) -->
+<div class="fixed inset-0 bg-on-background/20 backdrop-blur-sm z-50 transition-opacity duration-300 opacity-0 pointer-events-none" id="overlay-backdrop" onclick="toggleOverlay()"></div>
+<div class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-[60] transform translate-x-full transition-transform duration-500 ease-out flex flex-col" id="activity-hub">
+<!-- Header -->
+<div class="p-gutter-desktop border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Activity Hub</h3>
+<p class="text-label-sm font-label-sm text-outline">Manage your health alerts &amp; stats</p>
+</div>
+<button class="p-2 hover:bg-surface-container rounded-full transition-colors active:scale-90" onclick="toggleOverlay()">
+<span class="material-symbols-outlined text-on-surface">close</span>
+</button>
+</div>
+<!-- Filter Tabs -->
+<div class="flex gap-2 p-4 overflow-x-auto scroll-hide bg-surface-container-lowest">
+<button class="px-4 py-2 bg-primary text-on-primary rounded-full font-label-md text-label-md shadow-md active:scale-95 transition-transform">All</button>
+<button class="px-4 py-2 bg-surface-container text-on-surface-variant hover:bg-surface-container-high rounded-full font-label-md text-label-md transition-colors">Reminders</button>
+<button class="px-4 py-2 bg-surface-container text-on-surface-variant hover:bg-surface-container-high rounded-full font-label-md text-label-md transition-colors">Achievements</button>
+<button class="px-4 py-2 bg-surface-container text-on-surface-variant hover:bg-surface-container-high rounded-full font-label-md text-label-md transition-colors">Reports</button>
+</div>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-4 space-y-6 scroll-hide">
+<!-- Category: Meal Reminders -->
+<section>
+<div class="flex justify-between items-center mb-3 px-2">
+<h4 class="font-label-md text-label-md text-primary font-bold uppercase tracking-wider">Meal Reminders</h4>
+<span class="text-[10px] text-outline font-bold">2 NEW</span>
+</div>
+<div class="space-y-3">
+<!-- Notification Card -->
+<div class="bg-card-light border border-outline-variant rounded-2xl p-4 shadow-sm hover:shadow-md transition-all group">
+<div class="flex gap-4">
+<div class="w-12 h-12 bg-mint-surface rounded-xl flex items-center justify-center shrink-0 border border-primary/10">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-label-md text-label-md text-on-surface font-bold">Lunch Time!</h5>
+<span class="text-label-sm font-label-sm text-outline">12:30 PM</span>
+</div>
+<p class="text-body-md text-label-md text-on-surface-variant mb-3">You haven't logged your Mediterranean salad yet. Stay consistent!</p>
+<button class="w-full py-2 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-on-primary-fixed-variant transition-colors active:scale-95">Log Now</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Category: Achievements -->
+<section>
+<div class="flex justify-between items-center mb-3 px-2">
+<h4 class="font-label-md text-label-md text-achievement-purple font-bold uppercase tracking-wider">Achievements</h4>
+<span class="text-[10px] text-outline font-bold">JUST NOW</span>
+</div>
+<div class="space-y-3">
+<div class="bg-surface-container-low border border-achievement-purple/20 rounded-2xl p-4 shadow-sm relative overflow-hidden group">
+<!-- Subtle Background Glow -->
+<div class="absolute -top-10 -right-10 w-24 h-24 bg-achievement-purple/10 rounded-full blur-2xl"></div>
+<div class="flex gap-4 relative z-10">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 shadow-inner border border-achievement-purple/30">
+<span class="material-symbols-outlined text-achievement-purple" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-label-md text-label-md text-on-surface font-bold">Hydration Hero</h5>
+<span class="text-label-sm font-label-sm text-outline">5m ago</span>
+</div>
+<p class="text-body-md text-label-md text-on-surface-variant mb-3">You've hit your water goal 7 days in a row! New badge unlocked.</p>
+<div class="flex gap-2">
+<button class="flex-1 py-2 bg-achievement-purple text-on-primary rounded-lg font-label-md text-label-md hover:opacity-90 transition-all active:scale-95">View Badge</button>
+<button class="p-2 border border-achievement-purple/30 text-achievement-purple rounded-lg hover:bg-achievement-purple/5"><span class="material-symbols-outlined">share</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Category: Weekly Reports -->
+<section>
+<div class="flex justify-between items-center mb-3 px-2">
+<h4 class="font-label-md text-label-md text-secondary font-bold uppercase tracking-wider">Weekly Reports</h4>
+</div>
+<div class="space-y-3">
+<div class="bg-card-light border border-outline-variant rounded-2xl p-4 shadow-sm hover:shadow-md transition-all">
+<div class="flex gap-4">
+<div class="w-12 h-12 bg-secondary-fixed rounded-xl flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">insights</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h5 class="font-label-md text-label-md text-on-surface font-bold">Week 4 Analysis</h5>
+<span class="text-label-sm font-label-sm text-outline">Yesterday</span>
+</div>
+<p class="text-body-md text-label-md text-on-surface-variant mb-3">Your protein intake is up by 12% compared to last week. See full breakdown.</p>
+<button class="w-full py-2 border border-outline-variant text-on-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-container transition-colors active:scale-95">Open Report</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Category: Community -->
+<section>
+<div class="flex justify-between items-center mb-3 px-2">
+<h4 class="font-label-md text-label-md text-energy-orange font-bold uppercase tracking-wider">Community</h4>
+</div>
+<div class="bg-white border border-outline-variant rounded-2xl p-4 flex items-center gap-4">
+<div class="flex -space-x-2">
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-white" data-alt="A close-up portrait of a cheerful young woman with bright, expressive eyes and a friendly smile. The lighting is warm and natural, creating a soft glow. She is set against a blurred outdoor background with hints of lush green foliage, suggesting a healthy and active lifestyle." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBpQPwTBwAJxrBRuPURt2LDf1aHST1fGbefEwuj4lM3Vbs1fI25t61kuANVrc-OEmFD4e3cUjQ2bg5etQFVjWEY3HVVAgsmiP4pKwy0OFhKu9c-zkylRoYANYVSsW51XVocxPFL9LgeXp4sUPzpqJioSpuD74YQHbqpT9yq-kiAGPLtPtO_qTksB9skkP5bu0U4_e1LmuuIzFLhDynmexYmkjzFnOQcf_9STuHPSMmECT0c5dOfEvhb1IOLTiAuhsqmuX3zcwszDc"/>
+<img alt="Avatar" class="w-8 h-8 rounded-full border-2 border-white" data-alt="A portrait of a confident man in his late 20s with a modern, short hairstyle and clean-shaven look. He is wearing a simple, high-quality athletic shirt. The lighting is professional and bright, set against a clean, minimalist architectural background in light mode tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAWBqTUP85IPw_yaaXv8SoWxioAqLFcjved4K-WjZZ-RAc56pY9oQQ0Zhmz-Vh4QcCM0lnDkY34quxhNUaT0QNdhldL8AjuQMngTgp-Y0MHHnBZCHtgCKhHTbXvRl9uOhwyfTgX1JTN1j9_ao4vX1SuksVWi6f64VkjRrAd6P-eFboemtO_oMGw4c_n1W5_b0xGG8sdmicxX2A2BMK8EfHUPPO1fx6H_Q6m_nfdgReXXFZY6mYCdjp5El5BYevrXDnSBzC7ZLaQdWE"/>
+</div>
+<div class="flex-1">
+<p class="text-label-md font-label-md text-on-surface">3 friends joined the <span class="font-bold">Keto Challenge</span></p>
+</div>
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<div class="p-6 border-t border-outline-variant bg-surface-container-low text-center">
+<button class="text-primary font-label-md text-label-md hover:underline decoration-2 underline-offset-4 transition-all">Mark all as read</button>
+</div>
+</div>
+<!-- Floating Action Button (FAB) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-20 md:hidden">
+<span class="material-symbols-outlined text-[32px]">add</span>
+</button>
+<script>
+        function toggleOverlay() {
+            const overlay = document.getElementById('activity-hub');
+            const backdrop = document.getElementById('overlay-backdrop');
+            
+            if (overlay.classList.contains('translate-x-full')) {
+                overlay.classList.remove('translate-x-full');
+                overlay.classList.add('translate-x-0');
+                backdrop.classList.remove('pointer-events-none', 'opacity-0');
+                backdrop.classList.add('opacity-100');
+            } else {
+                overlay.classList.add('translate-x-full');
+                overlay.classList.remove('translate-x-0');
+                backdrop.classList.add('pointer-events-none', 'opacity-0');
+                backdrop.classList.remove('opacity-100');
+            }
+        }
+
+        // Auto-open for demo purposes
+        window.onload = () => {
+            setTimeout(toggleOverlay, 800);
+        };
+    
+
+        // Sidebar collapse & hide controls (shared shell)
+        (function(){
+            const sidebar = document.getElementById('sidebar');
+            const collapseBtn = document.getElementById('collapseBtn');
+            const hideBtn = document.getElementById('hideSidebarBtn');
+            const main = document.getElementById('mainContent');
+
+            if (collapseBtn && sidebar) {
+                collapseBtn.addEventListener('click', () => {
+                    const isCollapsed = sidebar.classList.toggle('collapsed');
+                    collapseBtn.setAttribute('aria-expanded', String(!isCollapsed));
+                    const icon = collapseBtn.querySelector('.material-symbols-outlined');
+                    if (icon) icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left';
+                    if (main) main.classList.toggle('main-collapsed', isCollapsed);
+                });
+            }
+
+            if (hideBtn && sidebar) {
+                hideBtn.addEventListener('click', () => {
+                    const hidden = sidebar.classList.toggle('hidden-full');
+                    if (main) main.classList.toggle('hidden-sidebar', hidden);
+                    hideBtn.setAttribute('aria-pressed', String(hidden));
+                });
+            }
+        })();
+    </script>
+</body></html>

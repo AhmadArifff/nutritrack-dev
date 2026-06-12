@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Onboarding - NutriTrack</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','sans-serif']},colors:{primary:'#007a35',mint:'#e9f8ef',ink:'#071727'}}}}</script>
+</head>
+<body class="bg-[#f4f7fb] font-sans text-ink min-h-screen">
+<header class="h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200 sticky top-0 z-30">
+<div class="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
+<a class="flex items-center gap-3" href="index.html"><span class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center material-symbols-outlined">nutrition</span><span class="font-black text-xl text-primary">NutriTrack</span></a>
+<a class="text-sm font-bold text-slate-500 hover:text-primary" href="dashboard.html">Lewati</a>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-6 py-10">
+<div class="mb-10">
+<p class="uppercase tracking-[0.28em] text-xs font-extrabold text-primary mb-3">Self-service onboarding</p>
+<h1 class="text-4xl md:text-5xl font-black mb-4">Setup profil sehatmu</h1>
+<p class="text-slate-600 max-w-2xl">Enam langkah pertama sesuai PRD untuk menghitung target kalori, makro, preferensi, dan jadwal makan.</p>
+<div class="mt-6 h-3 bg-white rounded-full overflow-hidden border border-slate-200"><div class="h-full w-full bg-primary rounded-full"></div></div>
+</div>
+<section class="grid lg:grid-cols-[1fr_360px] gap-8 items-start">
+<div class="grid gap-5">
+<article class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm"><div class="flex items-center gap-3 mb-5"><span class="w-10 h-10 rounded-xl bg-mint text-primary flex items-center justify-center font-black">1</span><h2 class="text-xl font-black">Kenali Tubuhmu</h2></div><div class="grid md:grid-cols-4 gap-4"><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="Alex Carter"/><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="29 tahun"/><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="178 cm"/><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="78.5 kg"/></div></article>
+<article class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm"><div class="flex items-center gap-3 mb-5"><span class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center font-black">2</span><h2 class="text-xl font-black">Pilih Program</h2></div><div class="grid md:grid-cols-3 gap-4"><button class="p-5 rounded-2xl bg-orange-50 text-left border border-orange-100"><b>Turun Berat Badan</b><p class="text-sm text-slate-600 mt-2">Defisit kalori sehat.</p></button><button class="p-5 rounded-2xl bg-blue-50 text-left border border-blue-100"><b>Naik Berat Badan</b><p class="text-sm text-slate-600 mt-2">Bulking bergizi.</p></button><button class="p-5 rounded-2xl bg-mint text-left border border-green-100"><b>Pola Makan Sehat</b><p class="text-sm text-slate-600 mt-2">Seimbang harian.</p></button></div></article>
+<article class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm"><div class="flex items-center gap-3 mb-5"><span class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black">3</span><h2 class="text-xl font-black">Target & Timeline</h2></div><div class="grid md:grid-cols-3 gap-4"><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="Target 70 kg"/><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="Normal 0.5 kg/minggu"/><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="~30 minggu"/></div></article>
+<article class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm"><div class="flex items-center gap-3 mb-5"><span class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-black">4</span><h2 class="text-xl font-black">Level Aktivitas</h2></div><div class="grid md:grid-cols-5 gap-3 text-sm"><span class="p-3 rounded-xl bg-slate-50">Jarang</span><span class="p-3 rounded-xl bg-slate-50">Ringan</span><span class="p-3 rounded-xl bg-primary text-white font-bold">Sedang</span><span class="p-3 rounded-xl bg-slate-50">Aktif</span><span class="p-3 rounded-xl bg-slate-50">Sangat Aktif</span></div></article>
+<article class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm"><div class="flex items-center gap-3 mb-5"><span class="w-10 h-10 rounded-xl bg-green-50 text-primary flex items-center justify-center font-black">5</span><h2 class="text-xl font-black">Preferensi Makanan</h2></div><div class="flex flex-wrap gap-3"><span class="px-4 py-2 rounded-full bg-primary text-white font-bold">Halal Only</span><span class="px-4 py-2 rounded-full bg-mint text-primary font-bold">Masakan Indonesia</span><span class="px-4 py-2 rounded-full bg-slate-100">Tidak ada alergi</span><span class="px-4 py-2 rounded-full bg-slate-100">Omnivora</span></div></article>
+<article class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm"><div class="flex items-center gap-3 mb-5"><span class="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center font-black">6</span><h2 class="text-xl font-black">Jadwal & Notifikasi</h2></div><div class="grid md:grid-cols-3 gap-4"><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="Sarapan 07:00"/><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="Lunch 12:30"/><input class="h-12 rounded-2xl bg-slate-50 border border-slate-200 px-4" value="Dinner 19:00"/></div></article>
+</div>
+<aside class="bg-white rounded-[32px] p-7 border border-slate-200 shadow-xl sticky top-24">
+<p class="uppercase tracking-[0.22em] text-xs font-extrabold text-primary mb-3">Rencana siap</p>
+<h2 class="text-2xl font-black mb-5">Target harian</h2>
+<div class="space-y-3 text-sm"><div class="flex justify-between"><span>Kalori</span><b>1,800 kcal</b></div><div class="flex justify-between"><span>Protein</span><b>135 g</b></div><div class="flex justify-between"><span>Karbohidrat</span><b>180 g</b></div><div class="flex justify-between"><span>Lemak</span><b>60 g</b></div></div>
+<a class="mt-7 h-12 rounded-2xl bg-primary text-white font-extrabold flex items-center justify-center" href="dashboard.html">Mulai Perjalananku</a>
+</aside>
+</section>
+</main>
+</body>
+</html>

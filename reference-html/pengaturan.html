@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NutriTrack - Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&amp;family=Nunito:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "warning-yellow": "#eab308",
+                        "surface-bright": "#f8f9ff",
+                        "energy-orange": "#f97316",
+                        "on-tertiary-container": "#76231b",
+                        "achievement-purple": "#a855f7",
+                        "primary-fixed-dim": "#4ae176",
+                        "on-tertiary": "#ffffff",
+                        "outline": "#6d7b6c",
+                        "surface-container-highest": "#d3e4fe",
+                        "bg-dark": "#0f172a",
+                        "card-dark": "#1e293b",
+                        "inverse-primary": "#4ae176",
+                        "secondary": "#0058be",
+                        "secondary-container": "#2170e4",
+                        "error": "#ba1a1a",
+                        "primary-fixed": "#6bff8f",
+                        "outline-variant": "#bccbb9",
+                        "on-background": "#0b1c30",
+                        "mint-surface": "#f0fdf4",
+                        "surface-container-high": "#dce9ff",
+                        "on-primary-fixed-variant": "#005321",
+                        "surface-container-low": "#eff4ff",
+                        "on-secondary-fixed": "#001a42",
+                        "error-container": "#ffdad6",
+                        "error-red": "#ef4444",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "tertiary": "#9e4036",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-container": "#fefcff",
+                        "on-surface-variant": "#3d4a3d",
+                        "tertiary-container": "#ff8b7c",
+                        "surface-variant": "#d3e4fe",
+                        "surface-tint": "#006e2f",
+                        "on-tertiary-fixed": "#410001",
+                        "on-secondary-fixed-variant": "#004395",
+                        "surface-dim": "#cbdbf5",
+                        "on-tertiary-fixed-variant": "#7f2a21",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#004b1e",
+                        "tertiary-fixed": "#ffdad5",
+                        "tertiary-fixed-dim": "#ffb4a9",
+                        "on-surface": "#0b1c30",
+                        "background": "#f8f9ff",
+                        "on-error-container": "#93000a",
+                        "primary-container": "#22c55e",
+                        "on-primary-fixed": "#002109",
+                        "on-error": "#ffffff",
+                        "bg-light": "#f8fafc",
+                        "card-light": "#ffffff",
+                        "primary": "#006e2f",
+                        "surface-container": "#e5eeff",
+                        "inverse-surface": "#213145",
+                        "secondary-fixed": "#d8e2ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "section-gap": "32px",
+                        "gutter-mobile": "16px",
+                        "unit": "4px",
+                        "gutter-desktop": "24px",
+                        "margin-page": "24px",
+                        "card-padding": "20px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Poppins"],
+                        "body-md": ["Nunito"],
+                        "label-md": ["Inter"],
+                        "headline-xl": ["Poppins"],
+                        "headline-lg": ["Poppins"],
+                        "label-sm": ["Inter"],
+                        "headline-lg-mobile": ["Poppins"],
+                        "body-lg": ["Nunito"],
+                        "metrics-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "label-md": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                        "headline-xl": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.25", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "1.25", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "metrics-mono": ["16px", {"lineHeight": "1", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+            box-shadow: 0 10px 25px -5px rgba(0, 110, 47, 0.05);
+        }
+        .toggle-switch {
+            width: 44px;
+            height: 24px;
+            background-color: #cbd5e1;
+            border-radius: 999px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        input:checked + .toggle-switch {
+            background-color: #006e2f;
+        }
+        input:checked + .toggle-switch::after {
+            transform: translateX(20px);
+        }
+
+        /* Sidebar collapse / hide and mobile drawer */
+        aside#sidebar { transition: width 0.22s ease, transform 0.22s ease; }
+        aside#sidebar.collapsed { width: 72px; }
+        aside#sidebar .nav-label { display: inline; transition: opacity 0.15s ease; white-space: nowrap; }
+        aside#sidebar.collapsed .nav-label { opacity: 0; width: 0; display: none; }
+        aside#sidebar .logo-text { transition: opacity 0.15s ease; }
+        aside#sidebar.collapsed .logo-text { opacity: 0; display: none; }
+        main#mainContent { transition: margin-left 0.22s ease, width 0.22s ease; }
+        main#mainContent.main-collapsed { margin-left: 72px; }
+        aside#sidebar.hidden-full { transform: translateX(-110%); width: 0 !important; }
+        main#mainContent.hidden-sidebar { margin-left: 0 !important; }
+        @media (min-width: 1280px) {
+            main#mainContent { width: calc(100% - 16rem); }
+            main#mainContent.main-collapsed { width: calc(100% - 72px); }
+            main#mainContent.hidden-sidebar { width: 100%; }
+        }
+        .upgrade-card { background: linear-gradient(135deg, rgba(33,112,228,0.08), rgba(33,112,228,0.14)); }
+        .upgrade-card .upgrade-content p { color: #072044; }
+        .upgrade-card .upgrade-illustration { right: -8px; bottom: -6px; color: rgba(0,0,0,0.06); }
+        .upgrade-card .upgrade-compact { display:none; }
+        aside#sidebar.collapsed .upgrade-content { display:none; }
+        aside#sidebar.collapsed .upgrade-compact { display:flex; }
+        @media (max-width: 1024px) {
+            aside#sidebar { transform: translateX(-110%); position:fixed; z-index:50; }
+            aside#sidebar.mobile-open { transform: translateX(0%); }
+            main#mainContent { margin-left: 0 !important; }
+        }
+    </style>
+<link rel="stylesheet" href="app-shell.css"/>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden">
+<!-- Left Navigation Shell -->
+<aside id="sidebar" role="navigation" aria-label="Primary navigation" class="h-screen w-64 fixed left-0 top-0 z-50 bg-surface-container-low border-r border-outline-variant/20 shadow-md flex flex-col py-margin-page px-4 hidden xl:flex">
+<div class="mb-10 px-2 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="nutrition">nutrition</span>
+</div>
+<div class="logo-text">
+<h1 class="font-headline-md text-headline-md font-black text-primary">NutriTrack</h1>
+<p class="text-[10px] font-label-md uppercase tracking-widest text-on-surface-variant/60">Pro Companion</p>
+</div>
+<button id="collapseBtn" aria-expanded="true" aria-controls="sidebar" class="ml-auto hidden lg:inline-flex w-9 h-9 items-center justify-center rounded-full hover:bg-surface-variant text-on-surface-variant" title="Toggle sidebar">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="dashboard.html">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md nav-label">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="logfood.html">
+<span class="material-symbols-outlined" data-icon="add_box">add_box</span>
+<span class="font-label-md text-label-md nav-label">Log Food</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="mealplanner.html">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-label-md text-label-md nav-label">Meal Planner</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="progress.html">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-label-md text-label-md nav-label">Progress</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="nutrition.html">
+<span class="material-symbols-outlined" data-icon="bar_chart">bar_chart</span>
+<span class="font-label-md text-label-md nav-label">Nutrition</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="fooddatabase.html">
+<span class="material-symbols-outlined" data-icon="nutrition">nutrition</span>
+<span class="font-label-md text-label-md nav-label">Foods</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="community.html">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-label-md nav-label">Community</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface transition-all rounded-xl" href="profiledetail.html">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-label-md nav-label">Profile</span>
+</a>
+</nav>
+<div class="mt-auto space-y-2">
+<div class="p-4 bg-gradient-to-br from-secondary-container/80 to-secondary/20 rounded-2xl mb-6 relative overflow-hidden upgrade-card" role="region" aria-label="Upgrade to premium">
+<div class="relative z-10 upgrade-content">
+<p class="text-on-secondary-container font-bold text-label-md mb-1">Upgrade to Premium</p>
+<p class="text-on-secondary-container/90 text-[12px] mb-3">Get personalized AI meal plans and deep analytics.</p>
+<button class="w-full bg-on-secondary-container text-white py-2 rounded-lg text-label-sm font-bold hover:scale-105 transition-transform shadow-md">Get Started</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-12 upgrade-illustration" aria-hidden="true">
+<span class="material-symbols-outlined text-6xl" data-icon="workspace_premium">workspace_premium</span>
+</div>
+<div class="upgrade-compact hidden absolute left-1/2 -translate-x-1/2 top-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">workspace_premium</span>
+</div>
+<button id="hideSidebarBtn" class="absolute top-2 left-2 w-8 h-8 rounded-full bg-white/30 hover:bg-white/50 text-on-secondary-container hidden lg:inline-flex items-center justify-center" title="Hide sidebar" aria-label="Hide sidebar">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-on-surface transition-colors" href="helpcenter.html">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-label-md text-label-md nav-label">Help Center</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:text-error-red transition-colors" href="login.html">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-label-md text-label-md nav-label">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main id="mainContent" class="flex-1 xl:ml-64 p-gutter-desktop max-w-[1200px] mx-auto w-full">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-40 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 px-gutter-desktop h-16 flex items-center justify-between">
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Settings</h2>
+<p class="text-label-md text-on-surface-variant/60">Atur preferensi akun dan pengalaman NutriTrack Anda.</p>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden md:block">
+<input class="bg-surface-container border-none rounded-full px-5 py-2 pl-12 focus:ring-2 focus:ring-primary w-64 text-label-md" placeholder="Search settings..." type="text"/>
+<span class="material-symbols-outlined absolute left-4 top-2 text-on-surface-variant" data-icon="search">search</span>
+</div>
+<div class="flex gap-2">
+<a class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors text-on-surface-variant" href="notifikasi.html" aria-label="Open notifications">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</a>
+<a class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-variant transition-colors text-on-surface-variant" href="pengaturan.html" aria-label="Open settings">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</a>
+</div>
+<a class="flex items-center gap-3 pl-4 border-l border-outline-variant" href="profiledetail.html" aria-label="Open profile detail">
+<img alt="User profile avatar" class="w-10 h-10 rounded-full object-cover border-2 border-primary-container" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAckz7AJX85wWaXQtilqbC7uheJm8ujhKgbAUIWKetBroqupBgrwBiInvZ8PkEKJ6MvwB4SZH04OIEWqql0dffuNC8aplU0NR8lN6bKP1yIaFf-cCESl19Y5Q9EjnCezbl72JvF_mA9hB-t0U16gCRLOczeKWv9OzJMWBIA3tesoe1t3G6km3YkP699QqxD26McxQ_Rslmu96lxGU5eNiD5761uQ3Y47DsPrjSTFPv3jKBSD6l7aNjSQGGgiAbvs7IKMuR42xHaM-4"/>
+<div class="hidden lg:block text-left">
+<p class="text-label-md font-bold text-on-surface">Alex Carter</p>
+<p class="text-label-sm text-on-surface-variant">Pro Member</p>
+</div>
+</a>
+</div>
+</header>
+<!-- Settings Content -->
+<div class="p-8 max-w-[1000px] mx-auto space-y-8">
+<div class="mb-10">
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-2">Settings</h2>
+<p class="text-on-surface-variant font-body-md">Atur preferensi akun dan pengalaman NutriTrack Anda.</p>
+</div>
+<!-- Section: General -->
+<section class="glass-card rounded-[2rem] p-8 space-y-6">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-weight="fill">settings_suggest</span>
+</div>
+<h3 class="font-headline-md text-xl text-on-surface">General</h3>
+</div>
+<div class="space-y-6">
+<div class="flex items-center justify-between">
+<div>
+<p class="font-bold text-on-surface">Language</p>
+<p class="text-label-sm text-on-surface-variant">Pilih bahasa aplikasi yang Anda inginkan</p>
+</div>
+<select class="bg-surface-container border border-outline-variant/30 rounded-xl px-4 py-2 text-label-md font-medium focus:ring-primary focus:border-primary">
+<option value="en">English (US)</option>
+<option selected="" value="id">Indonesian</option>
+<option value="es">Spanish</option>
+</select>
+</div>
+<div class="pt-6 border-t border-outline-variant/20 flex items-center justify-between">
+<div>
+<p class="font-bold text-on-surface">Theme Mode</p>
+<p class="text-label-sm text-on-surface-variant">Ganti gaya visual antara terang dan gelap</p>
+</div>
+<div class="flex p-1.5 bg-surface-container-low rounded-2xl border border-outline-variant/30 shadow-inner">
+<button class="px-5 py-2.5 rounded-xl text-label-sm font-bold flex items-center gap-2 bg-white shadow-sm text-primary transition-all">
+<span class="material-symbols-outlined text-[18px]">light_mode</span>
+                            Light
+                        </button>
+<button class="px-5 py-2.5 rounded-xl text-label-sm font-bold flex items-center gap-2 text-on-surface-variant hover:bg-surface-variant/40 transition-all">
+<span class="material-symbols-outlined text-[18px]">dark_mode</span>
+                            Dark
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section: Notifications -->
+<section class="glass-card rounded-[2rem] p-8">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-weight="fill">notifications_active</span>
+</div>
+<h3 class="font-headline-md text-xl text-on-surface">Notifications</h3>
+</div>
+<div class="space-y-6">
+<!-- Push Notifications -->
+<div class="flex items-center justify-between group p-3 -mx-3 hover:bg-surface-container/30 rounded-2xl transition-all">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-all">
+<span class="material-symbols-outlined">smartphone</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Push Notifications</p>
+<p class="text-label-sm text-on-surface-variant">Dapatkan pengingat makan dan minum air secara real-time</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only" type="checkbox"/>
+<div class="toggle-switch"></div>
+</label>
+</div>
+<!-- Email Updates -->
+<div class="flex items-center justify-between group p-3 -mx-3 hover:bg-surface-container/30 rounded-2xl transition-all">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-all">
+<span class="material-symbols-outlined">mail</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Email Updates</p>
+<p class="text-label-sm text-on-surface-variant">Laporan mingguan dan resep makanan sehat</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only" type="checkbox"/>
+<div class="toggle-switch"></div>
+</label>
+</div>
+<!-- SMS Alerts -->
+<div class="flex items-center justify-between group p-3 -mx-3 hover:bg-surface-container/30 rounded-2xl transition-all">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-all">
+<span class="material-symbols-outlined">chat</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">SMS Alerts</p>
+<p class="text-label-sm text-on-surface-variant">Peringatan kesehatan kritis dan kode verifikasi</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only" type="checkbox"/>
+<div class="toggle-switch"></div>
+</label>
+</div>
+</div>
+</section>
+<!-- Section: Privacy & Security -->
+<section class="glass-card rounded-[2rem] p-8">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-weight="fill">shield</span>
+</div>
+<h3 class="font-headline-md text-xl text-on-surface">Privacy &amp; Security</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 transition-all cursor-pointer group shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<span class="material-symbols-outlined text-secondary text-3xl">visibility</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<p class="font-bold text-on-surface text-lg">Account Visibility</p>
+<p class="text-label-sm text-on-surface-variant mt-2">Kelola siapa yang dapat melihat progres dan lencana Anda.</p>
+</div>
+<div class="p-6 rounded-2xl bg-surface-container-low border border-outline-variant/30 hover:border-primary/50 transition-all cursor-pointer group shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<span class="material-symbols-outlined text-secondary text-3xl">download</span>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+<p class="font-bold text-on-surface text-lg">Export Data</p>
+<p class="text-label-sm text-on-surface-variant mt-2">Unduh riwayat nutrisi lengkap Anda dalam format CSV.</p>
+</div>
+</div>
+</section>
+<!-- Section: Subscription (Premium Banner Style) -->
+<section class="relative overflow-hidden rounded-[2.5rem] p-10 bg-gradient-to-br from-primary to-primary-container text-white shadow-2xl transition-transform hover:scale-[1.01]">
+<div class="absolute -right-16 -top-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+<div class="absolute -left-12 -bottom-12 w-48 h-48 bg-white/10 rounded-full blur-2xl"></div>
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+<div class="flex items-center gap-8">
+<div class="w-20 h-20 bg-white/20 rounded-3xl backdrop-blur-md flex items-center justify-center border border-white/30">
+<span class="material-symbols-outlined text-5xl text-white" data-weight="fill">workspace_premium</span>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-2">
+<h3 class="font-headline-md text-2xl font-black">NutriTrack Pro</h3>
+<span class="px-3 py-1 bg-white text-primary text-[11px] font-black rounded-full uppercase tracking-widest shadow-sm">Aktif</span>
+</div>
+<p class="text-white/90 font-body-md text-lg">Paket Anda diperbarui pada 12 Okt 2024 seharga $12.99/bln</p>
+</div>
+</div>
+<div class="flex gap-4">
+<button class="px-8 py-4 bg-white text-primary font-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-lg text-label-md">Kelola Paket</button>
+<button class="px-8 py-4 bg-white/20 backdrop-blur-md border border-white/30 text-white font-black rounded-2xl hover:bg-white/30 transition-all text-label-md">Riwayat Tagihan</button>
+</div>
+</div>
+</section>
+<!-- Logout -->
+<div class="flex justify-center pt-8">
+<button class="flex items-center gap-3 text-error-red font-black hover:bg-error-red/10 px-10 py-4 rounded-2xl transition-all group">
+<span class="material-symbols-outlined group-hover:rotate-12 transition-transform">logout</span>
+                Logout dari NutriTrack
+            </button>
+</div>
+</div>
+</main>
+<!-- Success Toast (Hidden by default) -->
+<div class="fixed bottom-10 left-1/2 -translate-x-1/2 bg-on-background text-white px-10 py-5 rounded-[1.5rem] shadow-2xl flex items-center gap-4 transition-all translate-y-32 opacity-0 z-50 border border-white/10" id="save-toast">
+<div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-xl">check</span>
+</div>
+<p class="font-bold text-label-md">Pengaturan berhasil diperbarui!</p>
+</div>
+<script>
+    // Micro-interactions
+    const toggles = document.querySelectorAll('input[type="checkbox"]');
+    const toast = document.getElementById('save-toast');
+
+    toggles.forEach(toggle => {
+        toggle.addEventListener('change', () => {
+            // Show toast
+            toast.classList.remove('translate-y-32', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-32', 'opacity-0');
+            }, 3000);
+        });
+    });
+
+    // Sidebar interaction
+    document.querySelectorAll('aside a').forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (this.classList.contains('bg-primary-container')) return;
+            // Simulated active state change
+        });
+    });
+
+
+        // Sidebar collapse & hide controls (shared shell)
+        (function(){
+            const sidebar = document.getElementById('sidebar');
+            const collapseBtn = document.getElementById('collapseBtn');
+            const hideBtn = document.getElementById('hideSidebarBtn');
+            const main = document.getElementById('mainContent');
+
+            if (collapseBtn && sidebar) {
+                collapseBtn.addEventListener('click', () => {
+                    const isCollapsed = sidebar.classList.toggle('collapsed');
+                    collapseBtn.setAttribute('aria-expanded', String(!isCollapsed));
+                    const icon = collapseBtn.querySelector('.material-symbols-outlined');
+                    if (icon) icon.textContent = isCollapsed ? 'chevron_right' : 'chevron_left';
+                    if (main) main.classList.toggle('main-collapsed', isCollapsed);
+                });
+            }
+
+            if (hideBtn && sidebar) {
+                hideBtn.addEventListener('click', () => {
+                    const hidden = sidebar.classList.toggle('hidden-full');
+                    if (main) main.classList.toggle('hidden-sidebar', hidden);
+                    hideBtn.setAttribute('aria-pressed', String(hidden));
+                });
+            }
+        })();
+    </script>
+</body></html>
