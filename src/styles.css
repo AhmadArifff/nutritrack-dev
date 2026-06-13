@@ -779,6 +779,31 @@ h3 {
   background: linear-gradient(135deg, rgba(33, 112, 228, 0.08), rgba(33, 112, 228, 0.14));
 }
 
+.pro-theme .pro-dashboard-page > * + * {
+  margin-top: 48px !important;
+}
+
+.pro-theme .pro-dashboard-page > section,
+.pro-theme .pro-dashboard-page > .glass-card {
+  scroll-margin-top: 104px;
+}
+
+.pro-theme .achievement-gradient {
+  background: linear-gradient(135deg, #a855f7 0%, #f97316 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 22px 46px rgba(249, 115, 22, 0.16), 0 12px 28px rgba(168, 85, 247, 0.14) !important;
+}
+
+.pro-theme .achievement-gradient p,
+.pro-theme .achievement-gradient span,
+.pro-theme .achievement-gradient svg {
+  color: inherit !important;
+}
+
+.pro-theme .achievement-gradient p:last-child {
+  color: rgba(255, 255, 255, 0.86) !important;
+}
+
 .pro-theme .font-metrics-mono {
   font-family: "JetBrains Mono", monospace;
 }
