@@ -33,10 +33,13 @@ import {
   CalendarDays,
   Check,
   ChevronLeft,
+  ChevronRight,
   Compass,
+  Download,
   Droplets,
   Dumbbell,
   Edit3,
+  Eye,
   Flame,
   Gauge,
   Heart,
@@ -55,8 +58,11 @@ import {
   Scale,
   Search,
   Settings,
+  Shield,
   Share2,
   Sparkles,
+  Smartphone,
+  Sun,
   TrendingUp,
   Trophy,
   User,
@@ -967,8 +973,7 @@ const proNavItems = [
   { to: '/app/nutrition', label: 'Nutrition', icon: BarChart3 },
   { to: '/app/foods', label: 'Foods', icon: Apple },
   { to: '/app/community', label: 'Community', icon: User },
-  { to: '/app/profile', label: 'Profile', icon: User },
-  { to: '/app/settings', label: 'Settings', icon: Settings }
+  { to: '/app/profile', label: 'Profile', icon: User }
 ]
 
 const proPageMeta = {
@@ -981,7 +986,7 @@ const proPageMeta = {
   '/app/foods/gado-gado': { title: 'Food Detail', subtitle: 'Nutrition facts and portion calculator', search: 'Search foods...' },
   '/app/community': { title: 'Community Hub', subtitle: 'Tuesday, October 24', search: 'Search buddies or challenges...' },
   '/app/profile': { title: 'Profile Detail', subtitle: 'Alex Rivera', search: 'Search metrics, meals, or friends...' },
-  '/app/settings': { title: 'Settings', subtitle: 'Personalize your NutriTrack experience', search: 'Search settings...' },
+  '/app/settings': { title: 'Settings', subtitle: 'Atur preferensi akun dan pengalaman NutriTrack Anda.', search: 'Search settings...' },
   '/app/notifications': { title: 'Activity Hub', subtitle: 'Smart reminders and weekly reports', search: 'Search notifications...' },
   '/help': { title: 'Help Center', subtitle: 'Find answers and guided support', search: 'Search help...' }
 }
@@ -1103,7 +1108,7 @@ function ProAppLayout() {
         )}
       </AnimatePresence>
       <motion.aside
-        className={`pro-sidebar fixed left-0 top-0 z-[60] flex h-dvh w-[272px] flex-col border-r border-outline-variant/20 bg-surface-container-low p-4 shadow-md transition-transform duration-300 ${mobileOpen ? 'pro-sidebar-open' : ''}`}
+        className={`pro-sidebar fixed left-0 top-0 z-[60] flex h-dvh w-[272px] flex-col overflow-y-auto border-r border-outline-variant/20 bg-surface-container-low p-4 shadow-md transition-transform duration-300 ${mobileOpen ? 'pro-sidebar-open' : ''}`}
         initial={false}
       >
         <div className="flex min-h-12 items-center gap-3">
@@ -1139,7 +1144,7 @@ function ProAppLayout() {
         </nav>
 
         <motion.div
-          className="upgrade-card-react mt-auto overflow-hidden rounded-2xl border border-secondary/10 bg-gradient-to-br from-secondary-container/80 to-secondary/20 p-4 shadow-sm"
+          className="upgrade-card-react mt-auto flex-shrink-0 overflow-hidden rounded-2xl border border-secondary/10 bg-gradient-to-br from-secondary-container/80 to-secondary/20 p-4 shadow-sm"
           whileHover={{ y: -3 }}
         >
           <Sparkles className="text-primary" size={22} />
@@ -1150,7 +1155,7 @@ function ProAppLayout() {
           </button>
         </motion.div>
 
-        <div className="mt-3 grid gap-2">
+        <div className="mt-3 grid flex-shrink-0 gap-2">
           <NavLink className="flex min-h-10 items-center gap-3 rounded-xl px-4 text-label-md font-bold text-on-surface-variant transition hover:text-on-surface" to="/help">
             <HelpCircle size={20} />
             <span>Help Center</span>
@@ -3344,36 +3349,190 @@ function ProfileWeeklyConsistency() {
 
 function ProSettingsPage() {
   const { data: settings, setData: setSettings } = useBackendData(() => apiRequest('/api/settings'), null, [])
+  const [themeMode, setThemeMode] = useState('light')
+  const [language, setLanguage] = useState('id')
+  const [toast, setToast] = useState(false)
+  const showSettingsToast = () => {
+    setToast(true)
+    window.clearTimeout(showSettingsToast.timer)
+    showSettingsToast.timer = window.setTimeout(() => setToast(false), 2600)
+  }
   const toggle = async (key, apiKey) => {
     const next = { ...(settings || {}), [key]: !settings?.[key] }
     setSettings(next)
-    await apiRequest('/api/settings', { method: 'PUT', body: { [apiKey]: next[key] } })
+    showSettingsToast()
+    try {
+      await apiRequest('/api/settings', { method: 'PUT', body: { [apiKey]: next[key] } })
+    } catch (err) {
+      // Keep the UI responsive when the API is unavailable in local preview.
+    }
   }
-  const items = [
-    ['Light / Dark / System', true, null],
-    ['Meal Reminder', Boolean(settings?.meal_reminder_enabled ?? true), ['meal_reminder_enabled', 'mealReminderEnabled']],
-    ['Hydration Alerts', Boolean(settings?.water_reminder_enabled ?? true), ['water_reminder_enabled', 'waterReminderEnabled']],
-    ['Weekly Report', Boolean(settings?.weekly_report_enabled ?? true), ['weekly_report_enabled', 'weeklyReportEnabled']],
-    ['Notifications', Boolean(settings?.notification_enabled ?? true), ['notification_enabled', 'notificationEnabled']],
-    ['Locale ID', settings?.locale || 'id-ID', null]
+  const notificationItems = [
+    {
+      title: 'Push Notifications',
+      description: 'Dapatkan pengingat makan dan minum air secara real-time',
+      Icon: Smartphone,
+      enabled: Boolean(settings?.meal_reminder_enabled ?? true),
+      keys: ['meal_reminder_enabled', 'mealReminderEnabled']
+    },
+    {
+      title: 'Email Updates',
+      description: 'Laporan mingguan dan resep makanan sehat',
+      Icon: Mail,
+      enabled: Boolean(settings?.weekly_report_enabled ?? false),
+      keys: ['weekly_report_enabled', 'weeklyReportEnabled']
+    },
+    {
+      title: 'SMS Alerts',
+      description: 'Peringatan kesehatan kritis dan kode verifikasi',
+      Icon: MessageCircle,
+      enabled: Boolean(settings?.notification_enabled ?? false),
+      keys: ['notification_enabled', 'notificationEnabled']
+    }
   ]
 
   return (
-    <ProPage title="Settings" subtitle="Theme, notifications, data export, and privacy controls." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Save Changes</button>}>
-      <div className="grid gap-6 lg:grid-cols-2">
-        {items.map(([item, enabled, keys], index) => (
-          <ProPanel className="flex items-center justify-between gap-4" key={item}>
-            <div>
-              <h3 className="font-black">{item}</h3>
-              <p className="mt-1 text-sm text-on-surface-variant">{keys ? 'Connected to backend settings.' : 'Smooth interactive setting control.'}</p>
+    <ProPage title="Settings" subtitle="Atur preferensi akun dan pengalaman NutriTrack Anda." showHeader={false}>
+      <div className="mx-auto w-full max-w-[1000px] space-y-8 pb-20">
+        <div className="mb-10">
+          <h2 className="mb-2 font-headline-lg text-headline-lg font-bold text-on-surface">Settings</h2>
+          <p className="text-on-surface-variant">Atur preferensi akun dan pengalaman NutriTrack Anda.</p>
+        </div>
+
+        <NutritionGlassCard className="space-y-6 p-8">
+          <div className="mb-2 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Settings size={22} />
             </div>
-            <button className={`h-7 w-12 rounded-full p-1 transition ${enabled ? 'bg-primary' : 'bg-surface-container-high'}`} onClick={() => keys && toggle(keys[0], keys[1])} type="button">
-              <motion.span className="block h-5 w-5 rounded-full bg-white shadow" animate={{ x: enabled ? 20 : 0 }} />
-            </button>
-          </ProPanel>
-        ))}
+            <h3 className="font-headline-md text-xl font-bold text-on-surface">General</h3>
+          </div>
+          <div className="space-y-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold text-on-surface">Language</p>
+                <p className="text-label-sm text-on-surface-variant">Pilih bahasa aplikasi yang Anda inginkan</p>
+              </div>
+              <select className="rounded-xl border border-outline-variant/30 bg-surface-container px-4 py-2 text-label-md font-medium focus:border-primary focus:ring-primary" value={language} onChange={(event) => { setLanguage(event.target.value); showSettingsToast() }}>
+                <option value="en">English (US)</option>
+                <option value="id">Indonesian</option>
+                <option value="es">Spanish</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-4 border-t border-outline-variant/20 pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold text-on-surface">Theme Mode</p>
+                <p className="text-label-sm text-on-surface-variant">Ganti gaya visual antara terang dan gelap</p>
+              </div>
+              <div className="flex rounded-2xl border border-outline-variant/30 bg-surface-container-low p-1.5 shadow-inner">
+                {[
+                  ['light', Sun, 'Light'],
+                  ['dark', Moon, 'Dark']
+                ].map(([mode, Icon, label]) => (
+                  <button className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-label-sm font-bold transition-all ${themeMode === mode ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/40'}`} key={mode} onClick={() => { setThemeMode(mode); showSettingsToast() }} type="button">
+                    <Icon size={18} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </NutritionGlassCard>
+
+        <NutritionGlassCard className="p-8">
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Bell size={22} />
+            </div>
+            <h3 className="font-headline-md text-xl font-bold text-on-surface">Notifications</h3>
+          </div>
+          <div className="space-y-6">
+            {notificationItems.map(({ title, description, Icon, enabled, keys }) => (
+              <div className="-mx-3 flex flex-col gap-4 rounded-2xl p-3 transition-all hover:bg-surface-container/30 sm:flex-row sm:items-center sm:justify-between" key={title}>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-surface-container text-on-surface-variant transition-all">
+                    <Icon size={22} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-on-surface">{title}</p>
+                    <p className="text-label-sm text-on-surface-variant">{description}</p>
+                  </div>
+                </div>
+                <SettingsSwitch checked={enabled} onChange={() => toggle(keys[0], keys[1])} />
+              </div>
+            ))}
+          </div>
+        </NutritionGlassCard>
+
+        <NutritionGlassCard className="p-8">
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Shield size={22} />
+            </div>
+            <h3 className="font-headline-md text-xl font-bold text-on-surface">Privacy &amp; Security</h3>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {[
+              [Eye, 'Account Visibility', 'Kelola siapa yang dapat melihat progres dan lencana Anda.'],
+              [Download, 'Export Data', 'Unduh riwayat nutrisi lengkap Anda dalam format CSV.']
+            ].map(([Icon, title, description]) => (
+              <button className="group rounded-2xl border border-outline-variant/30 bg-surface-container-low p-6 text-left shadow-sm transition-all hover:border-primary/50" key={title} type="button">
+                <div className="mb-4 flex items-center justify-between">
+                  <Icon className="text-secondary" size={30} />
+                  <ChevronRight className="text-outline-variant transition-colors group-hover:text-primary" size={22} />
+                </div>
+                <p className="text-lg font-bold text-on-surface">{title}</p>
+                <p className="mt-2 text-label-sm text-on-surface-variant">{description}</p>
+              </button>
+            ))}
+          </div>
+        </NutritionGlassCard>
+
+        <motion.section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-container p-8 text-white shadow-2xl transition-transform hover:scale-[1.01] md:p-10" whileHover={{ y: -3 }}>
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+          <div className="relative z-10 flex flex-col justify-between gap-8 md:flex-row md:items-center">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-3xl border border-white/30 bg-white/20 backdrop-blur-md">
+                <Sparkles size={44} />
+              </div>
+              <div>
+                <div className="mb-2 flex flex-wrap items-center gap-3">
+                  <h3 className="font-headline-md text-2xl font-black">NutriTrack Pro</h3>
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-widest text-primary shadow-sm">Aktif</span>
+                </div>
+                <p className="text-lg text-white/90">Paket Anda diperbarui pada 12 Okt 2024 seharga $12.99/bln</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <button className="rounded-2xl bg-white px-8 py-4 text-label-md font-black text-primary shadow-lg transition-all hover:scale-105 active:scale-95" type="button">Kelola Paket</button>
+              <button className="rounded-2xl border border-white/30 bg-white/20 px-8 py-4 text-label-md font-black text-white backdrop-blur-md transition-all hover:bg-white/30" type="button">Riwayat Tagihan</button>
+            </div>
+          </div>
+        </motion.section>
+
+        <div className="flex justify-center pt-8">
+          <button className="group flex items-center gap-3 rounded-2xl px-10 py-4 font-black text-error-red transition-all hover:bg-error-red/10" type="button">
+            <LogOut className="transition-transform group-hover:rotate-12" size={22} />
+            Logout dari NutriTrack
+          </button>
+        </div>
+
+        <motion.div className="fixed bottom-10 left-1/2 z-50 flex -translate-x-1/2 items-center gap-4 rounded-[1.5rem] border border-white/10 bg-on-background px-8 py-5 text-white shadow-2xl" initial={false} animate={{ y: toast ? 0 : 96, opacity: toast ? 1 : 0 }} transition={{ duration: 0.25 }}>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+            <Check size={18} />
+          </div>
+          <p className="text-label-md font-bold">Pengaturan berhasil diperbarui!</p>
+        </motion.div>
       </div>
     </ProPage>
+  )
+}
+
+function SettingsSwitch({ checked, onChange }) {
+  return (
+    <button className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-slate-300'}`} type="button" role="switch" aria-checked={checked} onClick={onChange}>
+      <motion.span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow" animate={{ x: checked ? 20 : 0 }} transition={{ duration: 0.2 }} />
+    </button>
   )
 }
 
