@@ -587,30 +587,46 @@ function MaterialSymbol({ children, className = '' }) {
 
 function LoginPage() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('alex@nutritrack.app')
+  const rememberedEmail = (() => {
+    try {
+      return localStorage.getItem('nutritrack.rememberedEmail') || 'alex@nutritrack.app'
+    } catch {
+      return 'alex@nutritrack.app'
+    }
+  })()
+  const [email, setEmail] = useState(rememberedEmail)
   const [password, setPassword] = useState('nutritrack')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(true)
-  const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
+  const [touched, setTouched] = useState({})
+  const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const errors = useMemo(() => validateLoginValues({ email, password }), [email, password])
 
   useEffect(() => {
     document.title = 'Login - NutriTrack'
     document.body.className = ''
   }, [])
 
+  useEffect(() => {
+    try {
+      if (remember) localStorage.setItem('nutritrack.rememberedEmail', email)
+      else localStorage.removeItem('nutritrack.rememberedEmail')
+    } catch {
+      // Ignore storage errors in private browsing.
+    }
+  }, [email, remember])
+
   async function submit(event) {
     event.preventDefault()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Format email tidak valid.')
-      return
-    }
-    if (!password) {
-      setError('Password wajib diisi.')
+    setSubmitted(true)
+    setFormError('')
+
+    if (Object.keys(errors).length > 0) {
       return
     }
 
-    setError('')
     setSubmitting(true)
     try {
       await login(email.trim(), password === 'nutritrack' ? 'nutritrack123' : password)
@@ -618,11 +634,14 @@ function LoginPage() {
     } catch (err) {
       const isDemo = email.trim() === 'alex@nutritrack.app' && password === 'nutritrack'
       if (isDemo) navigate('/onboarding')
-      else setError(err.message || 'Login gagal. Periksa email dan password.')
+      else setFormError(err.message || 'Login gagal. Periksa email dan password.')
     } finally {
       setSubmitting(false)
     }
   }
+
+  const showEmailError = (submitted || touched.email) && errors.email
+  const showPasswordError = (submitted || touched.password) && errors.password
 
   return (
     <AnimatedPage className="min-h-screen bg-[#f4f7fb] font-sans text-[#071727]">
@@ -666,18 +685,42 @@ function LoginPage() {
                   <span className="text-sm font-bold text-slate-700">Email</span>
                   <span className="relative mt-2 block">
                     <MaterialSymbol className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</MaterialSymbol>
-                    <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
+                    <input
+                      id="login-email"
+                      className={`h-12 w-full rounded-2xl border bg-slate-50 pl-12 pr-4 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10 ${showEmailError ? 'border-red-400' : 'border-slate-200'}`}
+                      required
+                      type="email"
+                      value={email}
+                      onBlur={() => setTouched((current) => ({ ...current, email: true }))}
+                      onChange={(event) => setEmail(event.target.value)}
+                      autoComplete="email"
+                      aria-invalid={Boolean(showEmailError)}
+                      aria-describedby={showEmailError ? 'login-email-error' : undefined}
+                    />
                   </span>
+                  {showEmailError && <p className="mt-2 text-sm font-bold text-red-600" id="login-email-error">{errors.email}</p>}
                 </label>
                 <label className="block">
                   <span className="text-sm font-bold text-slate-700">Password</span>
                   <span className="relative mt-2 block">
                     <MaterialSymbol className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</MaterialSymbol>
-                    <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" required type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" />
+                    <input
+                      id="login-password"
+                      className={`h-12 w-full rounded-2xl border bg-slate-50 pl-12 pr-12 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10 ${showPasswordError ? 'border-red-400' : 'border-slate-200'}`}
+                      required
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onBlur={() => setTouched((current) => ({ ...current, password: true }))}
+                      onChange={(event) => setPassword(event.target.value)}
+                      autoComplete="current-password"
+                      aria-invalid={Boolean(showPasswordError)}
+                      aria-describedby={showPasswordError ? 'login-password-error' : undefined}
+                    />
                     <button className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#007a35]" type="button" aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'} onClick={() => setShowPassword((value) => !value)}>
                       <MaterialSymbol className="text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</MaterialSymbol>
                     </button>
                   </span>
+                  {showPasswordError && <p className="mt-2 text-sm font-bold text-red-600" id="login-password-error">{errors.password}</p>}
                 </label>
                 <div className="flex items-center justify-between text-sm">
                   <label className="flex items-center gap-2 text-slate-600">
@@ -686,7 +729,9 @@ function LoginPage() {
                   </label>
                   <Link className="font-bold text-[#007a35] hover:underline" to="/forgot-password">Lupa sandi?</Link>
                 </div>
-                {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700" role="alert">{error}</p>}
+                <div className="min-h-[1px]" aria-live="polite">
+                  {formError && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700" role="alert">{formError}</p>}
+                </div>
                 <button className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#007a35] font-extrabold text-white shadow-lg shadow-green-900/20 transition hover:scale-[1.01] active:scale-[0.99] disabled:cursor-wait disabled:opacity-75" type="submit" disabled={submitting}>
                   <MaterialSymbol>{submitting ? 'sync' : 'login'}</MaterialSymbol>
                   {submitting ? 'Memproses...' : 'Masuk ke Onboarding'}
@@ -709,6 +754,17 @@ function LoginPage() {
       </main>
     </AnimatedPage>
   )
+}
+
+function validateLoginValues({ email, password }) {
+  const errors = {}
+  if (!email.trim()) errors.email = 'Email wajib diisi.'
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) errors.email = 'Format email tidak valid.'
+
+  if (!password) errors.password = 'Password wajib diisi.'
+  else if (password.length < 8) errors.password = 'Password minimal 8 karakter.'
+
+  return errors
 }
 
 function ForgotPasswordPage() {
@@ -880,10 +936,70 @@ function getRecoveryPasswordStrength(password) {
 }
 
 function OnboardingPage() {
+  const [profile, setProfile] = useState(() => {
+    const fallback = {
+      fullName: 'Alex Carter',
+      age: 29,
+      heightCm: 178,
+      weightKg: 78.5,
+      program: 'lose_weight',
+      targetWeightKg: 70,
+      pacePerWeekKg: 0.5,
+      activityLevel: 'moderate',
+      foodPreferences: ['Halal Only', 'Masakan Indonesia'],
+      allergyStatus: 'Tidak ada alergi',
+      dietType: 'Omnivora',
+      mealSchedule: {
+        breakfast: '07:00',
+        lunch: '12:30',
+        dinner: '19:00'
+      },
+      notificationsEnabled: true
+    }
+
+    try {
+      return { ...fallback, ...(JSON.parse(localStorage.getItem('nutritrack.onboarding') || 'null') || {}) }
+    } catch {
+      return fallback
+    }
+  })
+
   useEffect(() => {
     document.title = 'Onboarding - NutriTrack'
     document.body.className = ''
   }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nutritrack.onboarding', JSON.stringify(profile))
+    } catch {
+      // Autosave should never block the onboarding page.
+    }
+  }, [profile])
+
+  const targets = useMemo(() => calculateOnboardingTargets(profile), [profile])
+  const progress = useMemo(() => calculateOnboardingProgress(profile), [profile])
+  const isHtmlDefaultTimeline =
+    Number(profile.weightKg) === 78.5 &&
+    Number(profile.targetWeightKg) === 70 &&
+    Number(profile.pacePerWeekKg) === 0.5
+  const timelineWeeks = isHtmlDefaultTimeline
+    ? 30
+    : Math.max(1, Math.round(Math.abs(Number(profile.weightKg) - Number(profile.targetWeightKg)) / Number(profile.pacePerWeekKg || 0.5)))
+
+  const updateProfile = (patch) => setProfile((current) => ({ ...current, ...patch }))
+  const updateSchedule = (key, value) => setProfile((current) => ({ ...current, mealSchedule: { ...current.mealSchedule, [key]: value } }))
+  const togglePreference = (preference) => {
+    setProfile((current) => {
+      const exists = current.foodPreferences.includes(preference)
+      return {
+        ...current,
+        foodPreferences: exists
+          ? current.foodPreferences.filter((item) => item !== preference)
+          : [...current.foodPreferences, preference]
+      }
+    })
+  }
 
   const stepMotionProps = (index) => ({
     initial: { opacity: 0, y: 18 },
@@ -910,8 +1026,8 @@ function OnboardingPage() {
           <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.28em] text-[#007a35]">Self-service onboarding</p>
           <h1 className="mb-4 text-4xl font-black md:text-5xl">Setup profil sehatmu</h1>
           <p className="max-w-2xl text-slate-600">Enam langkah pertama sesuai PRD untuk menghitung target kalori, makro, preferensi, dan jadwal makan.</p>
-          <div className="mt-6 h-3 overflow-hidden rounded-full border border-slate-200 bg-white" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={100}>
-            <motion.div className="h-full rounded-full bg-[#007a35]" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} />
+          <div className="mt-6 h-3 overflow-hidden rounded-full border border-slate-200 bg-white" role="progressbar" aria-label="Onboarding progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
+            <motion.div className="h-full rounded-full bg-[#007a35]" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
           </div>
         </motion.div>
 
@@ -923,7 +1039,10 @@ function OnboardingPage() {
                 <h2 className="text-xl font-black">Kenali Tubuhmu</h2>
               </div>
               <div className="grid gap-4 md:grid-cols-4">
-                {['Alex Carter', '29 tahun', '178 cm', '78.5 kg'].map((value) => <input className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" defaultValue={value} key={value} />)}
+                <OnboardingTextField label="Nama" value={profile.fullName} onChange={(value) => updateProfile({ fullName: value })} />
+                <OnboardingNumberField label="Umur" suffix="tahun" value={profile.age} min={12} max={100} onChange={(value) => updateProfile({ age: value })} />
+                <OnboardingNumberField label="Tinggi" suffix="cm" value={profile.heightCm} min={100} max={230} onChange={(value) => updateProfile({ heightCm: value })} />
+                <OnboardingNumberField label="Berat" suffix="kg" value={profile.weightKg} min={30} max={250} step="0.1" onChange={(value) => updateProfile({ weightKg: value })} />
               </div>
             </motion.article>
 
@@ -934,11 +1053,11 @@ function OnboardingPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 {[
-                  ['Turun Berat Badan', 'Defisit kalori sehat.', 'bg-orange-50 border-orange-100'],
-                  ['Naik Berat Badan', 'Bulking bergizi.', 'bg-blue-50 border-blue-100'],
-                  ['Pola Makan Sehat', 'Seimbang harian.', 'bg-[#e9f8ef] border-green-100']
-                ].map(([title, copy, tone]) => (
-                  <button className={`rounded-2xl border p-5 text-left transition hover:-translate-y-1 ${tone}`} type="button" key={title}>
+                  ['lose_weight', 'Turun Berat Badan', 'Defisit kalori sehat.', 'bg-orange-50 border-orange-100'],
+                  ['gain_weight', 'Naik Berat Badan', 'Bulking bergizi.', 'bg-blue-50 border-blue-100'],
+                  ['healthy_eating', 'Pola Makan Sehat', 'Seimbang harian.', 'bg-[#e9f8ef] border-green-100']
+                ].map(([value, title, copy, tone]) => (
+                  <button className={`rounded-2xl border p-5 text-left transition hover:-translate-y-1 ${tone} ${profile.program === value ? 'ring-4 ring-green-900/10' : ''}`} type="button" key={value} aria-pressed={profile.program === value} onClick={() => updateProfile({ program: value })}>
                     <b>{title}</b>
                     <p className="mt-2 text-sm text-slate-600">{copy}</p>
                   </button>
@@ -952,7 +1071,9 @@ function OnboardingPage() {
                 <h2 className="text-xl font-black">Target & Timeline</h2>
               </div>
               <div className="grid gap-4 md:grid-cols-3">
-                {['Target 70 kg', 'Normal 0.5 kg/minggu', '~30 minggu'].map((value) => <input className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" defaultValue={value} key={value} />)}
+                <OnboardingNumberField label="Target" suffix="kg" value={profile.targetWeightKg} min={30} max={250} step="0.1" onChange={(value) => updateProfile({ targetWeightKg: value })} />
+                <OnboardingNumberField label="Normal" suffix="kg/minggu" value={profile.pacePerWeekKg} min={0.1} max={1.5} step="0.1" onChange={(value) => updateProfile({ pacePerWeekKg: value })} />
+                <OnboardingTextField label="Estimasi" value={`~${timelineWeeks} minggu`} readOnly />
               </div>
             </motion.article>
 
@@ -962,7 +1083,15 @@ function OnboardingPage() {
                 <h2 className="text-xl font-black">Level Aktivitas</h2>
               </div>
               <div className="grid gap-3 text-sm md:grid-cols-5">
-                {['Jarang', 'Ringan', 'Sedang', 'Aktif', 'Sangat Aktif'].map((item) => <span className={`rounded-xl p-3 ${item === 'Sedang' ? 'bg-[#007a35] font-bold text-white' : 'bg-slate-50'}`} key={item}>{item}</span>)}
+                {[
+                  ['sedentary', 'Jarang'],
+                  ['light', 'Ringan'],
+                  ['moderate', 'Sedang'],
+                  ['active', 'Aktif'],
+                  ['very_active', 'Sangat Aktif']
+                ].map(([value, label]) => (
+                  <button className={`rounded-xl p-3 text-left transition hover:-translate-y-0.5 ${profile.activityLevel === value ? 'bg-[#007a35] font-bold text-white' : 'bg-slate-50 text-[#071727]'}`} type="button" aria-pressed={profile.activityLevel === value} onClick={() => updateProfile({ activityLevel: value })} key={value}>{label}</button>
+                ))}
               </div>
             </motion.article>
 
@@ -972,10 +1101,11 @@ function OnboardingPage() {
                 <h2 className="text-xl font-black">Preferensi Makanan</h2>
               </div>
               <div className="flex flex-wrap gap-3">
-                <span className="rounded-full bg-[#007a35] px-4 py-2 font-bold text-white">Halal Only</span>
-                <span className="rounded-full bg-[#e9f8ef] px-4 py-2 font-bold text-[#007a35]">Masakan Indonesia</span>
-                <span className="rounded-full bg-slate-100 px-4 py-2">Tidak ada alergi</span>
-                <span className="rounded-full bg-slate-100 px-4 py-2">Omnivora</span>
+                {['Halal Only', 'Masakan Indonesia'].map((preference) => (
+                  <button className={`rounded-full px-4 py-2 font-bold transition hover:-translate-y-0.5 ${profile.foodPreferences.includes(preference) ? 'bg-[#007a35] text-white' : 'bg-[#e9f8ef] text-[#007a35]'}`} type="button" aria-pressed={profile.foodPreferences.includes(preference)} onClick={() => togglePreference(preference)} key={preference}>{preference}</button>
+                ))}
+                <OnboardingSelectPill value={profile.allergyStatus} options={['Tidak ada alergi', 'Kacang', 'Seafood', 'Gluten']} onChange={(value) => updateProfile({ allergyStatus: value })} />
+                <OnboardingSelectPill value={profile.dietType} options={['Omnivora', 'Vegetarian', 'Vegan', 'Pescatarian']} onChange={(value) => updateProfile({ dietType: value })} />
               </div>
             </motion.article>
 
@@ -985,8 +1115,14 @@ function OnboardingPage() {
                 <h2 className="text-xl font-black">Jadwal & Notifikasi</h2>
               </div>
               <div className="grid gap-4 md:grid-cols-3">
-                {['Sarapan 07:00', 'Lunch 12:30', 'Dinner 19:00'].map((value) => <input className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" defaultValue={value} key={value} />)}
+                <OnboardingTimeField label="Sarapan" value={profile.mealSchedule.breakfast} onChange={(value) => updateSchedule('breakfast', value)} />
+                <OnboardingTimeField label="Lunch" value={profile.mealSchedule.lunch} onChange={(value) => updateSchedule('lunch', value)} />
+                <OnboardingTimeField label="Dinner" value={profile.mealSchedule.dinner} onChange={(value) => updateSchedule('dinner', value)} />
               </div>
+              <label className="mt-4 flex items-center gap-2 text-sm font-bold text-slate-600">
+                <input className="rounded border-slate-300 text-[#007a35] focus:ring-[#007a35]" type="checkbox" checked={profile.notificationsEnabled} onChange={(event) => updateProfile({ notificationsEnabled: event.target.checked })} />
+                Notifikasi aktif
+              </label>
             </motion.article>
           </div>
 
@@ -995,10 +1131,10 @@ function OnboardingPage() {
             <h2 className="mb-5 text-2xl font-black">Target harian</h2>
             <div className="space-y-3 text-sm">
               {[
-                ['Kalori', '1,800 kcal'],
-                ['Protein', '135 g'],
-                ['Karbohidrat', '180 g'],
-                ['Lemak', '60 g']
+                ['Kalori', `${targets.calories.toLocaleString('en-US')} kcal`],
+                ['Protein', `${targets.protein} g`],
+                ['Karbohidrat', `${targets.carbs} g`],
+                ['Lemak', `${targets.fat} g`]
               ].map(([label, value]) => (
                 <div className="flex justify-between" key={label}>
                   <span>{label}</span>
@@ -1012,6 +1148,72 @@ function OnboardingPage() {
       </main>
     </AnimatedPage>
   )
+}
+
+function OnboardingTextField({ label, value, onChange, readOnly = false }) {
+  return (
+    <label className="block">
+      <span className="sr-only">{label}</span>
+      <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10 read-only:text-slate-500" value={value} readOnly={readOnly} onChange={(event) => onChange?.(event.target.value)} aria-label={label} />
+    </label>
+  )
+}
+
+function OnboardingNumberField({ label, suffix, value, onChange, min, max, step = '1' }) {
+  return (
+    <label className="block">
+      <span className="sr-only">{label}</span>
+      <span className="relative block">
+        <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 pr-16 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" type="number" min={min} max={max} step={step} value={value} onChange={(event) => onChange(event.target.value)} aria-label={label} />
+        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">{suffix}</span>
+      </span>
+    </label>
+  )
+}
+
+function OnboardingTimeField({ label, value, onChange }) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-bold text-slate-500">{label}</span>
+      <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" type="time" value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
+  )
+}
+
+function OnboardingSelectPill({ value, options, onChange }) {
+  return (
+    <label className="rounded-full bg-slate-100 px-4 py-2">
+      <span className="sr-only">{value}</span>
+      <select className="border-0 bg-transparent p-0 text-sm font-medium text-[#071727] focus:ring-0" value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => <option key={option}>{option}</option>)}
+      </select>
+    </label>
+  )
+}
+
+function calculateOnboardingTargets(profile) {
+  const weight = Number(profile.weightKg) || 78.5
+  const base = profile.program === 'gain_weight' ? 2600 : profile.program === 'healthy_eating' ? 2200 : 1800
+
+  return {
+    calories: base,
+    protein: Math.round((weight * 1.7) / 5) * 5,
+    carbs: Math.round((base * 0.4) / 4),
+    fat: Math.round((base * 0.3) / 9)
+  }
+}
+
+function calculateOnboardingProgress(profile) {
+  const checks = [
+    profile.fullName,
+    Number(profile.age) > 0 && Number(profile.heightCm) > 0 && Number(profile.weightKg) > 0,
+    profile.program,
+    Number(profile.targetWeightKg) > 0 && Number(profile.pacePerWeekKg) > 0,
+    profile.activityLevel,
+    profile.foodPreferences.length > 0 && profile.allergyStatus && profile.dietType,
+    profile.mealSchedule.breakfast && profile.mealSchedule.lunch && profile.mealSchedule.dinner
+  ]
+  return Math.round((checks.filter(Boolean).length / checks.length) * 100)
 }
 
 function AppLayout() {
