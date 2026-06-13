@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, OrbitControls, PerspectiveCamera } from '@react-three/drei'
-import { AnimatePresence, motion, useScroll, useSpring } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
 import dashboardHtml from '../reference-html/dashboard.html?raw'
 import mealPlannerHtml from '../reference-html/mealplanner.html?raw'
 import progressHtml from '../reference-html/progress.html?raw'
@@ -936,6 +936,9 @@ function getRecoveryPasswordStrength(password) {
 }
 
 function OnboardingPage() {
+  const { scrollY } = useScroll()
+  const summaryScrollY = useTransform(scrollY, (value) => Math.max(0, value - 224))
+  const [summaryFollowsScroll, setSummaryFollowsScroll] = useState(false)
   const [profile, setProfile] = useState(() => {
     const fallback = {
       fullName: 'Alex Carter',
@@ -967,6 +970,14 @@ function OnboardingPage() {
   useEffect(() => {
     document.title = 'Onboarding - NutriTrack'
     document.body.className = ''
+  }, [])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)')
+    const sync = () => setSummaryFollowsScroll(mediaQuery.matches)
+    sync()
+    mediaQuery.addEventListener('change', sync)
+    return () => mediaQuery.removeEventListener('change', sync)
   }, [])
 
   useEffect(() => {
@@ -1126,24 +1137,26 @@ function OnboardingPage() {
             </motion.article>
           </div>
 
-          <motion.aside className="sticky top-24 rounded-[32px] border border-slate-200 bg-white p-7 shadow-xl" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.16 }}>
-            <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.22em] text-[#007a35]">Rencana siap</p>
-            <h2 className="mb-5 text-2xl font-black">Target harian</h2>
-            <div className="space-y-3 text-sm">
-              {[
-                ['Kalori', `${targets.calories.toLocaleString('en-US')} kcal`],
-                ['Protein', `${targets.protein} g`],
-                ['Karbohidrat', `${targets.carbs} g`],
-                ['Lemak', `${targets.fat} g`]
-              ].map(([label, value]) => (
-                <div className="flex justify-between" key={label}>
-                  <span>{label}</span>
-                  <b>{value}</b>
-                </div>
-              ))}
-            </div>
-            <Link className="mt-7 flex h-12 items-center justify-center rounded-2xl bg-[#007a35] font-extrabold text-white transition hover:scale-[1.01] active:scale-[0.99]" to="/app/dashboard">Mulai Perjalananku</Link>
-          </motion.aside>
+          <aside className="self-start lg:sticky lg:top-24">
+            <motion.div className="rounded-[32px] border border-slate-200 bg-white p-7 shadow-xl" style={{ y: summaryFollowsScroll ? summaryScrollY : 0 }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.16 }}>
+              <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.22em] text-[#007a35]">Rencana siap</p>
+              <h2 className="mb-5 text-2xl font-black">Target harian</h2>
+              <div className="space-y-3 text-sm">
+                {[
+                  ['Kalori', `${targets.calories.toLocaleString('en-US')} kcal`],
+                  ['Protein', `${targets.protein} g`],
+                  ['Karbohidrat', `${targets.carbs} g`],
+                  ['Lemak', `${targets.fat} g`]
+                ].map(([label, value], index) => (
+                  <motion.div className="flex justify-between" key={label} initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + index * 0.04 }}>
+                    <span>{label}</span>
+                    <b>{value}</b>
+                  </motion.div>
+                ))}
+              </div>
+              <Link className="mt-7 flex h-12 items-center justify-center rounded-2xl bg-[#007a35] font-extrabold text-white transition hover:scale-[1.01] active:scale-[0.99]" to="/app/dashboard">Mulai Perjalananku</Link>
+            </motion.div>
+          </aside>
         </section>
       </main>
     </AnimatedPage>
@@ -4907,15 +4920,7 @@ function LegalPage({ type }) {
 
   return (
     <AnimatedPage className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <header className="sticky top-0 z-40 h-16 border-b bg-white">
-        <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-6">
-          <Link className="text-2xl font-black text-green-700" to="/">NutriTrack</Link>
-          <nav className="flex gap-5 text-sm font-bold" aria-label="Navigasi legal">
-            <Link className="transition hover:text-green-700" to="/login">Login</Link>
-            <Link className="transition hover:text-green-700" to={page.navTo}>{page.navLabel}</Link>
-          </nav>
-        </div>
-      </header>
+      <LegalHeader active={type} navLabel={page.navLabel} navTo={page.navTo} />
       <main className="mx-auto max-w-5xl px-6 py-14">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
           <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.28em] text-green-700">{page.label}</p>
@@ -4924,10 +4929,7 @@ function LegalPage({ type }) {
         </motion.div>
         <div className="grid gap-5">
           {page.sections.map(([title, body], index) => (
-            <motion.section className="rounded-3xl border bg-white p-7 shadow-sm transition hover:-translate-y-1" key={title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}>
-              <h2 className="mb-3 text-xl font-black">{title}</h2>
-              <p className="text-slate-600">{body}</p>
-            </motion.section>
+            <LegalSectionCard title={title} body={body} index={index} key={title} />
           ))}
         </div>
       </main>
@@ -4935,8 +4937,32 @@ function LegalPage({ type }) {
   )
 }
 
+function LegalHeader({ active, navLabel, navTo }) {
+  return (
+    <header className="sticky top-0 z-40 h-16 border-b border-slate-200 bg-white">
+      <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-6">
+        <Link className="text-2xl font-black text-green-700 transition hover:text-green-800" to="/">NutriTrack</Link>
+        <nav className="flex gap-5 text-sm font-bold" aria-label="Navigasi legal">
+          <Link className="transition hover:text-green-700 focus:outline-none focus:ring-4 focus:ring-green-200" to="/login">Login</Link>
+          <Link className="transition hover:text-green-700 focus:outline-none focus:ring-4 focus:ring-green-200" aria-current={active === 'privacy' && navLabel === 'Privacy' ? 'page' : undefined} to={navTo}>{navLabel}</Link>
+        </nav>
+      </div>
+    </header>
+  )
+}
+
+function LegalSectionCard({ title, body, index }) {
+  return (
+    <motion.section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06, duration: 0.34 }} whileHover={{ y: -4 }}>
+      <h2 className="mb-3 text-xl font-black">{title}</h2>
+      <p className="text-slate-600">{body}</p>
+    </motion.section>
+  )
+}
+
 function SplashPage() {
   const [highlighted, setHighlighted] = useState(false)
+  const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     document.title = 'Splash - NutriTrack'
@@ -4948,7 +4974,7 @@ function SplashPage() {
   return (
     <AnimatedPage className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-100 px-6 font-sans">
       <main className="text-center">
-        <motion.div className="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-[32px] bg-[#007a35] text-white shadow-2xl shadow-green-900/20" animate={{ scale: [1, 1.08, 1], rotate: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+        <motion.div className="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-[32px] bg-[#007a35] text-white shadow-2xl shadow-green-900/20" animate={reduceMotion ? { scale: 1, rotate: 0 } : { scale: [1, 1.08, 1], rotate: [0, 8, 0] }} transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
           <MaterialSymbol className="text-7xl">nutrition</MaterialSymbol>
         </motion.div>
         <motion.h1 className="mb-3 text-4xl font-black text-[#007a35]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>NutriTrack</motion.h1>
