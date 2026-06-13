@@ -962,8 +962,8 @@ const proNavItems = [
 
 const proPageMeta = {
   '/app/dashboard': { title: 'Good Morning, Alex', subtitle: 'Tuesday, October 24', search: 'Search foods...' },
-  '/app/log-food': { title: 'Daily Food Log', subtitle: 'Track meals without breaking flow', search: 'Search foods...' },
-  '/app/meal-planner': { title: 'Meal Architecture', subtitle: 'Plan balanced meals for the week', search: 'Search recipes...' },
+  '/app/log-food': { title: 'Daily Food Log', subtitle: 'Tuesday, October 24th, 2023', search: 'Search foods...' },
+  '/app/meal-planner': { title: 'Meal Architecture', subtitle: 'Weekly Plan', search: 'Search recipes or ingredients...' },
   '/app/progress': { title: 'Weight Journey', subtitle: "You've lost 2.4kg in the last 30 days", search: 'Search progress...' },
   '/app/nutrition': { title: 'Nutrition Insights', subtitle: 'Macro, hydration, and micronutrient balance', search: 'Search nutrients...' },
   '/app/foods': { title: 'Food Database', subtitle: 'Verified meals and quick logging', search: 'Search foods...' },
@@ -1561,57 +1561,319 @@ function ProMealPlannerPage() {
     [],
     []
   )
+  const fallbackDays = [
+    {
+      day: 'Monday',
+      date: 'Oct 23',
+      total: 2120,
+      meals: [
+        { type: 'Breakfast', title: 'Avocado Toast with Poached Egg', kcal: 420, protein: 18 },
+        { type: 'Lunch', title: 'Quinoa & Roasted Veggie Bowl', kcal: 580, protein: 22 },
+        { type: 'Dinner', title: 'Pan-Seared Salmon with Asparagus', kcal: 650, protein: 42 }
+      ]
+    },
+    { day: 'Tuesday', date: 'Oct 24', total: 0, meals: [] },
+    {
+      day: 'Wednesday',
+      date: 'Oct 25',
+      total: 2240,
+      meals: [
+        { type: 'Breakfast', title: 'Greek Yogurt Parfait' },
+        { type: 'Lunch', title: 'Turkey & Swiss Wrap' },
+        { type: 'Dinner', title: 'Beef Stir-fry with Ginger' }
+      ]
+    },
+    { day: 'Thursday', date: 'Oct 26', total: 0, meals: [] }
+  ]
   const days = plans.length
     ? Object.values(
         plans.reduce((acc, plan) => {
           const date = String(plan.plan_date || plan.planDate).slice(0, 10)
-          acc[date] ||= { day: new Date(date).toLocaleDateString('en-US', { weekday: 'long' }), date, total: 0, meals: [] }
-          acc[date].total += Number(plan.target_calories || 0)
-          acc[date].meals.push(plan.food_name)
+          acc[date] ||= {
+            day: new Date(date).toLocaleDateString('en-US', { weekday: 'long' }),
+            date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            total: 0,
+            meals: []
+          }
+          acc[date].total += Number(plan.target_calories || plan.calories || 0)
+          acc[date].meals.push({
+            type: mealLabel(plan.meal_type || plan.mealType || 'Meal'),
+            title: plan.food_name || plan.foodName || plan.name || 'Planned meal',
+            kcal: Number(plan.target_calories || plan.calories || 0),
+            protein: Number(plan.protein_g || plan.protein || 0)
+          })
           return acc
         }, {})
       )
-    : [
-        { day: 'Monday', date: 'Oct 23', total: 2120, meals: ['Avocado Toast', 'Quinoa Bowl', 'Salmon Rice'] },
-        { day: 'Tuesday', date: 'Oct 24', total: 1840, meals: ['Greek Yogurt', 'Turkey Wrap', 'Beef Stir-fry'] },
-        { day: 'Wednesday', date: 'Oct 25', total: 2240, meals: ['Oatmeal Bowl', 'Chicken Salad', 'Tofu Curry'] }
-      ]
+    : fallbackDays
+
   return (
-    <ProPage title="Weekly Meal Plan" subtitle="Balanced weekly planning with clean columns, no cramped cards, and quick actions." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Generate Plan</button>}>
-      <div className="grid gap-6 lg:grid-cols-3">
-        {days.slice(0, 3).map(({ day, date, total, meals }, index) => (
-          <ProPanel delay={index * 0.05} key={`${day}-${date}`}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">{day}</p>
-                <h3 className="mt-1 text-xl font-black">{/^\d{4}-/.test(String(date)) ? String(date).slice(5) : date}</h3>
+    <motion.main
+      className="pro-mealplanner-page mx-auto max-w-[1400px] px-5 py-7 pb-28 lg:px-8"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <section className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+        <div className="max-w-2xl">
+          <h2 className="font-headline-lg text-headline-lg font-black text-on-surface">Weekly Summary</h2>
+          <p className="mt-2 font-body-lg text-body-lg text-on-surface-variant">
+            Precision nutrition tailored for your vitality. Manage your week's macros and energy levels with AI-assisted planning.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <MealPlannerMetricCard value="2,450" label="Target kcal" tone="text-energy-orange" />
+          <MealPlannerMetricCard value="185g" label="Protein Goal" tone="text-primary" />
+        </div>
+      </section>
+
+      <section className="custom-scrollbar mt-8 flex snap-x gap-6 overflow-x-auto pb-6">
+        {days.slice(0, 7).map((day, index) => (
+          <MealPlannerDayCard day={day} index={index} key={`${day.day}-${day.date}`} />
+        ))}
+      </section>
+
+      <section className="mt-8 grid grid-cols-12 gap-8">
+        <MealPlannerShoppingList />
+        <div className="col-span-12 flex flex-col gap-8 lg:col-span-4">
+          <MealPlannerInsights />
+          <MealPlannerAssistantCard />
+        </div>
+      </section>
+
+      <MealPlannerPantryBanner />
+
+      <button
+        className="fixed bottom-6 right-6 z-50 grid h-16 w-16 place-items-center rounded-full bg-primary text-on-primary shadow-2xl shadow-primary/25 transition-all hover:scale-110 active:scale-95 lg:bottom-8 lg:right-8"
+        type="button"
+        aria-label="Add meal"
+      >
+        <Plus size={32} strokeWidth={2.6} />
+      </button>
+    </motion.main>
+  )
+}
+
+function MealPlannerMetricCard({ value, label, tone }) {
+  return (
+    <motion.div className="glass-card flex min-w-[120px] flex-col items-center rounded-2xl bg-white/80 px-6 py-4 shadow-sm backdrop-blur-xl" whileHover={{ y: -3 }}>
+      <span className={`font-metrics-mono text-2xl font-bold ${tone}`}>{value}</span>
+      <span className="font-label-sm text-label-sm uppercase tracking-tighter text-on-surface-variant">{label}</span>
+    </motion.div>
+  )
+}
+
+function MealPlannerDayCard({ day, index }) {
+  const isEmpty = !day.meals?.length
+  return (
+    <motion.article
+      className="w-[320px] flex-shrink-0 snap-start"
+      initial={{ opacity: 0, x: 18 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.32 }}
+    >
+      <div className="glass-card flex h-full flex-col overflow-hidden rounded-[2rem] border border-outline-variant/30 bg-white/80 backdrop-blur-xl transition-transform hover:scale-[1.01]">
+        <div className={`flex items-center justify-between border-b p-6 ${isEmpty ? 'border-outline-variant/20 bg-surface-container-low' : 'border-primary/10 bg-mint-surface/50'}`}>
+          <div>
+            <span className={`font-label-sm text-label-sm font-bold uppercase tracking-widest ${isEmpty ? 'text-on-surface-variant/60' : 'text-primary'}`}>{day.day}</span>
+            <h3 className="font-headline-md text-headline-md font-black text-on-surface">{day.date}</h3>
+          </div>
+          <span className={`rounded-full px-3 py-1 font-metrics-mono text-xs font-bold ${isEmpty ? 'bg-surface-container-highest text-on-surface-variant' : 'bg-primary text-on-primary'}`}>
+            {formatNumber(day.total)} kcal
+          </span>
+        </div>
+
+        {isEmpty ? (
+          <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 bg-white/40 p-6">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container-high">
+              <Utensils className="text-on-surface-variant/40" size={38} />
+            </div>
+            <p className="text-center font-label-md text-on-surface-variant">Plan is currently empty</p>
+            <button className="rounded-xl bg-primary-container/20 px-6 py-2 text-label-md font-bold text-on-primary-container transition-all hover:bg-primary-container/30" type="button">
+              Add Meals
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-4 bg-white/40 p-6">
+            {day.meals.map((meal, mealIndex) => (
+              <MealPlannerSlot meal={meal} key={`${meal.type}-${meal.title}-${mealIndex}`} />
+            ))}
+            <MealPlannerSlot empty meal={{ type: 'Snack', title: 'Add a snack...' }} />
+          </div>
+        )}
+      </div>
+    </motion.article>
+  )
+}
+
+function MealPlannerSlot({ meal, empty = false }) {
+  if (empty) {
+    return (
+      <button className="meal-slot-hover rounded-2xl border border-dashed border-outline-variant/50 bg-surface-container p-4 text-left transition-all active:scale-[0.98]" type="button">
+        <div className="flex items-center justify-between">
+          <p className="text-label-md italic text-on-surface-variant/60">{meal.title}</p>
+          <Plus className="text-primary" size={20} />
+        </div>
+      </button>
+    )
+  }
+
+  return (
+    <button className="meal-slot-hover group/item rounded-2xl border border-outline-variant/20 bg-white p-4 text-left transition-all active:scale-[0.98]" type="button">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{meal.type}</span>
+        <Settings className="text-on-surface-variant/40 group-hover/item:text-primary" size={14} />
+      </div>
+      <p className="font-bold text-on-surface">{meal.title}</p>
+      {(meal.kcal || meal.protein) && (
+        <p className="mt-1 text-label-sm text-on-surface-variant">
+          {meal.kcal ? `${formatNumber(meal.kcal)} kcal` : ''}
+          {meal.kcal && meal.protein ? ' • ' : ''}
+          {meal.protein ? `${formatNumber(meal.protein)}g Protein` : ''}
+        </p>
+      )}
+    </button>
+  )
+}
+
+function MealPlannerShoppingList() {
+  const categories = [
+    {
+      title: 'Fresh Produce',
+      color: '#006e2f',
+      Icon: Apple,
+      items: [
+        ['Ripe Avocados (3 units)', false],
+        ['Baby Spinach (500g)', false],
+        ['Fresh Asparagus (1 bundle)', true],
+        ['Red Bell Peppers (2 units)', false]
+      ]
+    },
+    {
+      title: 'Protein & Dairy',
+      color: '#9e4036',
+      Icon: Utensils,
+      items: [
+        ['Atlantic Salmon Fillets (2)', false],
+        ['Organic Greek Yogurt (1kg)', false],
+        ['Free-range Eggs (12)', true],
+        ['Ground Turkey (500g)', false]
+      ]
+    }
+  ]
+
+  return (
+    <motion.section className="glass-card col-span-12 flex flex-col rounded-[2.5rem] bg-white/80 p-8 backdrop-blur-xl lg:col-span-8" whileHover={{ y: -3 }}>
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h3 className="font-headline-md text-headline-md font-black text-on-surface">Smart Shopping List</h3>
+          <p className="text-label-md font-bold uppercase tracking-widest text-on-surface-variant/60">Generated from weekly plan</p>
+        </div>
+        <button className="flex items-center gap-2 rounded-xl px-4 py-2 font-bold text-primary transition-colors hover:bg-primary-container/10" type="button">
+          <CalendarDays size={18} /> Export List
+        </button>
+      </div>
+      <div className="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2">
+        {categories.map(({ title, color, Icon, items }) => (
+          <div key={title}>
+            <div className="mb-5 flex items-center gap-3 font-bold" style={{ color }}>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ backgroundColor: `${color}1a` }}>
+                <Icon size={19} />
               </div>
-              <span className="rounded-full bg-primary px-3 py-1 font-metrics-mono text-xs font-black text-white">{formatNumber(total)} kcal</span>
+              {title}
             </div>
-            <div className="mt-6 grid gap-4">
-              {meals.map((meal) => (
-                <motion.div className="rounded-2xl border border-outline-variant/40 bg-white p-4" key={meal} whileHover={{ x: 4 }}>
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-on-surface-variant/70">Meal</p>
-                  <p className="mt-2 font-black">{meal}</p>
-                  <p className="mt-1 text-sm text-on-surface-variant">Balanced macros and fiber target</p>
-                </motion.div>
+            <ul className="grid gap-4">
+              {items.map(([item, checked]) => (
+                <li className="flex cursor-pointer items-center gap-4" key={item}>
+                  <span className="flex h-5 w-5 items-center justify-center rounded border-2" style={{ borderColor: color, backgroundColor: checked ? color : 'transparent' }}>
+                    {checked && <Check className="text-white" size={14} strokeWidth={3} />}
+                  </span>
+                  <span className={`text-body-md ${checked ? 'text-on-surface-variant/50 line-through' : 'text-on-surface'}`}>{item}</span>
+                </li>
               ))}
-            </div>
-          </ProPanel>
+            </ul>
+          </div>
         ))}
       </div>
-      <ProPanel className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-        <div>
-          <h3 className="text-2xl font-black">Grocery Focus</h3>
-          <p className="mt-2 text-sm leading-6 text-on-surface-variant">Protein, fresh vegetables, and low glycemic carbs for this week's plan.</p>
+      <div className="mt-auto flex justify-end pt-8">
+        <button className="rounded-2xl bg-secondary px-8 py-3 text-label-md font-bold text-on-primary shadow-lg shadow-secondary/20 transition-all hover:scale-105" type="button">
+          Send to InstaCart
+        </button>
+      </div>
+    </motion.section>
+  )
+}
+
+function MealPlannerInsights() {
+  return (
+    <motion.section className="glass-card rounded-[2.5rem] border border-primary/10 bg-mint-surface/30 p-8 backdrop-blur-xl" whileHover={{ y: -3 }}>
+      <div className="mb-8 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Sparkles size={22} />
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {['Eggs', 'Greek Yogurt', 'Brown Rice', 'Spinach', 'Chicken Breast', 'Avocado'].map((item) => (
-            <span className="rounded-xl bg-surface-container px-4 py-3 text-sm font-bold" key={item}>{item}</span>
-          ))}
+        <h3 className="font-headline-md text-headline-md font-black text-on-surface">Insights</h3>
+      </div>
+      <div className="grid gap-6">
+        <div className="relative pl-6 before:absolute before:left-0 before:top-1 before:h-[80%] before:w-1.5 before:rounded-full before:bg-primary">
+          <p className="mb-1 font-bold text-on-surface">Batch Cook Wednesday</p>
+          <p className="text-label-md text-on-surface-variant">Your Wednesday lunch and Thursday dinner use similar ingredients. Pre-roast your veggies once!</p>
         </div>
-      </ProPanel>
-    </ProPage>
+        <div className="relative pl-6 before:absolute before:left-0 before:top-1 before:h-[80%] before:w-1.5 before:rounded-full before:bg-energy-orange">
+          <p className="mb-1 font-bold text-on-surface">Fiber Deficiency Detected</p>
+          <p className="text-label-md text-on-surface-variant">Current plan is 15% below fiber goal. Consider adding chia seeds to breakfast.</p>
+        </div>
+        <div className="mt-1 rounded-2xl border border-primary/10 bg-white/60 p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-label-sm font-bold uppercase tracking-widest text-on-surface-variant">Macro Balance</span>
+            <span className="font-metrics-mono text-sm font-bold text-primary">92%</span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-surface-container">
+            <motion.div className="h-full rounded-full bg-primary" initial={{ width: 0 }} animate={{ width: '92%' }} transition={{ duration: 0.8 }} />
+          </div>
+        </div>
+      </div>
+    </motion.section>
+  )
+}
+
+function MealPlannerAssistantCard() {
+  return (
+    <motion.section className="achievement-gradient relative flex flex-1 flex-col justify-center overflow-hidden rounded-[2.5rem] p-8 text-white shadow-xl" whileHover={{ y: -3, rotateX: 2 }}>
+      <div className="absolute -right-10 -top-10 opacity-20">
+        <Sparkles size={148} />
+      </div>
+      <div className="relative z-10">
+        <p className="font-headline-md text-2xl italic leading-snug">"Pantry Inventory Sync is active. We've removed items you already own."</p>
+        <div className="mt-6 flex items-center gap-3">
+          <div className="h-1 w-10 rounded-full bg-white/40" />
+          <p className="text-[10px] font-bold uppercase tracking-widest">Smart Assistant</p>
+        </div>
+      </div>
+    </motion.section>
+  )
+}
+
+function MealPlannerPantryBanner() {
+  return (
+    <motion.section className="group relative mt-8 h-64 overflow-hidden rounded-[3rem] shadow-2xl" whileHover={{ y: -3 }}>
+      <img
+        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+        src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1600&q=80"
+        alt="Kitchen pantry with organic ingredients"
+      />
+      <div className="absolute inset-0 flex items-center bg-gradient-to-r from-primary/90 via-primary/40 to-transparent px-8 md:px-16">
+        <div className="max-w-md text-on-primary">
+          <div className="mb-4 w-fit rounded-2xl bg-white/20 p-3 backdrop-blur-md">
+            <Apple size={30} />
+          </div>
+          <h4 className="font-headline-lg text-headline-lg font-bold">Pantry Inventory Sync</h4>
+          <p className="mt-2 font-body-lg text-lg leading-relaxed opacity-90">
+            NutriTrack AI is scanning your uploaded pantry photos to automatically remove items you already have.
+          </p>
+        </div>
+      </div>
+    </motion.section>
   )
 }
 
@@ -1619,15 +1881,51 @@ function ProLogFoodPage() {
   const { data: logs, setData: setLogs } = useBackendData(() => apiRequest(`/api/food-logs?date=${todayIso()}`), [], [])
   const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=8'), [], [])
   const [saving, setSaving] = useState(false)
-  const groupedLogs = ['breakfast', 'lunch', 'dinner', 'afternoon_snack'].map((mealType) => {
-    const items = logs.filter((log) => log.meal_type === mealType)
+  const htmlMealFallback = {
+    breakfast: [
+      { food_name: 'Oatmeal with Blueberries', calories: 310 },
+      { food_name: 'Greek Yogurt', calories: 110 }
+    ],
+    lunch: [
+      { food_name: 'Quinoa Salad with Tofu', calories: 520 },
+      { food_name: 'Hummus & Carrots', calories: 160 }
+    ],
+    dinner: [],
+    afternoon_snack: [
+      { food_name: 'Mixed Nuts (30g)', calories: 180 },
+      { food_name: 'Protein Bar', calories: 170 }
+    ]
+  }
+  const mealOrder = ['breakfast', 'lunch', 'dinner', 'afternoon_snack']
+  const hasLogs = logs.length > 0
+  const groupedLogs = mealOrder.map((mealType) => {
+    const backendItems = logs.filter((log) => (log.meal_type || log.mealType) === mealType)
+    const items = backendItems.length ? backendItems : hasLogs ? [] : htmlMealFallback[mealType]
     return {
       mealType,
       kcal: items.reduce((total, item) => total + Number(item.calories || 0), 0),
-      items: items.length ? items.map((item) => item.food_name) : ['No items logged yet']
+      items
     }
   })
-  const recentItems = logs.length ? logs.slice(0, 3) : foods.slice(0, 3)
+  const fallbackRecentItems = [
+    { id: 'recent-coffee', food_name: 'Black Coffee', meal_type: 'breakfast', serving_unit: '1 cup', calories: 2, tone: 'primary' },
+    { id: 'recent-omelette', food_name: 'Omelette with Spinach', meal_type: 'breakfast', serving_unit: '2 eggs', calories: 240, tone: 'secondary' },
+    { id: 'recent-apple', food_name: 'Fuji Apple', meal_type: 'afternoon_snack', serving_unit: '1 medium', calories: 95, tone: 'orange' }
+  ]
+  const recentItems = logs.length ? logs.slice(0, 3) : fallbackRecentItems
+  const consumed = hasLogs ? groupedLogs.reduce((total, meal) => total + meal.kcal, 0) : 1450
+  const dailyGoal = 2100
+  const remaining = Math.max(dailyGoal - consumed, 0)
+  const foodSuggestions = foods.length
+    ? foods.slice(0, 2).map((food) => ({
+        name: food.food_name || food.name,
+        calories: food.calories,
+        serving: food.serving_unit || 'serving'
+      }))
+    : [
+        { name: 'Grilled Chicken Breast', calories: 165, serving: '100g' },
+        { name: 'Brown Rice', calories: 111, serving: '100g' }
+      ]
 
   const addQuickItem = async () => {
     const food = foods[0]
@@ -1652,50 +1950,247 @@ function ProLogFoodPage() {
   }
 
   return (
-    <ProPage title="Daily Food Log" subtitle="Fast food search, clear meal cards, and stable spacing for repeated logging." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" onClick={addQuickItem} type="button">{saving ? 'Adding...' : 'Add Item'}</button>}>
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.4fr]">
-        <div className="grid gap-6">
-          <ProPanel>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant">Search Food Database</p>
-            <label className="mt-4 flex h-12 items-center gap-3 rounded-2xl bg-surface-container px-4">
-              <Search size={20} />
-              <input className="min-w-0 flex-1 border-0 bg-transparent p-0 focus:ring-0" placeholder="Search for chicken, rice, coffee..." />
-            </label>
-          </ProPanel>
-          <ProPanel>
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-black">Recent History</h3>
-              <button className="text-sm font-black text-primary" type="button">View All</button>
-            </div>
-            <div className="mt-4 grid gap-3">
-              {recentItems.map((item, index) => (
-                <div className="flex items-center justify-between rounded-2xl bg-surface-container-low p-4" key={item.id || item.name || item.food_name}>
-                  <div>
-                    <p className="font-black">{item.food_name || item.name}</p>
-                    <p className="text-sm text-on-surface-variant">{mealLabel(item.meal_type || item.category || 'snack')}</p>
-                  </div>
-                  <p className="font-metrics-mono font-black">{formatNumber(item.calories || [2, 240, 95][index])} kcal</p>
-                </div>
-              ))}
-            </div>
-          </ProPanel>
+    <motion.main
+      className="pro-logfood-page mx-auto max-w-[1200px] px-5 py-7 pb-28 lg:px-8"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <section className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+        <div>
+          <h1 className="font-headline-lg text-headline-lg font-black text-on-surface">Daily Food Log</h1>
+          <p className="mt-1 font-body-md text-on-surface-variant">Tuesday, October 24th, 2023</p>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2">
-          {groupedLogs.map(({ mealType, kcal, items }, index) => (
-            <ProPanel className="border-l-4" key={mealType} style={{ borderLeftColor: ['#007a35', '#0058be', '#a855f7', '#f97316'][index] }}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black">{mealLabel(mealType)}</h3>
-                <p className="font-metrics-mono text-xl font-black">{kcal} <span className="text-xs text-on-surface-variant">kcal</span></p>
+        <LogFoodSummaryCard consumed={consumed} dailyGoal={dailyGoal} remaining={remaining} />
+      </section>
+
+      <section className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <div className="grid content-start gap-6 xl:col-span-4">
+          <LogFoodSearchCard suggestions={foodSuggestions} />
+          <LogFoodRecentCard items={recentItems} onAdd={addQuickItem} saving={saving} />
+        </div>
+
+        <div className="grid gap-6 xl:col-span-8">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {groupedLogs.map((meal, index) => (
+              <LogFoodMealCard key={meal.mealType} meal={meal} index={index} onAdd={addQuickItem} saving={saving} />
+            ))}
+          </div>
+          <LogFoodMacroDistribution />
+        </div>
+      </section>
+
+      <button
+        className="group fixed bottom-6 right-6 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg shadow-primary/25 transition-all hover:scale-110 active:scale-95 lg:bottom-8 lg:right-8"
+        onClick={addQuickItem}
+        type="button"
+        aria-label="Log food item"
+      >
+        <Plus className="transition-transform group-hover:rotate-90" size={32} strokeWidth={2.6} />
+        <span className="pointer-events-none absolute right-20 hidden translate-x-4 whitespace-nowrap rounded-xl bg-inverse-surface px-4 py-2 font-label-md text-sm text-inverse-on-surface opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100 sm:block">
+          {saving ? 'Adding...' : 'Log Food Item'}
+        </span>
+      </button>
+    </motion.main>
+  )
+}
+
+function LogFoodSummaryCard({ consumed, dailyGoal, remaining }) {
+  const items = [
+    ['Consumed', consumed, 'text-primary'],
+    ['Daily Goal', dailyGoal, 'text-energy-orange'],
+    ['Remaining', remaining, 'text-secondary']
+  ]
+  return (
+    <div className="grid w-full grid-cols-3 gap-3 rounded-3xl border border-outline-variant/30 bg-surface-container-high px-4 py-4 shadow-sm sm:w-auto sm:flex sm:items-center sm:gap-8 sm:px-8">
+      {items.map(([label, value, color], index) => (
+        <div className="flex min-w-0 items-center gap-4" key={label}>
+          {index > 0 && <div className="hidden h-10 w-px bg-outline-variant/50 sm:block" />}
+          <div className="min-w-0 text-center">
+            <span className={`block font-metrics-mono text-xl font-bold ${color}`}>{formatNumber(value)}</span>
+            <span className="text-label-sm uppercase text-on-surface-variant">{label}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function LogFoodSearchCard({ suggestions }) {
+  return (
+    <motion.section
+      className="glass-card logfood-search-card group relative rounded-2xl border border-outline-variant/50 bg-white/80 p-5 shadow-md backdrop-blur-xl focus-within:ring-2 focus-within:ring-primary/30"
+      whileHover={{ y: -2 }}
+    >
+      <h3 className="mb-3 font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Search Food Database</h3>
+      <label className="relative block">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
+        <input
+          className="w-full rounded-xl border-none bg-surface-container py-3 pl-10 pr-4 font-body-md text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary"
+          placeholder="Search for chicken, rice, coffee..."
+          aria-label="Search food database"
+        />
+      </label>
+      <div className="logfood-suggestions mt-3 grid gap-1 overflow-hidden transition-all duration-300">
+        {suggestions.map((food) => (
+          <button className="flex items-center justify-between rounded-lg p-2 text-left text-sm hover:bg-surface-variant/40" key={food.name} type="button">
+            <span>{food.name}</span>
+            <span className="text-on-surface-variant/60">{formatNumber(food.calories)} kcal / {food.serving}</span>
+          </button>
+        ))}
+      </div>
+    </motion.section>
+  )
+}
+
+function LogFoodRecentCard({ items, onAdd, saving }) {
+  return (
+    <motion.section className="glass-card rounded-2xl bg-white/80 p-5 shadow-md backdrop-blur-xl" whileHover={{ y: -2 }}>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Recent History</h3>
+        <button className="text-label-sm text-primary hover:underline" type="button">View All</button>
+      </div>
+      <div className="custom-scrollbar grid max-h-[400px] gap-3 overflow-y-auto pr-1">
+        {items.map((item, index) => (
+          <LogFoodRecentItem item={item} index={index} key={item.id || item.food_name || item.name || index} onAdd={onAdd} saving={saving} />
+        ))}
+      </div>
+    </motion.section>
+  )
+}
+
+function LogFoodRecentItem({ item, index, onAdd, saving }) {
+  const tones = [
+    { bg: 'bg-mint-surface/50', border: 'border-primary/10', iconBg: 'bg-primary-container/20', iconText: 'text-primary', Icon: Activity },
+    { bg: 'bg-surface-container-low', border: 'border-outline-variant/20', iconBg: 'bg-secondary/10', iconText: 'text-secondary', Icon: Flame },
+    { bg: 'bg-surface-container-low', border: 'border-outline-variant/20', iconBg: 'bg-energy-orange/10', iconText: 'text-energy-orange', Icon: Apple }
+  ]
+  const tone = tones[index % tones.length]
+  const name = item.food_name || item.foodName || item.name || 'Food item'
+  const meal = mealLabel(item.meal_type || item.mealType || item.category || 'afternoon_snack')
+  const serving = item.serving_unit || item.servingUnit || item.serving || '1 serving'
+  const Icon = tone.Icon
+
+  return (
+    <motion.article
+      className={`group relative flex items-center gap-3 overflow-hidden rounded-xl border p-3 transition-all hover:shadow-sm ${tone.bg} ${tone.border}`}
+      whileHover={{ x: 2 }}
+    >
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone.iconBg} ${tone.iconText}`}>
+        <Icon size={20} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-label-md font-bold text-on-surface">{name}</p>
+        <p className="text-label-sm text-on-surface-variant">{meal} • {serving}</p>
+      </div>
+      <div className="text-right">
+        <p className="font-metrics-mono font-bold text-on-surface">{formatNumber(item.calories || 0)} <span className="text-[10px] uppercase">kcal</span></p>
+      </div>
+      <div className="absolute inset-0 flex translate-x-full items-center justify-center gap-4 bg-primary/95 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
+        <button className="rounded-full bg-white/20 p-2 text-white hover:bg-white/40" onClick={onAdd} disabled={saving} type="button" aria-label={`Add ${name}`}>
+          <Plus size={18} />
+        </button>
+        <button className="rounded-full bg-white/20 p-2 text-white hover:bg-white/40" type="button" aria-label={`Edit ${name}`}>
+          <Settings size={18} />
+        </button>
+      </div>
+    </motion.article>
+  )
+}
+
+function LogFoodMealCard({ meal, index, onAdd, saving }) {
+  const styles = [
+    { title: 'Breakfast', color: '#006e2f', border: 'border-l-primary', Icon: Activity, target: 630 },
+    { title: 'Lunch', color: '#0058be', border: 'border-l-secondary', Icon: Utensils, target: 680 },
+    { title: 'Dinner', color: '#a855f7', border: 'border-l-achievement-purple', Icon: Droplets, target: 650 },
+    { title: 'Snacks', color: '#f97316', border: 'border-l-energy-orange', Icon: Apple, target: 350 }
+  ]
+  const style = styles[index]
+  const Icon = style.Icon
+  const hasItems = meal.items.length > 0
+  const pct = style.target ? Math.min(100, Math.round((meal.kcal / style.target) * 100)) : 0
+
+  return (
+    <motion.article
+      className={`glass-card flex min-h-[210px] flex-col rounded-3xl border-l-4 bg-white/80 p-5 shadow-sm backdrop-blur-xl transition-all hover:-translate-y-0.5 hover:shadow-md ${style.border}`}
+      whileHover={{ y: -3 }}
+    >
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Icon style={{ color: style.color }} size={22} />
+          <h4 className="font-headline-md text-lg font-black text-on-surface">{style.title}</h4>
+        </div>
+        <div className="text-right">
+          {hasItems ? (
+            <>
+              <p className="font-metrics-mono text-lg font-bold text-on-surface">{formatNumber(meal.kcal)} <span className="text-xs font-normal uppercase text-on-surface-variant">kcal</span></p>
+              <div className="mt-1 h-1 w-24 overflow-hidden rounded-full bg-surface-container">
+                <motion.div className="h-full rounded-full" style={{ backgroundColor: style.color, width: `${pct}%`, transformOrigin: 'left center' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.65 }} />
               </div>
-              <div className="mt-5 grid gap-3">
-                {items.map((item) => <p className="text-sm text-on-surface-variant" key={item}>{item}</p>)}
-              </div>
-              <button className="mt-5 h-10 w-full rounded-xl border border-dashed border-outline-variant text-sm font-black text-on-surface-variant" type="button">+ Add Item</button>
-            </ProPanel>
-          ))}
+            </>
+          ) : (
+            <p className="font-metrics-mono text-lg font-bold italic text-on-surface-variant">Waiting... <span className="text-xs font-normal uppercase">kcal</span></p>
+          )}
         </div>
       </div>
-    </ProPage>
+
+      {hasItems ? (
+        <div className="mb-4 grid flex-grow gap-2">
+          {meal.items.slice(0, 3).map((item, itemIndex) => (
+            <div className="flex justify-between gap-3 text-sm" key={item.id || item.food_name || item.name || itemIndex}>
+              <span className="min-w-0 truncate text-on-surface-variant">{item.food_name || item.foodName || item.name}</span>
+              <span className="font-metrics-mono">{formatNumber(item.calories || 0)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-grow flex-col items-center justify-center opacity-60">
+          <Utensils className="mb-2 text-outline-variant" size={38} />
+          <p className="text-label-sm text-on-surface-variant">No items logged yet</p>
+        </div>
+      )}
+
+      <button
+        className="mt-auto flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/50 py-3 text-on-surface-variant transition-all hover:border-current"
+        style={{ '--hover-color': style.color }}
+        onClick={onAdd}
+        disabled={saving}
+        type="button"
+      >
+        <Plus size={16} />
+        <span className="font-label-md text-label-md">{saving ? 'Adding...' : 'Add Item'}</span>
+      </button>
+    </motion.article>
+  )
+}
+
+function LogFoodMacroDistribution() {
+  return (
+    <motion.section
+      className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-3xl border border-outline-variant/30 bg-gradient-to-br from-mint-surface to-surface-container-low shadow-inner"
+      whileHover={{ y: -3 }}
+    >
+      <motion.div
+        className="absolute h-56 w-56 rounded-full border-[18px] border-primary/20"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+      />
+      <motion.div
+        className="absolute h-36 w-36 rounded-full border-[14px] border-secondary/20"
+        animate={{ rotate: -360 }}
+        transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+      />
+      <div className="relative z-10 text-center">
+        <BarChart3 className="mx-auto mb-2 text-primary" size={48} />
+        <h3 className="font-headline-md text-xl font-black text-on-primary-container">Macro Distribution</h3>
+        <div className="mt-3 flex flex-wrap justify-center gap-3">
+          <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary">Protein: 40%</span>
+          <span className="rounded-full bg-secondary/20 px-3 py-1 text-xs font-bold text-secondary">Carbs: 35%</span>
+          <span className="rounded-full bg-energy-orange/20 px-3 py-1 text-xs font-bold text-energy-orange">Fat: 25%</span>
+        </div>
+      </div>
+    </motion.section>
   )
 }
 

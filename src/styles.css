@@ -783,6 +783,23 @@ h3 {
   margin-top: 48px !important;
 }
 
+.pro-theme .pro-logfood-page .logfood-suggestions {
+  max-height: 0;
+}
+
+.pro-theme .pro-logfood-page .logfood-search-card:focus-within .logfood-suggestions {
+  max-height: 132px;
+}
+
+.pro-theme .meal-slot-hover {
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.pro-theme .meal-slot-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 110, 47, 0.08);
+}
+
 .pro-theme .pro-dashboard-page > section,
 .pro-theme .pro-dashboard-page > .glass-card {
   scroll-margin-top: 104px;
