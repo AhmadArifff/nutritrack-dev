@@ -581,6 +581,136 @@ function AuthRecoveryLogo() {
   )
 }
 
+function MaterialSymbol({ children, className = '' }) {
+  return <span className={`material-symbols-outlined ${className}`} aria-hidden="true">{children}</span>
+}
+
+function LoginPage() {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('alex@nutritrack.app')
+  const [password, setPassword] = useState('nutritrack')
+  const [showPassword, setShowPassword] = useState(false)
+  const [remember, setRemember] = useState(true)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Login - NutriTrack'
+    document.body.className = ''
+  }, [])
+
+  async function submit(event) {
+    event.preventDefault()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Format email tidak valid.')
+      return
+    }
+    if (!password) {
+      setError('Password wajib diisi.')
+      return
+    }
+
+    setError('')
+    setSubmitting(true)
+    try {
+      await login(email.trim(), password === 'nutritrack' ? 'nutritrack123' : password)
+      navigate('/onboarding')
+    } catch (err) {
+      const isDemo = email.trim() === 'alex@nutritrack.app' && password === 'nutritrack'
+      if (isDemo) navigate('/onboarding')
+      else setError(err.message || 'Login gagal. Periksa email dan password.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <AnimatedPage className="min-h-screen bg-[#f4f7fb] font-sans text-[#071727]">
+      <main className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative hidden items-end overflow-hidden bg-cover bg-center lg:flex" style={{ backgroundImage: "linear-gradient(180deg, rgba(7,23,39,0.08), rgba(7,23,39,0.78)), url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1400&q=80')" }}>
+          <Link className="absolute left-8 top-8 flex items-center gap-3 text-white" to="/">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#007a35]">
+              <MaterialSymbol>nutrition</MaterialSymbol>
+            </span>
+            <span>
+              <strong className="block text-2xl font-black leading-none">NutriTrack</strong>
+              <small className="block text-[10px] uppercase tracking-[0.28em] text-white/70">Pro Companion</small>
+            </span>
+          </Link>
+          <motion.div className="max-w-2xl p-12 text-white" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+            <p className="mb-5 text-sm font-bold uppercase tracking-[0.32em] text-green-200">Welcome back</p>
+            <h1 className="mb-5 text-5xl font-black leading-tight">Lanjutkan tracking nutrisi hari ini.</h1>
+            <p className="text-lg text-white/80">Masuk untuk membuka dashboard, meal planner, log food, progress, dan komunitas dalam satu pengalaman yang sama.</p>
+          </motion.div>
+        </section>
+
+        <section className="flex items-center justify-center px-6 py-12">
+          <div className="w-full max-w-md">
+            <Link className="mb-10 inline-flex items-center gap-3 lg:hidden" to="/">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#007a35] text-white">
+                <MaterialSymbol>nutrition</MaterialSymbol>
+              </span>
+              <span>
+                <strong className="block text-2xl font-black leading-none text-[#007a35]">NutriTrack</strong>
+                <small className="block text-[10px] uppercase tracking-[0.28em] text-slate-500">Pro Companion</small>
+              </span>
+            </Link>
+
+            <motion.div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+              <div className="mb-8">
+                <h2 className="mb-2 text-3xl font-black text-[#071727]">Masuk</h2>
+                <p className="text-slate-500">Gunakan akun demo untuk masuk ke dashboard NutriTrack.</p>
+              </div>
+              <form className="space-y-5" id="loginForm" onSubmit={submit} noValidate>
+                <label className="block">
+                  <span className="text-sm font-bold text-slate-700">Email</span>
+                  <span className="relative mt-2 block">
+                    <MaterialSymbol className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">mail</MaterialSymbol>
+                    <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-4 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" required type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" />
+                  </span>
+                </label>
+                <label className="block">
+                  <span className="text-sm font-bold text-slate-700">Password</span>
+                  <span className="relative mt-2 block">
+                    <MaterialSymbol className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">lock</MaterialSymbol>
+                    <input className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-12 pr-12 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" required type={showPassword ? 'text' : 'password'} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" />
+                    <button className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-[#007a35]" type="button" aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'} onClick={() => setShowPassword((value) => !value)}>
+                      <MaterialSymbol className="text-[20px]">{showPassword ? 'visibility_off' : 'visibility'}</MaterialSymbol>
+                    </button>
+                  </span>
+                </label>
+                <div className="flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2 text-slate-600">
+                    <input checked={remember} className="rounded border-slate-300 text-[#007a35] focus:ring-[#007a35]" type="checkbox" onChange={(event) => setRemember(event.target.checked)} />
+                    Ingat saya
+                  </label>
+                  <Link className="font-bold text-[#007a35] hover:underline" to="/forgot-password">Lupa sandi?</Link>
+                </div>
+                {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700" role="alert">{error}</p>}
+                <button className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#007a35] font-extrabold text-white shadow-lg shadow-green-900/20 transition hover:scale-[1.01] active:scale-[0.99] disabled:cursor-wait disabled:opacity-75" type="submit" disabled={submitting}>
+                  <MaterialSymbol>{submitting ? 'sync' : 'login'}</MaterialSymbol>
+                  {submitting ? 'Memproses...' : 'Masuk ke Onboarding'}
+                </button>
+              </form>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <Link className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#e9f8ef] font-bold text-[#007a35]" to="/">
+                  <MaterialSymbol className="text-[20px]">arrow_back</MaterialSymbol>
+                  Landing
+                </Link>
+                <Link className="flex h-11 items-center justify-center gap-2 rounded-xl bg-slate-100 font-bold text-slate-700" to="/app/dashboard">
+                  <MaterialSymbol className="text-[20px]">dashboard</MaterialSymbol>
+                  Demo
+                </Link>
+              </div>
+              <p className="mt-6 text-center text-sm text-slate-600">Belum punya akun? <Link className="font-extrabold text-[#007a35]" to="/register">Daftar Gratis</Link></p>
+            </motion.div>
+          </div>
+        </section>
+      </main>
+    </AnimatedPage>
+  )
+}
+
 function ForgotPasswordPage() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('alex@nutritrack.app')
@@ -750,53 +880,135 @@ function getRecoveryPasswordStrength(password) {
 }
 
 function OnboardingPage() {
-  const steps = [
-    ['Data Fisik Dasar', '178 cm', '78.5 kg', User],
-    ['Pilih Program', 'Turun Berat Badan', 'Defisit sehat', Flame],
-    ['Target & Timeline', '70 kg', '~30 minggu', TrendingUp],
-    ['Level Aktivitas', 'Sedang', 'TDEE 2.150', Activity],
-    ['Preferensi Makanan', 'Halal Only', 'Indonesia', Apple],
-    ['Jadwal Makan', '07:00 / 12:30 / 19:00', 'Reminder aktif', Bell]
-  ]
+  useEffect(() => {
+    document.title = 'Onboarding - NutriTrack'
+    document.body.className = ''
+  }, [])
+
+  const stepMotionProps = (index) => ({
+    initial: { opacity: 0, y: 18 },
+    animate: { opacity: 1, y: 0 },
+    transition: { delay: index * 0.06, duration: 0.34 }
+  })
+
   return (
-    <AnimatedPage>
-      <PublicHeader />
-      <main className="onboarding-page">
-        <div className="section-heading left">
-          <span className="eyebrow">Self-service onboarding</span>
-          <h1>Setup profil sehatmu</h1>
-          <p>Enam langkah pertama untuk menghitung target kalori, makro, preferensi, dan jadwal makan.</p>
-          <div className="progress-bar">
-            <motion.span initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1.1 }} />
+    <AnimatedPage className="min-h-screen bg-[#f4f7fb] font-sans text-[#071727]">
+      <header className="sticky top-0 z-30 h-16 border-b border-slate-200 bg-white/80 backdrop-blur-xl">
+        <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-6">
+          <Link className="flex items-center gap-3" to="/">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#007a35] text-white">
+              <MaterialSymbol>nutrition</MaterialSymbol>
+            </span>
+            <span className="text-xl font-black text-[#007a35]">NutriTrack</span>
+          </Link>
+          <Link className="text-sm font-bold text-slate-500 transition hover:text-[#007a35]" to="/app/dashboard">Lewati</Link>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <motion.div className="mb-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.28em] text-[#007a35]">Self-service onboarding</p>
+          <h1 className="mb-4 text-4xl font-black md:text-5xl">Setup profil sehatmu</h1>
+          <p className="max-w-2xl text-slate-600">Enam langkah pertama sesuai PRD untuk menghitung target kalori, makro, preferensi, dan jadwal makan.</p>
+          <div className="mt-6 h-3 overflow-hidden rounded-full border border-slate-200 bg-white" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={100}>
+            <motion.div className="h-full rounded-full bg-[#007a35]" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} />
           </div>
-        </div>
-        <div className="onboarding-grid">
-          {steps.map(([title, value, sub, Icon], index) => (
-            <motion.article
-              className="setup-card"
-              key={title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.06 }}
-            >
-              <Icon />
-              <span>Step {index + 1}/6</span>
-              <h3>{title}</h3>
-              <strong>{value}</strong>
-              <p>{sub}</p>
+        </motion.div>
+
+        <section className="grid items-start gap-8 lg:grid-cols-[1fr_360px]">
+          <div className="grid gap-5">
+            <motion.article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1" {...stepMotionProps(0)}>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e9f8ef] font-black text-[#007a35]">1</span>
+                <h2 className="text-xl font-black">Kenali Tubuhmu</h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-4">
+                {['Alex Carter', '29 tahun', '178 cm', '78.5 kg'].map((value) => <input className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" defaultValue={value} key={value} />)}
+              </div>
             </motion.article>
-          ))}
-          <aside className="summary-card">
-            <h2>Rencana sehatmu siap</h2>
-            <Metric label="Target Kalori" value="1,800 kcal" />
-            <Metric label="Protein" value="135 g" />
-            <Metric label="Karbohidrat" value="180 g" />
-            <Metric label="Lemak" value="60 g" />
-            <Link className="primary-link full" to="/app/dashboard">
-              Mulai Perjalananku
-            </Link>
-          </aside>
-        </div>
+
+            <motion.article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1" {...stepMotionProps(1)}>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 font-black text-orange-600">2</span>
+                <h2 className="text-xl font-black">Pilih Program</h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {[
+                  ['Turun Berat Badan', 'Defisit kalori sehat.', 'bg-orange-50 border-orange-100'],
+                  ['Naik Berat Badan', 'Bulking bergizi.', 'bg-blue-50 border-blue-100'],
+                  ['Pola Makan Sehat', 'Seimbang harian.', 'bg-[#e9f8ef] border-green-100']
+                ].map(([title, copy, tone]) => (
+                  <button className={`rounded-2xl border p-5 text-left transition hover:-translate-y-1 ${tone}`} type="button" key={title}>
+                    <b>{title}</b>
+                    <p className="mt-2 text-sm text-slate-600">{copy}</p>
+                  </button>
+                ))}
+              </div>
+            </motion.article>
+
+            <motion.article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1" {...stepMotionProps(2)}>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 font-black text-blue-700">3</span>
+                <h2 className="text-xl font-black">Target & Timeline</h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {['Target 70 kg', 'Normal 0.5 kg/minggu', '~30 minggu'].map((value) => <input className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" defaultValue={value} key={value} />)}
+              </div>
+            </motion.article>
+
+            <motion.article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1" {...stepMotionProps(3)}>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 font-black text-purple-700">4</span>
+                <h2 className="text-xl font-black">Level Aktivitas</h2>
+              </div>
+              <div className="grid gap-3 text-sm md:grid-cols-5">
+                {['Jarang', 'Ringan', 'Sedang', 'Aktif', 'Sangat Aktif'].map((item) => <span className={`rounded-xl p-3 ${item === 'Sedang' ? 'bg-[#007a35] font-bold text-white' : 'bg-slate-50'}`} key={item}>{item}</span>)}
+              </div>
+            </motion.article>
+
+            <motion.article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1" {...stepMotionProps(4)}>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 font-black text-[#007a35]">5</span>
+                <h2 className="text-xl font-black">Preferensi Makanan</h2>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <span className="rounded-full bg-[#007a35] px-4 py-2 font-bold text-white">Halal Only</span>
+                <span className="rounded-full bg-[#e9f8ef] px-4 py-2 font-bold text-[#007a35]">Masakan Indonesia</span>
+                <span className="rounded-full bg-slate-100 px-4 py-2">Tidak ada alergi</span>
+                <span className="rounded-full bg-slate-100 px-4 py-2">Omnivora</span>
+              </div>
+            </motion.article>
+
+            <motion.article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1" {...stepMotionProps(5)}>
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 font-black text-sky-700">6</span>
+                <h2 className="text-xl font-black">Jadwal & Notifikasi</h2>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {['Sarapan 07:00', 'Lunch 12:30', 'Dinner 19:00'].map((value) => <input className="h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10" defaultValue={value} key={value} />)}
+              </div>
+            </motion.article>
+          </div>
+
+          <motion.aside className="sticky top-24 rounded-[32px] border border-slate-200 bg-white p-7 shadow-xl" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.16 }}>
+            <p className="mb-3 text-xs font-extrabold uppercase tracking-[0.22em] text-[#007a35]">Rencana siap</p>
+            <h2 className="mb-5 text-2xl font-black">Target harian</h2>
+            <div className="space-y-3 text-sm">
+              {[
+                ['Kalori', '1,800 kcal'],
+                ['Protein', '135 g'],
+                ['Karbohidrat', '180 g'],
+                ['Lemak', '60 g']
+              ].map(([label, value]) => (
+                <div className="flex justify-between" key={label}>
+                  <span>{label}</span>
+                  <b>{value}</b>
+                </div>
+              ))}
+            </div>
+            <Link className="mt-7 flex h-12 items-center justify-center rounded-2xl bg-[#007a35] font-extrabold text-white transition hover:scale-[1.01] active:scale-[0.99]" to="/app/dashboard">Mulai Perjalananku</Link>
+          </motion.aside>
+        </section>
       </main>
     </AnimatedPage>
   )
@@ -4455,17 +4667,94 @@ function StaticPage({ type }) {
   )
 }
 
-function SplashPage() {
+const legalPageCopy = {
+  privacy: {
+    title: 'Kebijakan Privasi',
+    label: 'Privacy',
+    intro: 'Halaman frontend statis ini merangkum bagaimana NutriTrack akan menangani data pengguna saat backend Supabase diintegrasikan.',
+    navLabel: 'Terms',
+    navTo: '/terms',
+    documentTitle: 'Kebijakan Privasi - NutriTrack',
+    sections: [
+      ['Data yang Dikumpulkan', 'Profil, target berat badan, log makanan, jadwal makan, notifikasi, dan preferensi makanan.'],
+      ['Penggunaan Data', 'Data digunakan untuk menghitung BMR, TDEE, target kalori, analisis nutrisi, dan rekomendasi meal plan.'],
+      ['Kontrol Pengguna', 'Pengguna dapat memperbarui profil, preferensi, notifikasi, dan menghapus data melalui pengaturan aplikasi.']
+    ]
+  },
+  terms: {
+    title: 'Syarat & Ketentuan',
+    label: 'Terms',
+    intro: 'NutriTrack adalah alat bantu manajemen nutrisi. Konten di aplikasi bukan pengganti konsultasi medis profesional.',
+    navLabel: 'Privacy',
+    navTo: '/privacy',
+    documentTitle: 'Syarat & Ketentuan - NutriTrack',
+    sections: [
+      ['Penggunaan Aplikasi', 'Pengguna bertanggung jawab memastikan data yang dimasukkan akurat agar perhitungan target lebih relevan.'],
+      ['Batasan Layanan', 'Rekomendasi makanan dan target kalori bersifat informatif dan perlu disesuaikan dengan kondisi pribadi.'],
+      ['Akun dan Keamanan', 'Jaga kredensial akun dan segera ubah kata sandi bila ada aktivitas yang mencurigakan.']
+    ]
+  }
+}
+
+function LegalPage({ type }) {
+  const page = legalPageCopy[type]
+  useEffect(() => {
+    document.title = page.documentTitle
+    document.body.className = ''
+  }, [page.documentTitle])
+
   return (
-    <AnimatedPage className="splash-page">
-      <motion.div className="splash-logo" animate={{ rotate: [0, 8, -8, 0], scale: [1, 1.08, 1] }} transition={{ repeat: Infinity, duration: 2.4 }}>
-        <Apple size={58} />
-      </motion.div>
-      <h1>NutriTrack</h1>
-      <p>Halo, Alex. Mari mulai perjalananmu.</p>
-      <Link className="primary-link" to="/onboarding">
-        Lanjut Onboarding
-      </Link>
+    <AnimatedPage className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      <header className="sticky top-0 z-40 h-16 border-b bg-white">
+        <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-6">
+          <Link className="text-2xl font-black text-green-700" to="/">NutriTrack</Link>
+          <nav className="flex gap-5 text-sm font-bold" aria-label="Navigasi legal">
+            <Link className="transition hover:text-green-700" to="/login">Login</Link>
+            <Link className="transition hover:text-green-700" to={page.navTo}>{page.navLabel}</Link>
+          </nav>
+        </div>
+      </header>
+      <main className="mx-auto max-w-5xl px-6 py-14">
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
+          <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.28em] text-green-700">{page.label}</p>
+          <h1 className="mb-6 text-4xl font-black">{page.title}</h1>
+          <p className="mb-10 max-w-3xl text-slate-600">{page.intro}</p>
+        </motion.div>
+        <div className="grid gap-5">
+          {page.sections.map(([title, body], index) => (
+            <motion.section className="rounded-3xl border bg-white p-7 shadow-sm transition hover:-translate-y-1" key={title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}>
+              <h2 className="mb-3 text-xl font-black">{title}</h2>
+              <p className="text-slate-600">{body}</p>
+            </motion.section>
+          ))}
+        </div>
+      </main>
+    </AnimatedPage>
+  )
+}
+
+function SplashPage() {
+  const [highlighted, setHighlighted] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Splash - NutriTrack'
+    document.body.className = ''
+    const timer = window.setTimeout(() => setHighlighted(true), 1200)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  return (
+    <AnimatedPage className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-100 px-6 font-sans">
+      <main className="text-center">
+        <motion.div className="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-[32px] bg-[#007a35] text-white shadow-2xl shadow-green-900/20" animate={{ scale: [1, 1.08, 1], rotate: [0, 8, 0] }} transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+          <MaterialSymbol className="text-7xl">nutrition</MaterialSymbol>
+        </motion.div>
+        <motion.h1 className="mb-3 text-4xl font-black text-[#007a35]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>NutriTrack</motion.h1>
+        <motion.p className="mb-8 text-slate-600" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Halo, Alex. Mari mulai perjalanan sehatmu.</motion.p>
+        <Link className={`inline-flex rounded-2xl bg-[#007a35] px-7 py-3 font-extrabold text-white transition hover:scale-105 active:scale-95 ${highlighted ? 'ring-4 ring-green-200' : ''}`} to="/onboarding">
+          Lanjut Onboarding
+        </Link>
+      </main>
     </AnimatedPage>
   )
 }
@@ -4476,6 +4765,14 @@ export default function App() {
 
   if (location.pathname.startsWith('/app') || location.pathname === '/help') {
     return <ProAppLayout />
+  }
+
+  if (location.pathname === '/login') {
+    return (
+      <AnimatePresence mode="wait">
+        <LoginPage key={location.pathname} />
+      </AnimatePresence>
+    )
   }
 
   if (location.pathname === '/forgot-password') {
@@ -4490,6 +4787,38 @@ export default function App() {
     return (
       <AnimatePresence mode="wait">
         <ResetPasswordPage key={location.pathname} />
+      </AnimatePresence>
+    )
+  }
+
+  if (location.pathname === '/onboarding') {
+    return (
+      <AnimatePresence mode="wait">
+        <OnboardingPage key={location.pathname} />
+      </AnimatePresence>
+    )
+  }
+
+  if (location.pathname === '/privacy') {
+    return (
+      <AnimatePresence mode="wait">
+        <LegalPage key={location.pathname} type="privacy" />
+      </AnimatePresence>
+    )
+  }
+
+  if (location.pathname === '/terms') {
+    return (
+      <AnimatePresence mode="wait">
+        <LegalPage key={location.pathname} type="terms" />
+      </AnimatePresence>
+    )
+  }
+
+  if (location.pathname === '/splash') {
+    return (
+      <AnimatePresence mode="wait">
+        <SplashPage key={location.pathname} />
       </AnimatePresence>
     )
   }
