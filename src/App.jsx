@@ -550,6 +550,205 @@ function PasswordStrength() {
   )
 }
 
+function AuthRecoveryShell({ title, children }) {
+  useEffect(() => {
+    document.title = `${title} - NutriTrack`
+    document.body.className = ''
+  }, [title])
+
+  return (
+    <AnimatedPage className="min-h-screen bg-[#f4f7fb] px-6 py-10 font-sans text-[#071727]">
+      <div className="flex min-h-[calc(100vh-5rem)] items-center justify-center">
+        <motion.main
+          className="w-full max-w-md rounded-[32px] border border-slate-200 bg-white p-8 shadow-xl"
+          initial={{ opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {children}
+        </motion.main>
+      </div>
+    </AnimatedPage>
+  )
+}
+
+function AuthRecoveryLogo() {
+  return (
+    <Link className="mb-8 inline-flex items-center gap-3" to="/" aria-label="Kembali ke halaman utama NutriTrack">
+      <span className="material-symbols-outlined flex h-11 w-11 items-center justify-center rounded-xl bg-[#007a35] text-white">nutrition</span>
+      <span className="text-2xl font-black text-[#007a35]">NutriTrack</span>
+    </Link>
+  )
+}
+
+function ForgotPasswordPage() {
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('alex@nutritrack.app')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  function submit(event) {
+    event.preventDefault()
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Masukkan email yang valid.')
+      return
+    }
+
+    setError('')
+    setSubmitting(true)
+    window.setTimeout(() => navigate('/reset-password'), 320)
+  }
+
+  return (
+    <AuthRecoveryShell title="Forgot Password">
+      <AuthRecoveryLogo />
+      <h1 className="mb-3 text-3xl font-black">Lupa Kata Sandi</h1>
+      <p className="mb-7 text-slate-600">Masukkan email untuk menerima link reset. Demo frontend akan membuka halaman reset langsung.</p>
+
+      <form className="space-y-5" id="forgotForm" onSubmit={submit} noValidate>
+        <label className="block">
+          <span className="text-sm font-bold text-slate-700">Email</span>
+          <input
+            className={`mt-2 h-12 w-full rounded-2xl border bg-slate-50 px-4 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10 ${error ? 'border-red-400' : 'border-slate-200'}`}
+            required
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            inputMode="email"
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? 'forgot-email-error' : undefined}
+          />
+          {error && <p className="mt-2 text-sm font-bold text-red-600" id="forgot-email-error">{error}</p>}
+        </label>
+
+        <button className="h-12 w-full rounded-2xl bg-[#007a35] font-extrabold text-white shadow-lg shadow-green-900/10 transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75" type="submit" disabled={submitting}>
+          {submitting ? 'Mengirim...' : 'Kirim Link Reset'}
+        </button>
+      </form>
+
+      <Link className="mt-5 inline-flex items-center gap-2 rounded-lg font-bold text-[#007a35] transition hover:underline focus:outline-none focus:ring-4 focus:ring-green-900/10" to="/login">
+        <ArrowLeft size={17} />
+        Kembali ke login
+      </Link>
+    </AuthRecoveryShell>
+  )
+}
+
+function ResetPasswordPage() {
+  const navigate = useNavigate()
+  const [password, setPassword] = useState('nutritrack')
+  const [confirmation, setConfirmation] = useState('nutritrack')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const strength = getRecoveryPasswordStrength(password)
+
+  function submit(event) {
+    event.preventDefault()
+    if (password.length < 8) {
+      setError('Password minimal 8 karakter.')
+      return
+    }
+    if (password !== confirmation) {
+      setError('Konfirmasi password tidak sama.')
+      return
+    }
+
+    setError('')
+    setSubmitting(true)
+    window.setTimeout(() => navigate('/login'), 320)
+  }
+
+  return (
+    <AuthRecoveryShell title="Reset Password">
+      <AuthRecoveryLogo />
+      <h1 className="mb-3 text-3xl font-black">Reset Kata Sandi</h1>
+      <p className="mb-7 text-slate-600">Buat password baru untuk akun NutriTrack.</p>
+
+      <form className="space-y-5" id="resetForm" onSubmit={submit} noValidate>
+        <RecoveryPasswordInput
+          id="new-password"
+          label="Password baru"
+          placeholder="Password baru"
+          value={password}
+          visible={showPassword}
+          onChange={setPassword}
+          onToggle={() => setShowPassword((current) => !current)}
+        />
+        <RecoveryPasswordInput
+          id="confirm-password"
+          label="Konfirmasi password"
+          placeholder="Konfirmasi password"
+          value={confirmation}
+          visible={showConfirmation}
+          onChange={setConfirmation}
+          onToggle={() => setShowConfirmation((current) => !current)}
+        />
+
+        <div className="grid grid-cols-5 gap-2" aria-label={`Kekuatan password ${strength} dari 5`}>
+          {[0, 1, 2, 3, 4].map((item) => (
+            <motion.span
+              className={`h-2 rounded-full ${item < strength ? 'bg-[#007a35]' : 'bg-slate-200'}`}
+              key={item}
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: item * 0.04, duration: 0.22 }}
+            />
+          ))}
+        </div>
+
+        {error && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700" role="alert">{error}</p>}
+
+        <button className="h-12 w-full rounded-2xl bg-[#007a35] font-extrabold text-white shadow-lg shadow-green-900/10 transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75" type="submit" disabled={submitting}>
+          {submitting ? 'Menyimpan...' : 'Simpan Password'}
+        </button>
+      </form>
+    </AuthRecoveryShell>
+  )
+}
+
+function RecoveryPasswordInput({ id, label, placeholder, value, visible, onChange, onToggle }) {
+  return (
+    <label className="block" htmlFor={id}>
+      <span className="sr-only">{label}</span>
+      <span className="relative block">
+        <input
+          className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 pr-12 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10"
+          id={id}
+          required
+          type={visible ? 'text' : 'password'}
+          placeholder={placeholder}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          autoComplete="new-password"
+        />
+        <button
+          className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-[#007a35]"
+          type="button"
+          aria-label={visible ? `Sembunyikan ${label}` : `Tampilkan ${label}`}
+          onClick={onToggle}
+        >
+          {visible ? <Eye size={18} /> : <Lock size={18} />}
+        </button>
+      </span>
+    </label>
+  )
+}
+
+function getRecoveryPasswordStrength(password) {
+  let score = 0
+  if (!password) return 0
+  if (password.length >= 8) score += 2
+  if (/[a-z]/.test(password)) score += 1
+  if (/[A-Z]/.test(password)) score += 1
+  if (/\d/.test(password)) score += 1
+  if (/[^A-Za-z0-9]/.test(password)) score += 1
+  if (!/\s/.test(password)) score += 1
+  return Math.min(score, 5)
+}
+
 function OnboardingPage() {
   const steps = [
     ['Data Fisik Dasar', '178 cm', '78.5 kg', User],
@@ -4277,6 +4476,22 @@ export default function App() {
 
   if (location.pathname.startsWith('/app') || location.pathname === '/help') {
     return <ProAppLayout />
+  }
+
+  if (location.pathname === '/forgot-password') {
+    return (
+      <AnimatePresence mode="wait">
+        <ForgotPasswordPage key={location.pathname} />
+      </AnimatePresence>
+    )
+  }
+
+  if (location.pathname === '/reset-password') {
+    return (
+      <AnimatePresence mode="wait">
+        <ResetPasswordPage key={location.pathname} />
+      </AnimatePresence>
+    )
   }
 
   return (
