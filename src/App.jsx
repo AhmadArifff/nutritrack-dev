@@ -458,7 +458,7 @@ function AuthLayout({ mode }) {
     if (isRegister) navigate('/verify-email')
     else if (isForgot) navigate('/reset-password')
     else if (isReset) navigate('/login')
-    else navigate('/app/dashboard')
+    else navigate('/onboarding')
   }
 
   return (
@@ -992,7 +992,7 @@ const proPageMeta = {
   '/app/community': { title: 'Community Hub', subtitle: 'Tuesday, October 24', search: 'Search buddies or challenges...' },
   '/app/profile': { title: 'Profile Detail', subtitle: 'Alex Rivera', search: 'Search metrics, meals, or friends...' },
   '/app/settings': { title: 'Settings', subtitle: 'Atur preferensi akun dan pengalaman NutriTrack Anda.', search: 'Search settings...' },
-  '/app/notifications': { title: 'Notifications', subtitle: 'Your wellness journey is 85% on track this week.', search: 'Search analytics...' },
+  '/app/notifications': { title: 'Notifications', subtitle: 'Activity Hub', search: 'Search notifications...' },
   '/help': { title: 'Help Center', subtitle: 'Apa yang bisa kami bantu?', search: 'Cari di pusat bantuan...' }
 }
 
@@ -1013,6 +1013,7 @@ const proRoutes = {
 
 function ProAppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [activityHubOpen, setActivityHubOpen] = useState(false)
   const [auth, setAuth] = useState(() => getStoredAuth())
   const [shellData, setShellData] = useState({
     me: null,
@@ -1184,10 +1185,10 @@ function ProAppLayout() {
                 <Search size={18} />
                 <input className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm outline-none ring-0 focus:ring-0" placeholder={meta.search} />
               </label>
-              <Link className="relative grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" to="/app/notifications?open=activity">
+              <button className="relative grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" onClick={() => setActivityHubOpen(true)} type="button" aria-label="Open notifications">
                 <Bell size={20} />
                 {(shellData.notifications || []).some((item) => item.status === 'unread') && <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-error-red ring-2 ring-surface" />}
-              </Link>
+              </button>
               <Link className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" to="/app/settings">
                 <Settings size={20} />
               </Link>
@@ -1238,6 +1239,7 @@ function ProAppLayout() {
 
         <ProAppRoutes shellData={shellData} />
       </div>
+      <ActivityHubDrawer shellData={shellData} open={activityHubOpen} onClose={() => setActivityHubOpen(false)} />
     </div>
   )
 }
@@ -3137,7 +3139,7 @@ function ProProfilePage() {
       <div className="space-y-8 pb-28">
         <ProfileHero user={user} />
 
-        <div className="mt-24 grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-6">
           <ProfileBioCard user={user} />
           <ProfileHealthStatsCard />
           <ProfileRecordsCard />
@@ -3159,37 +3161,34 @@ function ProProfilePage() {
 
 function ProfileHero({ user }) {
   return (
-    <section className="relative">
+    <section className="relative pb-6">
       <motion.div className="relative h-72 w-full overflow-hidden rounded-[2rem] shadow-lg" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
         <img className="h-full w-full object-cover" src={user.bannerUrl} alt="Profile Banner" loading="lazy" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
       </motion.div>
 
-      <div className="absolute -bottom-12 left-4 right-4 flex flex-col gap-4 sm:left-10 sm:right-auto sm:flex-row sm:items-end sm:gap-6">
-        <motion.div className="relative z-10 h-32 w-32 overflow-hidden rounded-[2rem] border-4 border-white bg-surface shadow-2xl sm:h-44 sm:w-44 sm:rounded-[2.5rem]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.35 }}>
+      <motion.div className="relative z-10 mx-4 -mt-14 flex flex-col gap-5 rounded-[2rem] border border-outline-variant/30 bg-white/95 p-5 shadow-2xl shadow-slate-900/10 backdrop-blur-xl sm:mx-10 sm:flex-row sm:items-end sm:gap-6 sm:p-6" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.35 }}>
+        <div className="h-32 w-32 flex-shrink-0 overflow-hidden rounded-[2rem] border-4 border-white bg-surface shadow-xl sm:h-40 sm:w-40 sm:rounded-[2.5rem]">
           <img className="h-full w-full object-cover" src={user.avatarUrl} alt={user.name} loading="lazy" />
-        </motion.div>
-        <div className="mb-2 space-y-1 sm:mb-6">
+        </div>
+        <div className="min-w-0 flex-1 space-y-2 pb-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="font-headline-lg text-3xl font-bold text-white drop-shadow-md md:text-headline-lg">{user.name}</h2>
-            <span className="flex items-center gap-1 rounded-full border border-achievement-purple/40 bg-achievement-purple/20 px-3 py-1 text-[10px] font-bold tracking-widest text-achievement-purple shadow-sm backdrop-blur-md">
+            <h2 className="font-headline-lg text-3xl font-bold text-on-surface md:text-headline-lg">{user.name}</h2>
+            <span className="flex items-center gap-1 rounded-full border border-achievement-purple/30 bg-achievement-purple/10 px-3 py-1 text-[10px] font-bold tracking-widest text-achievement-purple shadow-sm">
               <Check size={14} />
               PRO MEMBER
             </span>
           </div>
-          <p className="flex items-center gap-2 text-white/90 drop-shadow-sm">
+          <p className="flex items-center gap-2 text-on-surface-variant">
             <MapPin size={18} />
             {user.location} - Joined {user.joined}
           </p>
         </div>
-      </div>
-
-      <div className="absolute bottom-6 right-4 hidden sm:right-10 sm:block">
-        <button className="flex items-center gap-2 rounded-2xl bg-primary px-8 py-3 font-bold text-on-primary shadow-xl transition-all hover:scale-105 active:scale-95" type="button" aria-label="Edit profile">
+        <button className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-3 font-bold text-on-primary shadow-xl transition-all hover:scale-105 active:scale-95" type="button" aria-label="Edit profile">
           <Edit3 size={20} />
           Edit Profile
         </button>
-      </div>
+      </motion.div>
     </section>
   )
 }
@@ -3575,14 +3574,12 @@ function SettingsSwitch({ checked, onChange }) {
   )
 }
 
-function ProNotificationsPage({ shellData }) {
+function ActivityHubDrawer({ shellData, open, onClose }) {
   const { data: notifications, setData: setNotifications } = useBackendData(
     () => apiRequest('/api/notifications?limit=20'),
     shellData?.notifications || [],
     [shellData?.notifications?.length]
   )
-  const location = useLocation()
-  const [drawerOpen, setDrawerOpen] = useState(true)
   const [activeFilter, setActiveFilter] = useState('all')
   const [localReadIds, setLocalReadIds] = useState([])
   const referenceNotifications = useMemo(
@@ -3669,14 +3666,10 @@ function ProNotificationsPage({ shellData }) {
   }, {})
 
   useEffect(() => {
-    if (location.search.includes('open=activity')) setDrawerOpen(true)
-  }, [location.search])
-
-  useEffect(() => {
-    if (!drawerOpen) return undefined
+    if (!open) return undefined
     const originalOverflow = document.body.style.overflow
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setDrawerOpen(false)
+      if (event.key === 'Escape') onClose()
     }
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleKeyDown)
@@ -3684,7 +3677,7 @@ function ProNotificationsPage({ shellData }) {
       document.body.style.overflow = originalOverflow
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [drawerOpen])
+  }, [onClose, open])
 
   const markAllRead = async () => {
     const unread = notifications.filter((item) => item.status === 'unread')
@@ -3697,39 +3690,10 @@ function ProNotificationsPage({ shellData }) {
     setLocalReadIds(hubItems.map((item) => item.id))
   }
 
-  return (
-    <ProPage title="Notifications" subtitle="Your wellness journey is 85% on track this week." showHeader={false}>
-      <section aria-hidden={drawerOpen} className={`mx-auto max-w-5xl transition-opacity duration-300 ${drawerOpen ? 'opacity-40' : 'opacity-100'}`}>
-        <header className="mb-8">
-          <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Good Morning, Alex</h2>
-          <p className="mt-2 text-body-lg text-on-surface-variant">Your wellness journey is 85% on track this week.</p>
-        </header>
-
-        <div className="grid select-none grid-cols-1 gap-6 pointer-events-none md:grid-cols-3">
-          {[
-            [Activity, 'Daily energy', '85%', 'bg-primary/20 text-primary', 'bg-primary/40'],
-            [Droplets, 'Hydration', '7/8', 'bg-secondary/20 text-secondary', 'bg-secondary/40'],
-            [Dumbbell, 'Streak', '12d', 'bg-achievement-purple/20 text-achievement-purple', 'bg-achievement-purple/40']
-          ].map(([Icon, label, value, iconClass, pillClass]) => (
-            <motion.article className="rounded-3xl border border-outline-variant bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} key={label}>
-              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${iconClass}`}>
-                <Icon size={24} />
-              </div>
-              <div className="mb-3 h-4 w-28 rounded-full bg-surface-variant" />
-              <div className={`inline-flex h-9 items-center rounded-full px-4 font-metrics-mono text-lg font-black text-on-surface ${pillClass}`}>{value}</div>
-            </motion.article>
-          ))}
-        </div>
-      </section>
-
-      <button className="fixed bottom-8 right-8 z-20 grid h-14 w-14 place-items-center rounded-full bg-primary text-on-primary shadow-2xl transition-all hover:scale-110 active:scale-95 md:hidden" onClick={() => setDrawerOpen(true)} type="button" aria-label="Open activity hub">
-        <Plus size={32} />
-      </button>
-
-      {createPortal(
+  return createPortal(
         <>
           <AnimatePresence>
-            {drawerOpen && (
+            {open && (
               <motion.button
                 aria-label="Close activity hub backdrop"
                 className="fixed inset-0 z-50 bg-on-background/20 backdrop-blur-sm"
@@ -3737,7 +3701,7 @@ function ProNotificationsPage({ shellData }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                onClick={() => setDrawerOpen(false)}
+                onClick={onClose}
                 type="button"
               />
             )}
@@ -3748,7 +3712,7 @@ function ProNotificationsPage({ shellData }) {
             aria-modal="true"
             className="fixed right-0 top-0 z-[60] flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
             initial={false}
-            animate={{ x: drawerOpen ? 0 : '100%' }}
+            animate={{ x: open ? 0 : '100%' }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             role="dialog"
           >
@@ -3757,7 +3721,7 @@ function ProNotificationsPage({ shellData }) {
                 <h3 id="activity-hub-title" className="font-headline-md text-headline-md font-bold text-on-surface">Activity Hub</h3>
                 <p className="font-label-sm text-label-sm text-outline">Manage your health alerts &amp; stats</p>
               </div>
-              <button className="rounded-full p-2 text-on-surface transition-colors hover:bg-surface-container active:scale-90" onClick={() => setDrawerOpen(false)} type="button" aria-label="Close notifications">
+              <button className="rounded-full p-2 text-on-surface transition-colors hover:bg-surface-container active:scale-90" onClick={onClose} type="button" aria-label="Close notifications">
                 <X size={22} />
               </button>
             </div>
@@ -3806,7 +3770,15 @@ function ProNotificationsPage({ shellData }) {
           </motion.aside>
         </>,
         document.body
-      )}
+      )
+}
+
+function ProNotificationsPage({ shellData }) {
+  const navigate = useNavigate()
+  return (
+    <ProPage title="Notifications" subtitle="Activity Hub" showHeader={false}>
+      <div className="min-h-[50vh]" />
+      <ActivityHubDrawer shellData={shellData} open onClose={() => navigate('/app/dashboard')} />
     </ProPage>
   )
 }
@@ -4168,8 +4140,8 @@ function ReferencePage({ html }) {
         if (form.id === 'loginForm') {
           const { email, password } = getFormFields(form)
           await login(email, password === 'nutritrack' ? 'nutritrack123' : password)
-          showFormMessage(form, 'Login berhasil. Mengalihkan ke dashboard...')
-          navigate('/app/dashboard')
+          showFormMessage(form, 'Login berhasil. Mengalihkan ke onboarding...')
+          navigate('/onboarding')
         } else if (form.id === 'registerForm') {
           const { fullName, email, password, confirmation } = getFormFields(form)
           if (password !== confirmation) throw new Error('Konfirmasi password belum sama.')
@@ -4178,7 +4150,7 @@ function ReferencePage({ html }) {
           navigate('/onboarding')
         } else if (form.id === 'forgotForm') navigate('/verify-email')
         else if (form.id === 'resetForm') navigate('/login')
-        else navigate('/app/dashboard')
+        else navigate('/onboarding')
       } catch (err) {
         showFormMessage(form, err.message || 'Proses gagal.', true)
       } finally {
