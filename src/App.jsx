@@ -965,7 +965,7 @@ const proPageMeta = {
   '/app/log-food': { title: 'Daily Food Log', subtitle: 'Tuesday, October 24th, 2023', search: 'Search foods...' },
   '/app/meal-planner': { title: 'Meal Architecture', subtitle: 'Weekly Plan', search: 'Search recipes or ingredients...' },
   '/app/progress': { title: 'Weight Journey', subtitle: "You've lost 2.4kg in the last 30 days. Stay consistent!", search: 'Search data...' },
-  '/app/nutrition': { title: 'Nutrition Insights', subtitle: 'Macro, hydration, and micronutrient balance', search: 'Search nutrients...' },
+  '/app/nutrition': { title: 'Nutrition Analysis', subtitle: 'Macro, vitamin, mineral, and hydration', search: 'Search nutrients...' },
   '/app/foods': { title: 'Food Database', subtitle: 'Verified meals and quick logging', search: 'Search foods...' },
   '/app/foods/gado-gado': { title: 'Food Detail', subtitle: 'Gado-gado nutrition breakdown', search: 'Search foods...' },
   '/app/community': { title: 'Community Hub', subtitle: 'Challenges, buddies, and streaks', search: 'Search buddies...' },
@@ -1194,23 +1194,25 @@ function ProAppRoutes({ shellData }) {
   )
 }
 
-function ProPage({ children, action, eyebrow = 'NutriTrack PWA', title, subtitle }) {
+function ProPage({ children, action, eyebrow = 'NutriTrack PWA', title, subtitle, showHeader = true, wide = false }) {
   return (
     <motion.main
-      className="mx-auto grid max-w-[1280px] gap-7 px-5 py-7 pb-24 lg:px-8"
+      className={`mx-auto grid ${wide ? 'max-w-[1400px]' : 'max-w-[1280px]'} gap-7 px-5 py-7 pb-24 lg:px-8`}
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
     >
-      <section className="pro-section-header flex flex-col gap-4 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest/80 p-5 shadow-sm backdrop-blur-xl md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
-          <h2 className="mt-2 font-headline-md text-3xl font-black text-on-background">{title}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-on-surface-variant">{subtitle}</p>
-        </div>
-        {action}
-      </section>
+      {showHeader ? (
+        <section className="pro-section-header flex flex-col gap-4 rounded-2xl border border-outline-variant/30 bg-surface-container-lowest/80 p-5 shadow-sm backdrop-blur-xl md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
+            <h2 className="mt-2 font-headline-md text-3xl font-black text-on-background">{title}</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-on-surface-variant">{subtitle}</p>
+          </div>
+          {action}
+        </section>
+      ) : null}
       {children}
     </motion.main>
   )
@@ -2485,35 +2487,114 @@ function ProgressHistoryItem({ log }) {
 }
 
 function ProNutritionPage() {
+  const [waterCups, setWaterCups] = useState(6)
+  const macroItems = [
+    { name: 'Protein', current: 120, target: 180, unit: 'g', color: '#006e2f' },
+    { name: 'Carbs', current: 210, target: 300, unit: 'g', color: '#0058be' },
+    { name: 'Fat', current: 45, target: 75, unit: 'g', color: '#f97316' },
+    { name: 'Fiber', current: 22, target: 35, unit: 'g', color: '#047857' }
+  ]
+  const nutrientItems = [
+    { name: 'Vitamin C', percent: 82, color: '#006e2f' },
+    { name: 'Calcium', percent: 64, color: '#0058be' },
+    { name: 'Iron', percent: 51, color: '#f97316' },
+    { name: 'Magnesium', percent: 76, color: '#9333ea' }
+  ]
+
   return (
-    <ProPage title="Nutrition Analysis" subtitle="3D macro focus, hydration, vitamins, and mineral goals." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Export Report</button>}>
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <ProPanel className="min-h-[420px]">
-          <h3 className="text-2xl font-black">Macro Distribution</h3>
-          <div className="mt-4 h-[320px] rounded-[1.25rem] bg-gradient-to-br from-mint to-secondary-fixed">
-            <FloatingNutritionScene />
+    <ProPage title="Nutrition Analysis" subtitle="Macro, vitamin, mineral, and hydration" showHeader={false} wide>
+      <motion.div className="space-y-8 pb-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <NutritionGlassCard className="lg:col-span-4">
+            <p className="mb-2 text-label-md font-medium text-on-surface-variant">Daily Macro Split</p>
+            <h1 className="mb-8 font-headline-lg text-headline-lg font-bold text-on-surface">2,100 kcal</h1>
+            <motion.div className="relative mx-auto flex h-64 w-64 max-w-full items-center justify-center rounded-full" initial={{ rotate: -16, scale: 0.92 }} animate={{ rotate: 0, scale: 1 }} transition={{ duration: 0.8, ease: 'easeOut' }} style={{ background: 'conic-gradient(#006e2f 0% 40%, #0058be 40% 72%, #f97316 72% 92%, #dce9ff 92% 100%)' }}>
+              <div className="flex h-36 w-36 flex-col items-center justify-center rounded-full bg-white shadow-inner">
+                <b className="text-3xl font-black text-primary">92%</b>
+                <span className="text-xs font-medium text-on-surface-variant">target</span>
+              </div>
+            </motion.div>
+            <div className="mt-8 grid grid-cols-2 gap-3 text-label-sm text-on-surface-variant">
+              {[
+                ['Protein', '#006e2f'],
+                ['Carbs', '#0058be'],
+                ['Fat', '#f97316'],
+                ['Remaining', '#dce9ff']
+              ].map(([label, color]) => (
+                <div className="flex items-center gap-2" key={label}>
+                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+          </NutritionGlassCard>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:col-span-8">
+            {macroItems.map((item, index) => (
+              <NutritionMacroCard item={item} index={index} key={item.name} />
+            ))}
           </div>
-        </ProPanel>
-        <div className="grid gap-5">
-          {[
-            ['Protein', '120g', 72, '#9e4036'],
-            ['Carbs', '210g', 68, '#0058be'],
-            ['Hydration', '6/8 cups', 75, '#2170e4'],
-            ['Vitamin C', '82%', 82, '#f97316']
-          ].map(([label, value, pct, color]) => (
-            <ProPanel className="p-4" key={label}>
-              <div className="flex items-center justify-between">
-                <p className="font-black">{label}</p>
-                <p className="font-metrics-mono font-black">{value}</p>
-              </div>
-              <div className="mt-3 h-3 overflow-hidden rounded-full bg-surface-container">
-                <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${pct}%` }} style={{ backgroundColor: color }} transition={{ duration: 0.9 }} />
-              </div>
-            </ProPanel>
-          ))}
-        </div>
-      </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-3">
+          <NutritionGlassCard className="lg:col-span-2">
+            <h3 className="mb-6 font-headline-md text-headline-md font-bold text-on-surface">Vitamin & Mineral Tracker</h3>
+            <div className="grid gap-5 text-sm md:grid-cols-2">
+              {nutrientItems.map((item, index) => (
+                <div key={item.name}>
+                  <div className="mb-2 flex items-center justify-between gap-4">
+                    <b className="text-on-surface">{item.name}</b>
+                    <span className="font-metrics-mono font-bold text-on-surface-variant">{item.percent}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-surface-container" role="progressbar" aria-label={item.name} aria-valuemin={0} aria-valuemax={100} aria-valuenow={item.percent}>
+                    <motion.div className="h-full rounded-full" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ width: `${item.percent}%`, backgroundColor: item.color, transformOrigin: 'left center' }} transition={{ delay: 0.1 + index * 0.08, duration: 0.75, ease: 'easeOut' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </NutritionGlassCard>
+
+          <NutritionGlassCard className="bg-mint-surface">
+            <motion.div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary" animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2.6, ease: 'easeInOut' }}>
+              <Droplets size={42} />
+            </motion.div>
+            <h3 className="mt-5 font-headline-md text-headline-md font-bold text-on-surface">Hydration</h3>
+            <p className="mb-5 mt-2 text-on-surface-variant">{waterCups} dari 8 gelas tercatat hari ini.</p>
+            <div className="mb-5 h-3 overflow-hidden rounded-full bg-white/80" role="progressbar" aria-label="Hydration" aria-valuemin={0} aria-valuemax={8} aria-valuenow={waterCups}>
+              <motion.div className="h-full rounded-full bg-primary" animate={{ width: `${Math.min(100, (waterCups / 8) * 100)}%` }} transition={{ duration: 0.45, ease: 'easeOut' }} />
+            </div>
+            <button className="w-full rounded-xl bg-primary py-3 font-bold text-white shadow-[0_12px_24px_rgba(0,110,47,0.18)] transition hover:-translate-y-0.5 hover:bg-primary-dark active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70" type="button" disabled={waterCups >= 8} onClick={() => setWaterCups((value) => Math.min(8, value + 1))}>
+              Tambah Gelas
+            </button>
+          </NutritionGlassCard>
+        </section>
+      </motion.div>
     </ProPage>
+  )
+}
+
+function NutritionGlassCard({ children, className = '' }) {
+  return (
+    <motion.div className={`rounded-[2rem] border border-outline-variant/55 bg-white/85 p-6 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur-xl md:p-8 ${className}`} whileHover={{ y: -3 }} transition={{ duration: 0.25 }}>
+      {children}
+    </motion.div>
+  )
+}
+
+function NutritionMacroCard({ item, index }) {
+  const progress = Math.min(100, (item.current / item.target) * 100)
+
+  return (
+    <NutritionGlassCard className="min-h-[172px]">
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <b className="text-lg text-on-surface">{item.name}</b>
+        <span className="font-metrics-mono text-sm font-bold text-on-surface-variant">{item.current}{item.unit} / {item.target}{item.unit}</span>
+      </div>
+      <div className="h-3 overflow-hidden rounded-full bg-surface-container" role="progressbar" aria-label={item.name} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
+        <motion.div className="h-full rounded-full" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ width: `${progress}%`, backgroundColor: item.color, transformOrigin: 'left center' }} transition={{ delay: index * 0.08, duration: 0.75, ease: 'easeOut' }} />
+      </div>
+      <p className="mt-5 text-label-sm leading-6 text-on-surface-variant">{Math.round(progress)}% target harian tercapai.</p>
+    </NutritionGlassCard>
   )
 }
 
