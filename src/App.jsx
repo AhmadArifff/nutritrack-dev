@@ -36,6 +36,7 @@ import {
   Compass,
   Droplets,
   Dumbbell,
+  Edit3,
   Flame,
   Gauge,
   Heart,
@@ -46,8 +47,10 @@ import {
   LogOut,
   Mail,
   MessageCircle,
+  MapPin,
   Moon,
   MoreHorizontal,
+  Lock,
   Plus,
   Scale,
   Search,
@@ -977,7 +980,7 @@ const proPageMeta = {
   '/app/foods': { title: 'Food Database', subtitle: 'Browse, filter, favorite, and add foods', search: 'Search foods...' },
   '/app/foods/gado-gado': { title: 'Food Detail', subtitle: 'Nutrition facts and portion calculator', search: 'Search foods...' },
   '/app/community': { title: 'Community Hub', subtitle: 'Tuesday, October 24', search: 'Search buddies or challenges...' },
-  '/app/profile': { title: 'Profile Detail', subtitle: 'Goals, preferences, and achievements', search: 'Search activity...' },
+  '/app/profile': { title: 'Profile Detail', subtitle: 'Alex Rivera', search: 'Search metrics, meals, or friends...' },
   '/app/settings': { title: 'Settings', subtitle: 'Personalize your NutriTrack experience', search: 'Search settings...' },
   '/app/notifications': { title: 'Activity Hub', subtitle: 'Smart reminders and weekly reports', search: 'Search notifications...' },
   '/help': { title: 'Help Center', subtitle: 'Find answers and guided support', search: 'Search help...' }
@@ -3071,34 +3074,271 @@ function CommunityBuddyItem({ buddy }) {
 }
 
 function ProProfilePage() {
-  const { data: profile } = useBackendData(() => apiRequest('/api/profile'), null, [])
-  const avatarUrl =
-    profile?.avatar_url ||
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80'
+  useBackendData(() => apiRequest('/api/profile'), null, [])
+  const user = {
+    name: 'Alex Rivera',
+    location: 'San Francisco, CA',
+    joined: 'Jan 2023',
+    avatarUrl:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuAaDy65LL1GD47aJLJE75H5pZwGpvTfi_xpMeAbshzWqm7pfZd5s7rjTi9qL7V70oN4bFSGaWbfwXgjMVn5gwNauLKnF4rvHkNeA6Alz3Bhidr73CvY3REcKZgXW3NHQY1pxf3Wci1sRt3kzmr2tVYQqOmdQsmZyW9_CnzDKUWWkDwjzzAUWcsnQJNaOZodwoIponRAdDGnQUJJ-_cL1irZRNH9Hiz0meHEUGsiEZA7EKoahXWwb9kIozPW4q70B91AMsxjvwoDy9o',
+    bannerUrl:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuDdCToHzWGlPcEvRqDVvLPerYpnIybFd4zoThJlRNvOdl6FH6iWqz0B0V0Ma4MbXzlS-NWIX326gVq6RZrWJJ6KsjSTZ1NhOyfrUhQvAsRufrEmw9UGg0QAjVBhbBkMykntgfLXzeOBE3ZENuBq_qDrufcGAkGaloD5M7ZCPk5Eucd-5eb27HqBK-4TVudtYJaR2GJp4grhipeNXLAP80DiA8I0X8Uzw6GSdOTkejzGy6ZW10UnFnmLF7LeLgWkaaBoCXs54DnEdPg',
+    bio:
+      'Nutrition enthusiast and marathon runner. Focused on high-protein plant-based diets and optimizing recovery times. Currently training for the Big Sur International Marathon. Believe in the power of data to drive transformation.',
+    tags: ['MarathonRunner', 'PlantBased', 'BioHacking']
+  }
 
   return (
-    <ProPage title="Profile Detail" subtitle="Health identity, preferences, milestones, and achievement badges." action={<button className="h-11 rounded-xl bg-energy-orange px-5 text-sm font-black text-white" type="button">Share Profile</button>}>
-      <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-        <ProPanel className="text-center">
-          <img className="mx-auto h-28 w-28 rounded-full border-4 border-primary-container object-cover" src={avatarUrl} alt={profile?.full_name || 'Alex Carter'} />
-          <h3 className="mt-5 text-2xl font-black">{profile?.full_name || 'Alex Carter'}</h3>
-          <p className="text-on-surface-variant">Pro Member</p>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <ProMetric label="Weight" value={`${formatNumber(profile?.current_weight_kg, '78.5')}kg`} />
-            <ProMetric label="Goal" value={`${formatNumber(profile?.target_weight_kg, '70')}kg`} />
-          </div>
-        </ProPanel>
-        <div className="grid gap-6 md:grid-cols-2">
-          {['12 Achievements', 'Food Preference', 'Activity Level', 'Weekly Report'].map((item) => (
-            <ProPanel key={item}>
-              <Sparkles className="text-primary" />
-              <h3 className="mt-4 text-xl font-black">{item}</h3>
-              <p className="mt-2 text-sm text-on-surface-variant">Personalized user setting and progress summary.</p>
-            </ProPanel>
-          ))}
+    <ProPage title="Profile Detail" subtitle={user.name} showHeader={false} wide>
+      <div className="space-y-8 pb-28">
+        <ProfileHero user={user} />
+
+        <div className="mt-24 grid grid-cols-12 gap-6">
+          <ProfileBioCard user={user} />
+          <ProfileHealthStatsCard />
+          <ProfileRecordsCard />
+          <ProfileBadgesCard />
         </div>
+
+        <ProfileWeeklyConsistency />
+
+        <motion.button className="group fixed bottom-10 right-10 z-50 flex h-16 w-16 items-center justify-center rounded-full bg-energy-orange text-white shadow-[0_20px_50px_rgba(249,115,22,0.3)] transition-all hover:scale-110 active:scale-95" type="button" aria-label="Share profile" initial={{ scale: 0, rotate: -35 }} animate={{ scale: 1, rotate: 0 }} transition={{ delay: 0.35, type: 'spring', stiffness: 220 }}>
+          <Share2 className="h-7 w-7 transition-transform group-hover:rotate-12" />
+          <span className="pointer-events-none absolute right-24 hidden -translate-x-4 whitespace-nowrap rounded-xl bg-on-surface px-5 py-2 text-sm font-bold text-white opacity-0 shadow-lg transition-all group-hover:translate-x-0 group-hover:opacity-100 sm:block">
+            Share Profile
+          </span>
+        </motion.button>
       </div>
     </ProPage>
+  )
+}
+
+function ProfileHero({ user }) {
+  return (
+    <section className="relative">
+      <motion.div className="relative h-72 w-full overflow-hidden rounded-[2rem] shadow-lg" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+        <img className="h-full w-full object-cover" src={user.bannerUrl} alt="Profile Banner" loading="lazy" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+      </motion.div>
+
+      <div className="absolute -bottom-12 left-4 right-4 flex flex-col gap-4 sm:left-10 sm:right-auto sm:flex-row sm:items-end sm:gap-6">
+        <motion.div className="relative z-10 h-32 w-32 overflow-hidden rounded-[2rem] border-4 border-white bg-surface shadow-2xl sm:h-44 sm:w-44 sm:rounded-[2.5rem]" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1, duration: 0.35 }}>
+          <img className="h-full w-full object-cover" src={user.avatarUrl} alt={user.name} loading="lazy" />
+        </motion.div>
+        <div className="mb-2 space-y-1 sm:mb-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="font-headline-lg text-3xl font-bold text-white drop-shadow-md md:text-headline-lg">{user.name}</h2>
+            <span className="flex items-center gap-1 rounded-full border border-achievement-purple/40 bg-achievement-purple/20 px-3 py-1 text-[10px] font-bold tracking-widest text-achievement-purple shadow-sm backdrop-blur-md">
+              <Check size={14} />
+              PRO MEMBER
+            </span>
+          </div>
+          <p className="flex items-center gap-2 text-white/90 drop-shadow-sm">
+            <MapPin size={18} />
+            {user.location} - Joined {user.joined}
+          </p>
+        </div>
+      </div>
+
+      <div className="absolute bottom-6 right-4 hidden sm:right-10 sm:block">
+        <button className="flex items-center gap-2 rounded-2xl bg-primary px-8 py-3 font-bold text-on-primary shadow-xl transition-all hover:scale-105 active:scale-95" type="button" aria-label="Edit profile">
+          <Edit3 size={20} />
+          Edit Profile
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function ProfileBioCard({ user }) {
+  return (
+    <NutritionGlassCard className="col-span-12 p-8 lg:col-span-4">
+      <h3 className="mb-5 flex items-center gap-3 font-headline-md text-headline-md font-bold text-on-surface">
+        <Activity className="text-primary" size={30} />
+        Bio
+      </h3>
+      <p className="leading-7 text-on-surface-variant">{user.bio}</p>
+      <div className="mt-8 flex flex-wrap gap-2">
+        {user.tags.map((tag) => (
+          <span className="rounded-xl border border-primary/10 bg-mint-surface px-4 py-1.5 text-sm font-medium text-primary" key={tag}>#{tag}</span>
+        ))}
+      </div>
+    </NutritionGlassCard>
+  )
+}
+
+function ProfileHealthStatsCard() {
+  return (
+    <NutritionGlassCard className="relative col-span-12 overflow-hidden p-8 lg:col-span-8">
+      <h3 className="mb-8 flex items-center gap-3 font-headline-md text-headline-md font-bold text-on-surface">
+        <Gauge className="text-energy-orange" size={30} />
+        Health Stats at a Glance
+      </h3>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="flex flex-col items-center justify-center rounded-[1.5rem] border border-outline-variant/10 bg-surface-container/40 p-6 text-center">
+          <p className="mb-4 text-label-sm font-bold uppercase tracking-wider text-on-surface-variant">Current BMI</p>
+          <ProfileBmiGauge value={22.4} progress={75} />
+          <p className="mt-4 font-bold text-primary">Healthy Range</p>
+        </div>
+        <div className="col-span-1 rounded-[1.5rem] border border-outline-variant/10 bg-surface-container/40 p-6 md:col-span-2">
+          <p className="mb-6 text-label-sm font-bold uppercase tracking-wider text-on-surface-variant">Weight vs Goal</p>
+          <div className="space-y-6">
+            <div>
+              <div className="mb-2 flex flex-col justify-between gap-2 sm:flex-row">
+                <span className="text-lg font-bold">Current: 76.5 kg</span>
+                <span className="text-lg font-bold text-energy-orange">Goal: 74 kg</span>
+              </div>
+              <div className="h-4 w-full overflow-hidden rounded-full bg-surface-container">
+                <motion.div className="h-full rounded-full bg-gradient-to-r from-primary to-energy-orange" initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 0.9, ease: 'easeOut' }} />
+              </div>
+            </div>
+            <div className="flex flex-col justify-between gap-4 pt-4 sm:flex-row sm:items-center">
+              <div className="flex items-center gap-3 rounded-xl bg-white/50 px-4 py-2">
+                <TrendingUp className="text-primary" size={20} />
+                <span className="font-bold">-2.5kg this month</span>
+              </div>
+              <span className="rounded-full bg-primary-container/20 px-4 py-1.5 font-bold text-on-primary-container">82% of Goal</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </NutritionGlassCard>
+  )
+}
+
+function ProfileBmiGauge({ value, progress }) {
+  const radius = 48
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (progress / 100) * circumference
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg className="h-28 w-28 -rotate-90">
+        <circle className="text-surface-container" cx="56" cy="56" fill="transparent" r={radius} stroke="currentColor" strokeWidth="10" />
+        <motion.circle className="text-primary" cx="56" cy="56" fill="transparent" r={radius} stroke="currentColor" strokeDasharray={circumference} strokeLinecap="round" strokeWidth="10" initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset: offset }} transition={{ duration: 0.9, ease: 'easeOut' }} />
+      </svg>
+      <span className="absolute font-metrics-mono text-[34px] font-bold text-primary">{value.toFixed(1)}</span>
+    </div>
+  )
+}
+
+function ProfileRecordsCard() {
+  const records = [
+    { label: 'Longest Streak', value: '42 Days', Icon: Flame, tone: 'orange' },
+    { label: 'Calories Burned', value: '1,240 kcal', Icon: Sparkles, tone: 'primary' },
+    { label: 'Avg Daily Activity', value: '78 Minutes', Icon: Dumbbell, tone: 'purple' }
+  ]
+
+  return (
+    <NutritionGlassCard className="col-span-12 border-l-8 border-energy-orange p-8 lg:col-span-5">
+      <h3 className="mb-8 flex items-center gap-3 font-headline-md text-headline-md font-bold text-on-surface">
+        <Trophy className="text-energy-orange" size={30} />
+        Personal Records
+      </h3>
+      <div className="space-y-4">
+        {records.map(({ label, value, Icon, tone }) => {
+          const styles = {
+            orange: ['rgba(249,115,22,0.1)', '#f97316'],
+            primary: ['rgba(0,110,47,0.1)', '#006e2f'],
+            purple: ['rgba(168,85,247,0.1)', '#a855f7']
+          }[tone]
+          return (
+            <div className="flex items-center gap-5 rounded-[1.5rem] bg-surface-container/40 p-4 transition-colors hover:bg-surface-container" key={label}>
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: styles[0], color: styles[1] }}>
+                <Icon size={30} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-label-sm font-bold uppercase tracking-widest text-on-surface-variant">{label}</p>
+                <p className="font-headline-md text-2xl font-bold text-on-surface">{value}</p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </NutritionGlassCard>
+  )
+}
+
+function ProfileBadgesCard() {
+  const badges = [
+    { label: 'Early Bird', title: 'Early Riser (10 Days)', Icon: Trophy, gradient: 'linear-gradient(135deg,#f97316,#eab308)' },
+    { label: 'Veggies', title: 'Green Giant (50 Meals)', Icon: Apple, gradient: 'linear-gradient(135deg,#006e2f,#4ae176)' },
+    { label: 'Master', title: 'Master (100 Days)', Icon: Trophy, gradient: 'linear-gradient(135deg,#a855f7,#0058be)' },
+    { label: 'Hydrated', title: 'Hydration King', Icon: Droplets, gradient: 'linear-gradient(135deg,#60a5fa,#f97316)' }
+  ]
+
+  return (
+    <NutritionGlassCard className="col-span-12 p-8 lg:col-span-7">
+      <div className="mb-10 flex items-center justify-between gap-4">
+        <h3 className="flex items-center gap-3 font-headline-md text-headline-md font-bold text-on-surface">
+          <Sparkles className="text-achievement-purple" size={30} />
+          Badge Collection
+        </h3>
+        <button className="rounded-full bg-primary-container/10 px-4 py-1.5 font-bold text-primary hover:underline" type="button">View All</button>
+      </div>
+      <div className="grid grid-cols-3 gap-6 sm:grid-cols-5 sm:gap-8">
+        {badges.map(({ label, title, Icon, gradient }) => (
+          <div className="flex flex-col items-center gap-3" key={label}>
+            <motion.div className="group relative flex h-20 w-20 cursor-help items-center justify-center rounded-full shadow-lg" style={{ background: gradient }} whileHover={{ y: -8, scale: 1.1 }}>
+              <Icon className="h-10 w-10 text-white" />
+              <div className="absolute -bottom-14 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-lg bg-on-surface px-3 py-1.5 text-[11px] text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">{title}</div>
+            </motion.div>
+            <p className="text-center text-xs font-bold text-on-surface">{label}</p>
+          </div>
+        ))}
+        <div className="flex flex-col items-center gap-3 opacity-30">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-outline">
+            <Lock className="h-8 w-8 text-outline" />
+          </div>
+          <p className="text-center text-xs font-bold text-on-surface-variant">Locked</p>
+        </div>
+      </div>
+    </NutritionGlassCard>
+  )
+}
+
+function ProfileWeeklyConsistency() {
+  const days = [
+    ['Mon', 80, 'primary'],
+    ['Tue', 95, 'primary'],
+    ['Wed', 40, 'missed'],
+    ['Thu', 75, 'primary'],
+    ['Fri', 90, 'primary'],
+    ['Sat', 100, 'orange'],
+    ['Sun', 65, 'primary']
+  ]
+
+  return (
+    <NutritionGlassCard className="rounded-[2.5rem] p-8">
+      <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+        <div>
+          <h3 className="font-headline-md text-headline-md font-bold text-on-surface">Weekly Consistency</h3>
+          <p className="text-label-md text-on-surface-variant">Goal completion over the last 7 days</p>
+        </div>
+        <div className="flex gap-6">
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-4 rounded-full bg-primary shadow-sm" />
+            <span className="text-sm font-bold">Goal Met</span>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="h-4 w-4 rounded-full bg-surface-container shadow-sm" />
+            <span className="text-sm font-bold">Missed</span>
+          </div>
+        </div>
+      </div>
+      <div className="flex h-56 items-end justify-between gap-4 px-1 sm:px-4">
+        {days.map(([day, height, tone], index) => {
+          const bg = tone === 'orange' ? 'rgba(249,115,22,0.4)' : tone === 'missed' ? 'rgba(229,238,255,0.5)' : 'rgba(0,110,47,0.2)'
+          const hover = tone === 'orange' ? '#f97316' : tone === 'missed' ? '#e5eeff' : '#006e2f'
+          return (
+            <div className="group flex flex-1 flex-col items-center gap-4" key={day}>
+              <motion.div className="w-full cursor-pointer rounded-t-2xl shadow-sm transition-colors" initial={{ height: 0 }} animate={{ height: `${height}%` }} style={{ backgroundColor: bg }} transition={{ delay: index * 0.12, duration: 0.8, ease: 'easeOut' }} onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = hover }} onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = bg }} />
+              <span className={`text-sm font-bold ${tone === 'orange' ? 'text-energy-orange' : 'text-on-surface-variant'}`}>{day}</span>
+            </div>
+          )
+        })}
+      </div>
+    </NutritionGlassCard>
   )
 }
 
