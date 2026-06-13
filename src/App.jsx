@@ -964,7 +964,7 @@ const proPageMeta = {
   '/app/dashboard': { title: 'Good Morning, Alex', subtitle: 'Tuesday, October 24', search: 'Search foods...' },
   '/app/log-food': { title: 'Daily Food Log', subtitle: 'Tuesday, October 24th, 2023', search: 'Search foods...' },
   '/app/meal-planner': { title: 'Meal Architecture', subtitle: 'Weekly Plan', search: 'Search recipes or ingredients...' },
-  '/app/progress': { title: 'Weight Journey', subtitle: "You've lost 2.4kg in the last 30 days", search: 'Search progress...' },
+  '/app/progress': { title: 'Weight Journey', subtitle: "You've lost 2.4kg in the last 30 days. Stay consistent!", search: 'Search data...' },
   '/app/nutrition': { title: 'Nutrition Insights', subtitle: 'Macro, hydration, and micronutrient balance', search: 'Search nutrients...' },
   '/app/foods': { title: 'Food Database', subtitle: 'Verified meals and quick logging', search: 'Search foods...' },
   '/app/foods/gado-gado': { title: 'Food Detail', subtitle: 'Gado-gado nutrition breakdown', search: 'Search foods...' },
@@ -2199,12 +2199,53 @@ function ProProgressPage() {
   const latest = weights[weights.length - 1] || { weight_kg: 78.5, bmi: 23.8, bmi_category: 'Healthy' }
   const [weight, setWeight] = useState(latest.weight_kg || 78.5)
   const [saving, setSaving] = useState(false)
+  const currentWeight = Number(latest.weight_kg || latest.weightKg || 78.5)
+  const currentBmi = Number(latest.bmi || 23.8)
+  const bmiCategory = latest.bmi_category || latest.bmiCategory || 'Healthy'
+  const historyLogs = weights.length
+    ? weights.slice(-5).reverse().map((entry, index, arr) => {
+        const entryWeight = Number(entry.weight_kg || entry.weightKg || currentWeight)
+        const previous = Number(arr[index + 1]?.weight_kg || arr[index + 1]?.weightKg || entryWeight)
+        const delta = Number((entryWeight - previous).toFixed(1))
+        const rawDate = entry.log_date || entry.logDate || entry.created_at || entry.createdAt || new Date().toISOString()
+        return {
+          id: entry.id || `${rawDate}-${entryWeight}`,
+          date: new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          session: 'Morning Entry',
+          time: '7:15 AM',
+          weight: entryWeight,
+          delta,
+          photoUrl: entry.photo_url || entry.photoUrl || null
+        }
+      })
+    : [
+        {
+          id: 'sep-28',
+          date: 'Sep 28, 2023',
+          session: 'Morning Entry',
+          time: '7:15 AM',
+          weight: 78.5,
+          delta: -0.2,
+          photoUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=220&q=80'
+        },
+        { id: 'sep-27', date: 'Sep 27, 2023', session: 'Morning Entry', time: '7:30 AM', weight: 78.7, delta: 0.1, photoUrl: null },
+        {
+          id: 'sep-26',
+          date: 'Sep 26, 2023',
+          session: 'Morning Entry',
+          time: '7:20 AM',
+          weight: 78.6,
+          delta: -0.4,
+          photoUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=220&q=80'
+        }
+      ]
 
   useEffect(() => {
     if (latest.weight_kg) setWeight(latest.weight_kg)
   }, [latest.weight_kg])
 
-  const saveWeight = async () => {
+  const saveWeight = async (event) => {
+    event?.preventDefault?.()
     setSaving(true)
     try {
       await apiRequest('/api/progress/weight', {
@@ -2218,41 +2259,228 @@ function ProProgressPage() {
   }
 
   return (
-    <ProPage title="Weight Journey" subtitle="Progress trend, BMI, milestones, and consistency in one calm layout." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" onClick={saveWeight} type="button">{saving ? 'Saving...' : 'Record Progress'}</button>}>
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
-        <ProPanel>
-          <div className="flex items-center justify-between gap-4">
-            <h3 className="text-2xl font-black">Progress Trends</h3>
-            <div className="flex rounded-xl bg-surface-container p-1 text-xs font-black">
-              {['1M', '3M', '6M', '1Y'].map((item, index) => <span className={`rounded-lg px-3 py-2 ${index === 0 ? 'bg-white text-primary shadow' : 'text-on-surface-variant'}`} key={item}>{item}</span>)}
-            </div>
-          </div>
-          <svg className="mt-8 h-[290px] w-full overflow-visible" viewBox="0 0 720 290" role="img" aria-label="Weight chart">
-            <defs>
-              <linearGradient id="weightFill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="#007a35" stopOpacity="0.26" />
-                <stop offset="100%" stopColor="#007a35" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d="M20 210 C120 204 170 216 245 185 C310 158 330 130 405 112 C490 92 560 96 700 70 L700 250 L20 250 Z" fill="url(#weightFill)" />
-            <motion.path d="M20 210 C120 204 170 216 245 185 C310 158 330 130 405 112 C490 92 560 96 700 70" fill="none" stroke="#007a35" strokeLinecap="round" strokeWidth="6" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.1 }} />
-            {[245, 405, 560].map((x, index) => <circle cx={x} cy={[185, 112, 96][index]} fill="white" key={x} r="8" stroke="#007a35" strokeWidth="5" />)}
-          </svg>
-        </ProPanel>
-        <div className="grid gap-6">
-          <ProPanel className="bg-mint">
-            <h3 className="text-xl font-black">Log Weight</h3>
-            <label className="mt-5 block text-sm font-bold text-on-surface-variant">Current Weight (kg)</label>
-            <input className="mt-2 h-12 w-full rounded-xl border-outline-variant bg-white font-metrics-mono" onChange={(event) => setWeight(event.target.value)} value={weight} />
-            <button className="mt-4 h-11 w-full rounded-xl bg-primary font-black text-white" onClick={saveWeight} type="button">{saving ? 'Saving...' : 'Record Progress'}</button>
-          </ProPanel>
-          <ProPanel>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant">Current BMI</p>
-            <p className="mt-4 text-3xl font-black text-secondary">{formatNumber(latest.bmi || 23.8)} <span className="text-sm text-on-surface-variant">{latest.bmi_category || latest.bmiCategory || 'Healthy'}</span></p>
-          </ProPanel>
+    <motion.main
+      className="pro-progress-page mx-auto max-w-[1200px] px-5 py-7 pb-28 lg:px-8"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <section className="mb-8">
+        <h2 className="font-headline-lg text-headline-lg font-black text-on-surface">Weight Journey</h2>
+        <p className="mt-2 font-body-md text-on-surface-variant">You've lost 2.4kg in the last 30 days. Stay consistent!</p>
+      </section>
+
+      <section className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <ProgressTrendCard currentWeight={currentWeight} />
+        <div className="grid content-start gap-6 lg:col-span-4">
+          <ProgressLogWeightCard saving={saving} saveWeight={saveWeight} setWeight={setWeight} weight={weight} />
+          <ProgressBmiCard bmi={currentBmi} category={bmiCategory} />
+        </div>
+      </section>
+
+      <section className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <ProgressInsightCard Icon={Flame} borderColor="#f97316" label="Target Date" value="Oct 12, 2023" description="Based on your current pace" />
+        <ProgressInsightCard Icon={Trophy} borderColor="#a855f7" label="Next Milestone" value="-1.5 kg to go" description="75kg Goal Milestone" />
+        <ProgressInsightCard Icon={CalendarDays} borderColor="#0058be" label="Consistency" value="12 Day Streak" description="Daily logging hero" />
+      </section>
+
+      <ProgressHistoryCard logs={historyLogs} />
+
+      <button
+        className="fixed bottom-8 right-8 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-2xl transition-transform active:scale-[0.98] xl:hidden"
+        onClick={saveWeight}
+        type="button"
+        aria-label="Add weight progress"
+      >
+        <Plus size={26} />
+      </button>
+    </motion.main>
+  )
+}
+
+function ProgressGlassCard({ children, className = '', style }) {
+  return (
+    <motion.section
+      className={`glass-card border border-outline-variant/30 bg-white/80 shadow-md backdrop-blur-xl ${className}`}
+      style={style}
+      whileHover={{ y: -3 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+    >
+      {children}
+    </motion.section>
+  )
+}
+
+function ProgressTrendCard({ currentWeight }) {
+  return (
+    <ProgressGlassCard className="rounded-2xl p-5 lg:col-span-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h3 className="font-headline-md text-headline-md font-black text-on-surface">Progress Trends</h3>
+        <div className="flex gap-2 rounded-lg bg-surface-container-low p-1">
+          {['1M', '3M', '6M', '1Y'].map((range, index) => (
+            <button
+              className={`rounded-md px-3 py-1 text-label-sm transition-all ${index === 0 ? 'bg-white font-bold text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+              key={range}
+              type="button"
+            >
+              {range}
+            </button>
+          ))}
         </div>
       </div>
-    </ProPage>
+      <div className="relative flex h-64 w-full items-end overflow-hidden rounded-xl bg-surface-container-lowest/50 px-4 pb-4">
+        <svg className="h-full w-full text-primary drop-shadow-lg" viewBox="0 0 400 100" preserveAspectRatio="none" role="img" aria-label="Weight trend line chart">
+          <defs>
+            <linearGradient id="progressChartGradient" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <motion.path
+            d="M0,80 C50,75 100,85 150,60 C200,35 250,45 300,30 C350,15 400,20 450,10 L450,100 L0,100 Z"
+            fill="url(#progressChartGradient)"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          />
+          <motion.path
+            d="M0,80 C50,75 100,85 150,60 C200,35 250,45 300,30 C350,15 400,20 450,10"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="3"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+          />
+          <circle cx="150" cy="60" fill="white" r="4" stroke="currentColor" strokeWidth="2" />
+          <circle cx="300" cy="30" fill="white" r="4" stroke="currentColor" strokeWidth="2" />
+        </svg>
+        <div className="absolute right-4 top-4 flex flex-col items-end">
+          <span className="font-metrics-mono font-bold text-primary">{formatNumber(currentWeight)} kg</span>
+          <span className="text-label-sm text-on-surface-variant">Current</span>
+        </div>
+      </div>
+    </ProgressGlassCard>
+  )
+}
+
+function ProgressLogWeightCard({ weight, setWeight, saveWeight, saving }) {
+  return (
+    <ProgressGlassCard className="rounded-2xl bg-gradient-to-br from-white to-mint-surface p-5">
+      <h4 className="mb-4 font-headline-md text-xl font-black text-on-surface">Log Weight</h4>
+      <form className="grid gap-4" onSubmit={saveWeight}>
+        <label className="block">
+          <span className="mb-1 ml-1 block text-label-sm text-on-surface-variant">Current Weight (kg)</span>
+          <input
+            className="h-12 w-full rounded-xl border-outline-variant/30 bg-white px-4 font-metrics-mono text-lg focus:border-primary focus:ring-primary"
+            onChange={(event) => setWeight(event.target.value)}
+            placeholder="00.0"
+            step="0.1"
+            type="number"
+            value={weight}
+          />
+        </label>
+        <button
+          className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 font-bold text-on-primary shadow-lg transition-all active:scale-[0.98] ${saving ? 'bg-secondary shadow-secondary/20' : 'bg-primary shadow-primary/20 hover:brightness-110'}`}
+          disabled={saving}
+          type="submit"
+        >
+          {saving ? 'Saving...' : 'Record Progress'}
+        </button>
+      </form>
+    </ProgressGlassCard>
+  )
+}
+
+function ProgressBmiCard({ bmi, category }) {
+  return (
+    <ProgressGlassCard className="relative flex items-center justify-between overflow-hidden rounded-2xl p-5">
+      <div className="relative z-10">
+        <h4 className="mb-1 text-label-md font-bold uppercase tracking-wider text-on-surface-variant">Current BMI</h4>
+        <div className="flex items-baseline gap-1">
+          <span className="font-headline-lg text-secondary">{formatNumber(bmi)}</span>
+          <span className="text-label-sm font-bold text-on-surface-variant">{category}</span>
+        </div>
+      </div>
+      <div className="relative h-32 w-32">
+        <motion.div
+          className="absolute inset-2 rounded-full border-[14px] border-secondary/15"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
+        />
+        <motion.div
+          className="absolute inset-8 rounded-full bg-mint-surface"
+          animate={{ scale: [1, 1.08, 1] }}
+          transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <Scale className="absolute inset-0 m-auto text-secondary/70" size={34} />
+      </div>
+    </ProgressGlassCard>
+  )
+}
+
+function ProgressInsightCard({ Icon, borderColor, label, value, description }) {
+  return (
+    <ProgressGlassCard className="rounded-2xl border-l-4 p-5 shadow-sm" style={{ borderLeftColor: borderColor }}>
+      <div className="mb-2 flex items-center gap-3">
+        <Icon style={{ color: borderColor }} size={22} />
+        <span className="text-label-md font-bold text-on-surface-variant">{label}</span>
+      </div>
+      <p className="font-headline-md text-xl font-black text-on-surface">{value}</p>
+      <p className="text-label-sm text-on-surface-variant">{description}</p>
+    </ProgressGlassCard>
+  )
+}
+
+function ProgressHistoryCard({ logs }) {
+  return (
+    <ProgressGlassCard className="overflow-hidden rounded-2xl p-0 shadow-sm">
+      <div className="flex items-center justify-between border-b border-outline-variant/20 p-5">
+        <h3 className="font-headline-md text-xl font-black text-on-surface">History & Logs</h3>
+        <button className="flex items-center gap-2 text-label-md font-bold text-primary hover:underline" type="button">
+          View All <ArrowRight size={15} />
+        </button>
+      </div>
+      <div className="divide-y divide-outline-variant/10">
+        {logs.map((log) => (
+          <ProgressHistoryItem log={log} key={log.id} />
+        ))}
+      </div>
+    </ProgressGlassCard>
+  )
+}
+
+function ProgressHistoryItem({ log }) {
+  const delta = Number(log.delta || 0)
+  return (
+    <div className="group flex flex-col justify-between gap-4 p-5 transition-colors hover:bg-surface-container-low sm:flex-row sm:items-center">
+      <div className="flex items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-container-high font-bold text-primary">
+          <CalendarDays size={22} />
+        </div>
+        <div>
+          <p className="font-bold text-on-surface">{log.date}</p>
+          <p className="text-label-sm text-on-surface-variant">{log.session} • {log.time}</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-8 sm:justify-end">
+        <div className="text-right">
+          <p className="font-metrics-mono text-lg font-bold text-on-surface">{formatNumber(log.weight)} kg</p>
+          <p className={`text-label-sm ${delta < 0 ? 'text-error-red' : 'text-primary'}`}>{delta > 0 ? '+' : ''}{formatNumber(delta)} kg</p>
+        </div>
+        {log.photoUrl ? (
+          <button className="h-14 w-14 overflow-hidden rounded-lg border border-outline-variant/30 transition-transform group-hover:scale-110" type="button">
+            <img className="h-full w-full object-cover" src={log.photoUrl} alt={`Progress photo from ${log.date}`} />
+          </button>
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-dashed border-outline-variant/50 bg-surface-container text-on-surface-variant">
+            <Scale size={16} />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
