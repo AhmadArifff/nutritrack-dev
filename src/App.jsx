@@ -55,6 +55,7 @@ import {
 } from 'lucide-react'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { apiRequest, clearStoredAuth, getStoredAuth, login, register } from './api'
 
 const navItems = [
   { to: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -152,6 +153,63 @@ const pageMotion = {
   animate: { opacity: 1 },
   exit: { opacity: 0 },
   transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] }
+}
+
+function formatNumber(value, fallback = '0') {
+  const number = Number(value)
+  if (!Number.isFinite(number)) return fallback
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number)
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function addDaysIso(offset) {
+  const date = new Date()
+  date.setDate(date.getDate() + offset)
+  return date.toISOString().slice(0, 10)
+}
+
+function mealLabel(mealType = '') {
+  const labels = {
+    breakfast: 'Breakfast',
+    morning_snack: 'Morning Snack',
+    lunch: 'Lunch',
+    afternoon_snack: 'Afternoon Snack',
+    dinner: 'Dinner',
+    late_snack: 'Late Snack'
+  }
+  return labels[mealType] || mealType
+}
+
+function useBackendData(fetcher, fallback, deps = []) {
+  const [data, setData] = useState(fallback)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    setLoading(true)
+    setError('')
+
+    fetcher()
+      .then((nextData) => {
+        if (active) setData(nextData)
+      })
+      .catch((err) => {
+        if (active) setError(err.message || 'Gagal memuat data.')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, deps)
+
+  return { data, setData, loading, error }
 }
 
 function FloatingNutritionScene({ compact = false }) {
@@ -934,13 +992,81 @@ const proRoutes = {
 
 function ProAppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [auth, setAuth] = useState(() => getStoredAuth())
+  const [shellData, setShellData] = useState({
+    me: null,
+    summary: null,
+    notifications: []
+  })
+  const [shellError, setShellError] = useState('')
   const location = useLocation()
+  const navigate = useNavigate()
   const meta = proPageMeta[location.pathname] || proPageMeta['/app/dashboard']
 
   useEffect(() => {
     document.title = `${meta.title} - NutriTrack`
     document.body.className = 'bg-background text-on-surface font-sans overflow-x-hidden'
   }, [meta.title])
+
+  useEffect(() => {
+    let active = true
+
+    async function ensureSession() {
+      try {
+        let currentAuth = getStoredAuth()
+        if (!currentAuth?.token) {
+          currentAuth = await login('alex@nutritrack.app', 'nutritrack123')
+        }
+        if (active) setAuth(currentAuth)
+      } catch (err) {
+        if (active) setShellError(err.message || 'Gagal menghubungkan backend.')
+      }
+    }
+
+    ensureSession()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!auth?.token) return undefined
+    let active = true
+
+    async function loadShellData() {
+      try {
+        const [me, summary, notifications] = await Promise.all([
+          apiRequest('/api/auth/me'),
+          apiRequest(`/api/dashboard/summary?date=${todayIso()}`),
+          apiRequest('/api/notifications?limit=8')
+        ])
+        if (active) {
+          setShellData({ me, summary, notifications })
+          setShellError('')
+        }
+      } catch (err) {
+        if (active) setShellError(err.message || 'Gagal memuat data backend.')
+      }
+    }
+
+    loadShellData()
+    return () => {
+      active = false
+    }
+  }, [auth?.token])
+
+  const userName = shellData.me?.fullName || shellData.summary?.user?.fullName || auth?.user?.fullName || 'Alex Carter'
+  const avatarUrl =
+    shellData.me?.avatarUrl ||
+    shellData.summary?.user?.avatarUrl ||
+    auth?.user?.avatarUrl ||
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80'
+
+  const logout = () => {
+    clearStoredAuth()
+    setAuth(null)
+    navigate('/login')
+  }
 
   return (
     <div className="pro-theme min-h-screen bg-background text-on-surface">
@@ -1015,10 +1141,10 @@ function ProAppLayout() {
             <HelpCircle size={20} />
             <span>Help Center</span>
           </NavLink>
-          <NavLink className="flex min-h-10 items-center gap-3 rounded-xl px-4 text-label-md font-bold text-on-surface-variant transition hover:text-error-red" to="/login">
+          <button className="flex min-h-10 items-center gap-3 rounded-xl px-4 text-left text-label-md font-bold text-on-surface-variant transition hover:text-error-red" onClick={logout} type="button">
             <LogOut size={20} />
             <span>Logout</span>
-          </NavLink>
+          </button>
         </div>
       </motion.aside>
 
@@ -1041,28 +1167,29 @@ function ProAppLayout() {
                 <Settings size={20} />
               </Link>
               <Link className="flex min-w-0 items-center gap-3 border-l border-outline-variant pl-3" to="/app/profile">
-                <img className="h-11 w-11 rounded-full border-2 border-primary-container object-cover" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80" alt="Alex Carter" />
+                <img className="h-11 w-11 rounded-full border-2 border-primary-container object-cover" src={avatarUrl} alt={userName} />
                 <span className="hidden text-left lg:block">
-                  <strong className="block text-sm font-black">Alex Carter</strong>
+                  <strong className="block text-sm font-black">{userName}</strong>
                   <small className="block text-xs text-on-surface-variant">Pro Member</small>
                 </span>
               </Link>
             </div>
           </div>
+          {shellError && <p className="mx-auto mt-3 max-w-[1280px] rounded-xl bg-error-red/10 px-4 py-2 text-sm font-bold text-error-red">{shellError}</p>}
         </header>
 
-        <ProAppRoutes />
+        <ProAppRoutes shellData={shellData} />
       </div>
     </div>
   )
 }
 
-function ProAppRoutes() {
+function ProAppRoutes({ shellData }) {
   const location = useLocation()
   const Page = proRoutes[location.pathname] || ProDashboardPage
   return (
     <AnimatePresence mode="wait">
-      <Page key={location.pathname} />
+      <Page key={location.pathname} shellData={shellData} />
     </AnimatePresence>
   )
 }
@@ -1104,7 +1231,30 @@ function ProPanel({ children, className = '', delay = 0, style }) {
   )
 }
 
-function ProDashboardPage() {
+function ProDashboardPage({ shellData }) {
+  const summary = shellData?.summary
+  const calories = summary?.calories || { consumed: 1260, target: 2900, remaining: 1640, progress: 72 }
+  const macros = summary?.macros || {
+    protein: { consumed: 120, target: 180 },
+    carbs: { consumed: 210, target: 300 },
+    fat: { consumed: 45, target: 75 },
+    fiber: { consumed: 22, target: 35 }
+  }
+  const schedule = summary?.schedule?.length
+    ? summary.schedule
+    : [
+        { mealType: 'breakfast', loggedItems: 1, calories: 420 },
+        { mealType: 'lunch', loggedItems: 1, calories: 680 },
+        { mealType: 'dinner', loggedItems: 0, calories: 0 },
+        { mealType: 'afternoon_snack', loggedItems: 0, calories: 0 }
+      ]
+  const macroCards = [
+    ['Protein', `${formatNumber(macros.protein.consumed)}g / ${formatNumber(macros.protein.target)}g`, macros.protein, '#9e4036', Flame],
+    ['Carbs', `${formatNumber(macros.carbs.consumed)}g / ${formatNumber(macros.carbs.target)}g`, macros.carbs, '#0058be', Apple],
+    ['Fats', `${formatNumber(macros.fat.consumed)}g / ${formatNumber(macros.fat.target)}g`, macros.fat, '#f97316', Droplets],
+    ['Fiber', `${formatNumber(macros.fiber.consumed)}g / ${formatNumber(macros.fiber.target)}g`, macros.fiber, '#007a35', Activity]
+  ]
+
   return (
     <ProPage
       title="Daily Fuel"
@@ -1113,30 +1263,27 @@ function ProDashboardPage() {
     >
       <div className="grid gap-6 xl:grid-cols-[1.05fr_1.35fr]">
         <ProPanel className="relative overflow-hidden">
-          <div className="absolute right-6 top-6 rounded-full bg-primary-container/20 px-3 py-1 text-xs font-black text-primary">72% Goal</div>
+          <div className="absolute right-6 top-6 rounded-full bg-primary-container/20 px-3 py-1 text-xs font-black text-primary">{formatNumber(calories.progress)}% Goal</div>
           <h3 className="font-headline-md text-2xl font-black">Energy Balance</h3>
           <p className="mt-1 text-sm text-on-surface-variant">Calories left today</p>
           <div className="relative mx-auto my-4 h-[300px] max-w-[360px]">
             <FloatingNutritionScene compact />
             <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
               <div>
-                <p className="font-metrics-mono text-5xl font-black text-primary">1,640</p>
+                <p className="font-metrics-mono text-5xl font-black text-primary">{formatNumber(calories.remaining)}</p>
                 <p className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-on-surface-variant">Calories Left</p>
               </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <ProMetric label="Consumed" value="1,260 kcal" />
-            <ProMetric label="Target" value="2,900 kcal" />
+            <ProMetric label="Consumed" value={`${formatNumber(calories.consumed)} kcal`} />
+            <ProMetric label="Target" value={`${formatNumber(calories.target)} kcal`} />
           </div>
         </ProPanel>
         <div className="grid gap-6 sm:grid-cols-2">
-          {[
-            ['Protein', '120g / 180g', 68, '#9e4036', Flame],
-            ['Carbs', '210g / 300g', 72, '#0058be', Apple],
-            ['Fats', '45g / 75g', 61, '#f97316', Droplets],
-            ['Fiber', '22g / 35g', 76, '#007a35', Activity]
-          ].map(([label, value, pct, color, Icon], index) => (
+          {macroCards.map(([label, value, macro, color, Icon], index) => {
+            const pct = macro.target ? Math.min(100, Math.round((macro.consumed / macro.target) * 100)) : 0
+            return (
             <ProPanel className="grid min-h-[190px] content-between" delay={index * 0.04} key={label}>
               <div className="flex items-start justify-between gap-3">
                 <span className="grid h-11 w-11 place-items-center rounded-2xl" style={{ backgroundColor: `${color}18`, color }}>
@@ -1151,7 +1298,8 @@ function ProDashboardPage() {
                 </div>
               </div>
             </ProPanel>
-          ))}
+            )
+          })}
         </div>
       </div>
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
@@ -1159,16 +1307,16 @@ function ProDashboardPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-2xl font-black">Today's Schedule</h3>
-              <p className="text-sm text-on-surface-variant">4 meals planned, 2 completed</p>
+              <p className="text-sm text-on-surface-variant">{schedule.length} meals planned, {schedule.filter((item) => Number(item.loggedItems) > 0).length} completed</p>
             </div>
             <Link className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-black text-white" to="/app/meal-planner"><CalendarDays size={17} /> Planner</Link>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-4">
-            {['Breakfast done', 'Lunch done', 'Dinner planned', 'Snack upcoming'].map((item, index) => (
-              <motion.div className="rounded-2xl bg-mint p-4" key={item} whileHover={{ scale: 1.02 }}>
+            {schedule.slice(0, 4).map((item, index) => (
+              <motion.div className="rounded-2xl bg-mint p-4" key={item.mealType || index} whileHover={{ scale: 1.02 }}>
                 <Check className="text-primary" size={20} />
-                <p className="mt-3 font-black">{item}</p>
-                <p className="mt-1 text-xs text-on-surface-variant">{index < 2 ? 'Completed' : 'Upcoming'}</p>
+                <p className="mt-3 font-black">{mealLabel(item.mealType)} {Number(item.loggedItems) > 0 ? 'done' : 'planned'}</p>
+                <p className="mt-1 text-xs text-on-surface-variant">{Number(item.loggedItems) > 0 ? `${formatNumber(item.calories)} kcal logged` : item.scheduledTime || 'Upcoming'}</p>
               </motion.div>
             ))}
           </div>
@@ -1184,22 +1332,37 @@ function ProDashboardPage() {
 }
 
 function ProMealPlannerPage() {
-  const days = [
-    ['Monday', 'Oct 23', '2,120 kcal', ['Avocado Toast', 'Quinoa Bowl', 'Salmon Rice']],
-    ['Tuesday', 'Oct 24', '1,840 kcal', ['Greek Yogurt', 'Turkey Wrap', 'Beef Stir-fry']],
-    ['Wednesday', 'Oct 25', '2,240 kcal', ['Oatmeal Bowl', 'Chicken Salad', 'Tofu Curry']]
-  ]
+  const { data: plans } = useBackendData(
+    () => apiRequest(`/api/meal-plans?from=${todayIso()}&to=${addDaysIso(6)}`),
+    [],
+    []
+  )
+  const days = plans.length
+    ? Object.values(
+        plans.reduce((acc, plan) => {
+          const date = String(plan.plan_date || plan.planDate).slice(0, 10)
+          acc[date] ||= { day: new Date(date).toLocaleDateString('en-US', { weekday: 'long' }), date, total: 0, meals: [] }
+          acc[date].total += Number(plan.target_calories || 0)
+          acc[date].meals.push(plan.food_name)
+          return acc
+        }, {})
+      )
+    : [
+        { day: 'Monday', date: 'Oct 23', total: 2120, meals: ['Avocado Toast', 'Quinoa Bowl', 'Salmon Rice'] },
+        { day: 'Tuesday', date: 'Oct 24', total: 1840, meals: ['Greek Yogurt', 'Turkey Wrap', 'Beef Stir-fry'] },
+        { day: 'Wednesday', date: 'Oct 25', total: 2240, meals: ['Oatmeal Bowl', 'Chicken Salad', 'Tofu Curry'] }
+      ]
   return (
     <ProPage title="Weekly Meal Plan" subtitle="Balanced weekly planning with clean columns, no cramped cards, and quick actions." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Generate Plan</button>}>
       <div className="grid gap-6 lg:grid-cols-3">
-        {days.map(([day, date, total, meals], index) => (
-          <ProPanel delay={index * 0.05} key={day}>
+        {days.slice(0, 3).map(({ day, date, total, meals }, index) => (
+          <ProPanel delay={index * 0.05} key={`${day}-${date}`}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">{day}</p>
-                <h3 className="mt-1 text-xl font-black">{date}</h3>
+                <h3 className="mt-1 text-xl font-black">{/^\d{4}-/.test(String(date)) ? String(date).slice(5) : date}</h3>
               </div>
-              <span className="rounded-full bg-primary px-3 py-1 font-metrics-mono text-xs font-black text-white">{total}</span>
+              <span className="rounded-full bg-primary px-3 py-1 font-metrics-mono text-xs font-black text-white">{formatNumber(total)} kcal</span>
             </div>
             <div className="mt-6 grid gap-4">
               {meals.map((meal) => (
@@ -1229,8 +1392,43 @@ function ProMealPlannerPage() {
 }
 
 function ProLogFoodPage() {
+  const { data: logs, setData: setLogs } = useBackendData(() => apiRequest(`/api/food-logs?date=${todayIso()}`), [], [])
+  const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=8'), [], [])
+  const [saving, setSaving] = useState(false)
+  const groupedLogs = ['breakfast', 'lunch', 'dinner', 'afternoon_snack'].map((mealType) => {
+    const items = logs.filter((log) => log.meal_type === mealType)
+    return {
+      mealType,
+      kcal: items.reduce((total, item) => total + Number(item.calories || 0), 0),
+      items: items.length ? items.map((item) => item.food_name) : ['No items logged yet']
+    }
+  })
+  const recentItems = logs.length ? logs.slice(0, 3) : foods.slice(0, 3)
+
+  const addQuickItem = async () => {
+    const food = foods[0]
+    if (!food || saving) return
+    setSaving(true)
+    try {
+      await apiRequest('/api/food-logs', {
+        method: 'POST',
+        body: {
+          foodId: food.id,
+          mealType: 'breakfast',
+          logDate: todayIso(),
+          servingAmount: 1,
+          servingUnit: food.serving_unit || 'porsi'
+        }
+      })
+      const nextLogs = await apiRequest(`/api/food-logs?date=${todayIso()}`)
+      setLogs(nextLogs)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <ProPage title="Daily Food Log" subtitle="Fast food search, clear meal cards, and stable spacing for repeated logging." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Add Item</button>}>
+    <ProPage title="Daily Food Log" subtitle="Fast food search, clear meal cards, and stable spacing for repeated logging." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" onClick={addQuickItem} type="button">{saving ? 'Adding...' : 'Add Item'}</button>}>
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.4fr]">
         <div className="grid gap-6">
           <ProPanel>
@@ -1246,28 +1444,23 @@ function ProLogFoodPage() {
               <button className="text-sm font-black text-primary" type="button">View All</button>
             </div>
             <div className="mt-4 grid gap-3">
-              {['Black Coffee', 'Omelette with Spinach', 'Fuji Apple'].map((item, index) => (
-                <div className="flex items-center justify-between rounded-2xl bg-surface-container-low p-4" key={item}>
+              {recentItems.map((item, index) => (
+                <div className="flex items-center justify-between rounded-2xl bg-surface-container-low p-4" key={item.id || item.name || item.food_name}>
                   <div>
-                    <p className="font-black">{item}</p>
-                    <p className="text-sm text-on-surface-variant">{index === 0 ? 'Breakfast' : index === 1 ? 'Breakfast' : 'Snack'}</p>
+                    <p className="font-black">{item.food_name || item.name}</p>
+                    <p className="text-sm text-on-surface-variant">{mealLabel(item.meal_type || item.category || 'snack')}</p>
                   </div>
-                  <p className="font-metrics-mono font-black">{[2, 240, 95][index]} kcal</p>
+                  <p className="font-metrics-mono font-black">{formatNumber(item.calories || [2, 240, 95][index])} kcal</p>
                 </div>
               ))}
             </div>
           </ProPanel>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
-          {[
-            ['Breakfast', 420, '#007a35', ['Oatmeal with Blueberries', 'Greek Yogurt']],
-            ['Lunch', 680, '#0058be', ['Quinoa Salad with Tofu', 'Hummus & Carrots']],
-            ['Dinner', 0, '#a855f7', ['No items logged yet']],
-            ['Snacks', 350, '#f97316', ['Mixed Nuts', 'Protein Bar']]
-          ].map(([meal, kcal, color, items]) => (
-            <ProPanel className="border-l-4" key={meal} style={{ borderLeftColor: color }}>
+          {groupedLogs.map(({ mealType, kcal, items }, index) => (
+            <ProPanel className="border-l-4" key={mealType} style={{ borderLeftColor: ['#007a35', '#0058be', '#a855f7', '#f97316'][index] }}>
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black">{meal}</h3>
+                <h3 className="text-xl font-black">{mealLabel(mealType)}</h3>
                 <p className="font-metrics-mono text-xl font-black">{kcal} <span className="text-xs text-on-surface-variant">kcal</span></p>
               </div>
               <div className="mt-5 grid gap-3">
@@ -1283,8 +1476,30 @@ function ProLogFoodPage() {
 }
 
 function ProProgressPage() {
+  const { data: weights, setData: setWeights } = useBackendData(() => apiRequest('/api/progress/weight?limit=30'), [], [])
+  const latest = weights[weights.length - 1] || { weight_kg: 78.5, bmi: 23.8, bmi_category: 'Healthy' }
+  const [weight, setWeight] = useState(latest.weight_kg || 78.5)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (latest.weight_kg) setWeight(latest.weight_kg)
+  }, [latest.weight_kg])
+
+  const saveWeight = async () => {
+    setSaving(true)
+    try {
+      await apiRequest('/api/progress/weight', {
+        method: 'POST',
+        body: { weightKg: Number(weight), logDate: todayIso() }
+      })
+      setWeights(await apiRequest('/api/progress/weight?limit=30'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <ProPage title="Weight Journey" subtitle="Progress trend, BMI, milestones, and consistency in one calm layout." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Record Progress</button>}>
+    <ProPage title="Weight Journey" subtitle="Progress trend, BMI, milestones, and consistency in one calm layout." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" onClick={saveWeight} type="button">{saving ? 'Saving...' : 'Record Progress'}</button>}>
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
         <ProPanel>
           <div className="flex items-center justify-between gap-4">
@@ -1309,12 +1524,12 @@ function ProProgressPage() {
           <ProPanel className="bg-mint">
             <h3 className="text-xl font-black">Log Weight</h3>
             <label className="mt-5 block text-sm font-bold text-on-surface-variant">Current Weight (kg)</label>
-            <input className="mt-2 h-12 w-full rounded-xl border-outline-variant bg-white font-metrics-mono" defaultValue="78.5" />
-            <button className="mt-4 h-11 w-full rounded-xl bg-primary font-black text-white" type="button">Record Progress</button>
+            <input className="mt-2 h-12 w-full rounded-xl border-outline-variant bg-white font-metrics-mono" onChange={(event) => setWeight(event.target.value)} value={weight} />
+            <button className="mt-4 h-11 w-full rounded-xl bg-primary font-black text-white" onClick={saveWeight} type="button">{saving ? 'Saving...' : 'Record Progress'}</button>
           </ProPanel>
           <ProPanel>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-on-surface-variant">Current BMI</p>
-            <p className="mt-4 text-3xl font-black text-secondary">23.8 <span className="text-sm text-on-surface-variant">Healthy</span></p>
+            <p className="mt-4 text-3xl font-black text-secondary">{formatNumber(latest.bmi || 23.8)} <span className="text-sm text-on-surface-variant">{latest.bmi_category || latest.bmiCategory || 'Healthy'}</span></p>
           </ProPanel>
         </div>
       </div>
@@ -1356,20 +1571,28 @@ function ProNutritionPage() {
 }
 
 function ProFoodsPage() {
-  const foods = [
-    ['Gado-Gado', '320 kcal', 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80'],
-    ['Chicken Rice', '510 kcal', 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'],
-    ['Oatmeal Banana', '280 kcal', 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=80']
+  const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=9'), [], [])
+  const fallbackImages = [
+    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80',
+    'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=80'
   ]
+  const visibleFoods = foods.length
+    ? foods
+    : [
+        { name: 'Gado-Gado', calories: 320 },
+        { name: 'Chicken Rice', calories: 510 },
+        { name: 'Oatmeal Banana', calories: 280 }
+      ]
   return (
     <ProPage title="Food Database" subtitle="Browse verified foods with clean responsive cards and online assets." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Add Food</button>}>
       <div className="grid gap-6 md:grid-cols-3">
-        {foods.map(([name, kcal, image], index) => (
-          <motion.article className="overflow-hidden rounded-[1.5rem] border border-outline-variant/40 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]" key={name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }} whileHover={{ y: -5 }}>
-            <img className="h-52 w-full object-cover" src={image} alt={name} />
+        {visibleFoods.map((food, index) => (
+          <motion.article className="overflow-hidden rounded-[1.5rem] border border-outline-variant/40 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]" key={food.id || food.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }} whileHover={{ y: -5 }}>
+            <img className="h-52 w-full object-cover" src={food.image_url || fallbackImages[index % fallbackImages.length]} alt={food.name} />
             <div className="p-5">
-              <h3 className="text-xl font-black">{name}</h3>
-              <p className="mt-2 font-metrics-mono font-black text-primary">{kcal}</p>
+              <h3 className="text-xl font-black">{food.name}</h3>
+              <p className="mt-2 font-metrics-mono font-black text-primary">{formatNumber(food.calories)} kcal</p>
               <Link className="mt-4 inline-flex font-black text-primary" to="/app/foods/gado-gado">Detail nutrisi</Link>
             </div>
           </motion.article>
@@ -1431,16 +1654,21 @@ function ProCommunityPage() {
 }
 
 function ProProfilePage() {
+  const { data: profile } = useBackendData(() => apiRequest('/api/profile'), null, [])
+  const avatarUrl =
+    profile?.avatar_url ||
+    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80'
+
   return (
     <ProPage title="Profile Detail" subtitle="Health identity, preferences, milestones, and achievement badges." action={<button className="h-11 rounded-xl bg-energy-orange px-5 text-sm font-black text-white" type="button">Share Profile</button>}>
       <div className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
         <ProPanel className="text-center">
-          <img className="mx-auto h-28 w-28 rounded-full border-4 border-primary-container object-cover" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80" alt="Alex Carter" />
-          <h3 className="mt-5 text-2xl font-black">Alex Carter</h3>
+          <img className="mx-auto h-28 w-28 rounded-full border-4 border-primary-container object-cover" src={avatarUrl} alt={profile?.full_name || 'Alex Carter'} />
+          <h3 className="mt-5 text-2xl font-black">{profile?.full_name || 'Alex Carter'}</h3>
           <p className="text-on-surface-variant">Pro Member</p>
           <div className="mt-6 grid grid-cols-2 gap-4">
-            <ProMetric label="Weight" value="78.5kg" />
-            <ProMetric label="Goal" value="70kg" />
+            <ProMetric label="Weight" value={`${formatNumber(profile?.current_weight_kg, '78.5')}kg`} />
+            <ProMetric label="Goal" value={`${formatNumber(profile?.target_weight_kg, '70')}kg`} />
           </div>
         </ProPanel>
         <div className="grid gap-6 md:grid-cols-2">
@@ -1458,17 +1686,32 @@ function ProProfilePage() {
 }
 
 function ProSettingsPage() {
+  const { data: settings, setData: setSettings } = useBackendData(() => apiRequest('/api/settings'), null, [])
+  const toggle = async (key, apiKey) => {
+    const next = { ...(settings || {}), [key]: !settings?.[key] }
+    setSettings(next)
+    await apiRequest('/api/settings', { method: 'PUT', body: { [apiKey]: next[key] } })
+  }
+  const items = [
+    ['Light / Dark / System', true, null],
+    ['Meal Reminder', Boolean(settings?.meal_reminder_enabled ?? true), ['meal_reminder_enabled', 'mealReminderEnabled']],
+    ['Hydration Alerts', Boolean(settings?.water_reminder_enabled ?? true), ['water_reminder_enabled', 'waterReminderEnabled']],
+    ['Weekly Report', Boolean(settings?.weekly_report_enabled ?? true), ['weekly_report_enabled', 'weeklyReportEnabled']],
+    ['Notifications', Boolean(settings?.notification_enabled ?? true), ['notification_enabled', 'notificationEnabled']],
+    ['Locale ID', settings?.locale || 'id-ID', null]
+  ]
+
   return (
     <ProPage title="Settings" subtitle="Theme, notifications, data export, and privacy controls." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Save Changes</button>}>
       <div className="grid gap-6 lg:grid-cols-2">
-        {['Light / Dark / System', 'Meal Reminder', 'Hydration Alerts', 'Data Export', 'Privacy Mode', 'Connected Devices'].map((item, index) => (
+        {items.map(([item, enabled, keys], index) => (
           <ProPanel className="flex items-center justify-between gap-4" key={item}>
             <div>
               <h3 className="font-black">{item}</h3>
-              <p className="mt-1 text-sm text-on-surface-variant">Smooth interactive setting control.</p>
+              <p className="mt-1 text-sm text-on-surface-variant">{keys ? 'Connected to backend settings.' : 'Smooth interactive setting control.'}</p>
             </div>
-            <button className={`h-7 w-12 rounded-full p-1 transition ${index % 2 === 0 ? 'bg-primary' : 'bg-surface-container-high'}`} type="button">
-              <motion.span className="block h-5 w-5 rounded-full bg-white shadow" animate={{ x: index % 2 === 0 ? 20 : 0 }} />
+            <button className={`h-7 w-12 rounded-full p-1 transition ${enabled ? 'bg-primary' : 'bg-surface-container-high'}`} onClick={() => keys && toggle(keys[0], keys[1])} type="button">
+              <motion.span className="block h-5 w-5 rounded-full bg-white shadow" animate={{ x: enabled ? 20 : 0 }} />
             </button>
           </ProPanel>
         ))}
@@ -1477,18 +1720,38 @@ function ProSettingsPage() {
   )
 }
 
-function ProNotificationsPage() {
+function ProNotificationsPage({ shellData }) {
+  const { data: notifications, setData: setNotifications } = useBackendData(
+    () => apiRequest('/api/notifications?limit=20'),
+    shellData?.notifications || [],
+    [shellData?.notifications?.length]
+  )
+  const visibleNotifications = notifications.length
+    ? notifications
+    : [
+        { id: 'fallback-1', title: 'Lunch reminder in 30 minutes', created_at: new Date().toISOString() },
+        { id: 'fallback-2', title: 'Hydration streak maintained', created_at: new Date().toISOString() },
+        { id: 'fallback-3', title: 'Weekly nutrition report ready', created_at: new Date().toISOString() },
+        { id: 'fallback-4', title: 'Community challenge updated', created_at: new Date().toISOString() }
+      ]
+
+  const markAllRead = async () => {
+    const unread = notifications.filter((item) => item.status === 'unread')
+    await Promise.all(unread.map((item) => apiRequest(`/api/notifications/${item.id}/read`, { method: 'PATCH' })))
+    setNotifications(notifications.map((item) => ({ ...item, status: 'read' })))
+  }
+
   return (
-    <ProPage title="Activity Hub" subtitle="Reminders, achievements, reports, and system health signals." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Mark All Read</button>}>
+    <ProPage title="Activity Hub" subtitle="Reminders, achievements, reports, and system health signals." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" onClick={markAllRead} type="button">Mark All Read</button>}>
       <div className="grid gap-4">
-        {['Lunch reminder in 30 minutes', 'Hydration streak maintained', 'Weekly nutrition report ready', 'Community challenge updated'].map((item, index) => (
-          <ProPanel className="flex items-center gap-4 p-4" key={item}>
+        {visibleNotifications.map((item, index) => (
+          <ProPanel className="flex items-center gap-4 p-4" key={item.id || item.title}>
             <span className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
               <Bell size={20} />
             </span>
             <div className="min-w-0">
-              <h3 className="font-black">{item}</h3>
-              <p className="text-sm text-on-surface-variant">{index + 1}h ago</p>
+              <h3 className="font-black">{item.title}</h3>
+              <p className="text-sm text-on-surface-variant">{item.message || `${index + 1}h ago`}</p>
             </div>
           </ProPanel>
         ))}
@@ -1582,16 +1845,64 @@ function ReferencePage({ html }) {
       }
     }
 
-    const onSubmit = (event) => {
+    const showFormMessage = (form, message, isError = false) => {
+      let messageEl = form.querySelector('[data-api-message]')
+      if (!messageEl) {
+        messageEl = document.createElement('p')
+        messageEl.setAttribute('data-api-message', 'true')
+        messageEl.className = 'mt-3 text-center text-sm font-bold'
+        form.appendChild(messageEl)
+      }
+      messageEl.textContent = message
+      messageEl.style.color = isError ? '#ba1a1a' : '#006e2f'
+    }
+
+    const getFormFields = (form) => {
+      const email = form.querySelector('input[type="email"]')?.value?.trim()
+      const passwords = Array.from(form.querySelectorAll('input[type="password"]')).map((input) => input.value)
+      const textInput = form.querySelector('input:not([type]), input[type="text"]')
+      const fullName = textInput?.value?.trim() || 'Alex Carter'
+      return { email, password: passwords[0], confirmation: passwords[1], fullName }
+    }
+
+    const onSubmit = async (event) => {
       const form = event.target.closest('form')
       if (!form) return
       event.preventDefault()
 
-      if (form.id === 'loginForm') navigate('/app/dashboard')
-      else if (form.id === 'registerForm') navigate('/verify-email')
-      else if (form.id === 'forgotForm') navigate('/verify-email')
-      else if (form.id === 'resetForm') navigate('/login')
-      else navigate('/app/dashboard')
+      const submitButton = form.querySelector('button[type="submit"]')
+      const originalButtonContent = submitButton?.innerHTML
+
+      try {
+        if (submitButton) {
+          submitButton.disabled = true
+          submitButton.style.opacity = '0.75'
+          submitButton.innerHTML = '<span class="material-symbols-outlined">sync</span>Memproses...'
+        }
+
+        if (form.id === 'loginForm') {
+          const { email, password } = getFormFields(form)
+          await login(email, password === 'nutritrack' ? 'nutritrack123' : password)
+          showFormMessage(form, 'Login berhasil. Mengalihkan ke dashboard...')
+          navigate('/app/dashboard')
+        } else if (form.id === 'registerForm') {
+          const { fullName, email, password, confirmation } = getFormFields(form)
+          if (password !== confirmation) throw new Error('Konfirmasi password belum sama.')
+          await register(fullName, email, password === 'nutritrack' ? 'nutritrack123' : password)
+          showFormMessage(form, 'Akun berhasil dibuat. Mengalihkan ke onboarding...')
+          navigate('/onboarding')
+        } else if (form.id === 'forgotForm') navigate('/verify-email')
+        else if (form.id === 'resetForm') navigate('/login')
+        else navigate('/app/dashboard')
+      } catch (err) {
+        showFormMessage(form, err.message || 'Proses gagal.', true)
+      } finally {
+        if (submitButton) {
+          submitButton.disabled = false
+          submitButton.style.opacity = ''
+          submitButton.innerHTML = originalButtonContent
+        }
+      }
     }
 
     const onCollapse = () => {
