@@ -4919,8 +4919,8 @@ function LegalPage({ type }) {
   }, [page.documentTitle])
 
   return (
-    <AnimatedPage className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <LegalHeader active={type} navLabel={page.navLabel} navTo={page.navTo} />
+    <AnimatedPage className="min-h-screen bg-slate-50 font-['Plus_Jakarta_Sans'] text-slate-900">
+      <LegalHeader active={type} />
       <main className="mx-auto max-w-5xl px-6 py-14">
         <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
           <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.28em] text-green-700">{page.label}</p>
@@ -4937,14 +4937,18 @@ function LegalPage({ type }) {
   )
 }
 
-function LegalHeader({ active, navLabel, navTo }) {
+function LegalHeader({ active }) {
+  const secondaryLink = active === 'terms'
+    ? { label: 'Privacy', to: '/privacy' }
+    : { label: 'Terms', to: '/terms' }
+
   return (
-    <header className="sticky top-0 z-40 h-16 border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-40 h-16 border-b bg-white">
       <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-6">
         <Link className="text-2xl font-black text-green-700 transition hover:text-green-800" to="/">NutriTrack</Link>
         <nav className="flex gap-5 text-sm font-bold" aria-label="Navigasi legal">
           <Link className="transition hover:text-green-700 focus:outline-none focus:ring-4 focus:ring-green-200" to="/login">Login</Link>
-          <Link className="transition hover:text-green-700 focus:outline-none focus:ring-4 focus:ring-green-200" aria-current={active === 'privacy' && navLabel === 'Privacy' ? 'page' : undefined} to={navTo}>{navLabel}</Link>
+          <Link className="transition hover:text-green-700 focus:outline-none focus:ring-4 focus:ring-green-200" to={secondaryLink.to}>{secondaryLink.label}</Link>
         </nav>
       </div>
     </header>
@@ -4961,29 +4965,53 @@ function LegalSectionCard({ title, body, index }) {
 }
 
 function SplashPage() {
-  const [highlighted, setHighlighted] = useState(false)
-  const reduceMotion = useReducedMotion()
-
   useEffect(() => {
     document.title = 'Splash - NutriTrack'
     document.body.className = ''
+  }, [])
+
+  return (
+    <motion.main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-100 px-6 font-['Plus_Jakarta_Sans']" {...pageMotion}>
+      <motion.section className="text-center" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+        <SplashLogo />
+        <motion.h1 className="mb-3 text-4xl font-black text-[#007a35]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>NutriTrack</motion.h1>
+        <motion.p className="mb-8 text-slate-600" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Halo, Alex. Mari mulai perjalanan sehatmu.</motion.p>
+        <SplashCta />
+      </motion.section>
+    </motion.main>
+  )
+}
+
+function SplashLogo() {
+  const reduceMotion = useReducedMotion()
+
+  return (
+    <motion.div className="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-[32px] bg-[#007a35] text-white shadow-2xl shadow-green-900/20" animate={reduceMotion ? { scale: 1, rotate: 0 } : { scale: [1, 1.08, 1], rotate: [0, 8, 0] }} transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
+      <MaterialSymbol className="text-7xl" aria-hidden="true">nutrition</MaterialSymbol>
+    </motion.div>
+  )
+}
+
+function SplashCta() {
+  const [highlighted, setHighlighted] = useState(false)
+
+  useEffect(() => {
     const timer = window.setTimeout(() => setHighlighted(true), 1200)
     return () => window.clearTimeout(timer)
   }, [])
 
+  const rememberSplash = () => {
+    try {
+      localStorage.setItem('nutritrack.hasSeenSplash', 'true')
+    } catch {
+      // Splash should continue even when storage is unavailable.
+    }
+  }
+
   return (
-    <AnimatedPage className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-100 px-6 font-sans">
-      <main className="text-center">
-        <motion.div className="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-[32px] bg-[#007a35] text-white shadow-2xl shadow-green-900/20" animate={reduceMotion ? { scale: 1, rotate: 0 } : { scale: [1, 1.08, 1], rotate: [0, 8, 0] }} transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-          <MaterialSymbol className="text-7xl">nutrition</MaterialSymbol>
-        </motion.div>
-        <motion.h1 className="mb-3 text-4xl font-black text-[#007a35]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>NutriTrack</motion.h1>
-        <motion.p className="mb-8 text-slate-600" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Halo, Alex. Mari mulai perjalanan sehatmu.</motion.p>
-        <Link className={`inline-flex rounded-2xl bg-[#007a35] px-7 py-3 font-extrabold text-white transition hover:scale-105 active:scale-95 ${highlighted ? 'ring-4 ring-green-200' : ''}`} to="/onboarding">
-          Lanjut Onboarding
-        </Link>
-      </main>
-    </AnimatedPage>
+    <Link className={`inline-flex rounded-2xl bg-[#007a35] px-7 py-3 font-extrabold text-white transition hover:scale-105 active:scale-95 ${highlighted ? 'ring-4 ring-green-200' : ''}`} to="/onboarding" onClick={rememberSplash}>
+      Lanjut Onboarding
+    </Link>
   )
 }
 
