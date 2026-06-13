@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Compass,
+  CreditCard,
   Download,
   Droplets,
   Dumbbell,
@@ -44,6 +45,7 @@ import {
   Gauge,
   Heart,
   HelpCircle,
+  Headphones,
   Home,
   LayoutDashboard,
   Lightbulb,
@@ -55,8 +57,10 @@ import {
   MoreHorizontal,
   Lock,
   Plus,
+  Play,
   Scale,
   Search,
+  Send,
   Settings,
   Shield,
   Share2,
@@ -68,9 +72,12 @@ import {
   User,
   UserPlus,
   Users,
-  Utensils
+  Utensils,
+  Wrench,
+  X
 } from 'lucide-react'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { apiRequest, clearStoredAuth, getStoredAuth, login, register } from './api'
 
@@ -81,8 +88,7 @@ const navItems = [
   { to: '/app/progress', label: 'Progress', icon: TrendingUp },
   { to: '/app/nutrition', label: 'Nutrition', icon: BarChart3 },
   { to: '/app/foods', label: 'Foods', icon: Apple },
-  { to: '/app/community', label: 'Community', icon: User },
-  { to: '/app/profile', label: 'Profile', icon: User }
+  { to: '/app/community', label: 'Community', icon: User }
 ]
 
 const appPageMeta = {
@@ -972,8 +978,7 @@ const proNavItems = [
   { to: '/app/progress', label: 'Progress', icon: TrendingUp },
   { to: '/app/nutrition', label: 'Nutrition', icon: BarChart3 },
   { to: '/app/foods', label: 'Foods', icon: Apple },
-  { to: '/app/community', label: 'Community', icon: User },
-  { to: '/app/profile', label: 'Profile', icon: User }
+  { to: '/app/community', label: 'Community', icon: User }
 ]
 
 const proPageMeta = {
@@ -987,8 +992,8 @@ const proPageMeta = {
   '/app/community': { title: 'Community Hub', subtitle: 'Tuesday, October 24', search: 'Search buddies or challenges...' },
   '/app/profile': { title: 'Profile Detail', subtitle: 'Alex Rivera', search: 'Search metrics, meals, or friends...' },
   '/app/settings': { title: 'Settings', subtitle: 'Atur preferensi akun dan pengalaman NutriTrack Anda.', search: 'Search settings...' },
-  '/app/notifications': { title: 'Activity Hub', subtitle: 'Smart reminders and weekly reports', search: 'Search notifications...' },
-  '/help': { title: 'Help Center', subtitle: 'Find answers and guided support', search: 'Search help...' }
+  '/app/notifications': { title: 'Notifications', subtitle: 'Your wellness journey is 85% on track this week.', search: 'Search analytics...' },
+  '/help': { title: 'Help Center', subtitle: 'Apa yang bisa kami bantu?', search: 'Cari di pusat bantuan...' }
 }
 
 const proRoutes = {
@@ -1156,7 +1161,7 @@ function ProAppLayout() {
         </motion.div>
 
         <div className="mt-3 grid flex-shrink-0 gap-2">
-          <NavLink className="flex min-h-10 items-center gap-3 rounded-xl px-4 text-label-md font-bold text-on-surface-variant transition hover:text-on-surface" to="/help">
+          <NavLink className={({ isActive }) => `flex min-h-10 items-center gap-3 rounded-xl px-4 text-label-md font-bold transition ${isActive ? 'bg-primary-container text-on-primary-container shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`} to="/help">
             <HelpCircle size={20} />
             <span>Help Center</span>
           </NavLink>
@@ -1179,19 +1184,53 @@ function ProAppLayout() {
                 <Search size={18} />
                 <input className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm outline-none ring-0 focus:ring-0" placeholder={meta.search} />
               </label>
-              <Link className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" to="/app/notifications">
+              <Link className="relative grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" to="/app/notifications?open=activity">
                 <Bell size={20} />
+                {(shellData.notifications || []).some((item) => item.status === 'unread') && <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-error-red ring-2 ring-surface" />}
               </Link>
               <Link className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" to="/app/settings">
                 <Settings size={20} />
               </Link>
-              <Link className="flex min-w-0 items-center gap-3 border-l border-outline-variant pl-3" to="/app/profile">
-                <img className="h-11 w-11 rounded-full border-2 border-primary-container object-cover" src={avatarUrl} alt={userName} />
-                <span className="hidden text-left lg:block">
-                  <strong className="block text-sm font-black">{userName}</strong>
-                  <small className="block text-xs text-on-surface-variant">Pro Member</small>
-                </span>
-              </Link>
+              <div className="group relative flex min-w-0">
+                <Link className="flex min-w-0 items-center gap-3 border-l border-outline-variant pl-3" to="/app/profile">
+                  <img className="h-11 w-11 rounded-full border-2 border-primary-container object-cover" src={avatarUrl} alt={userName} />
+                  <span className="hidden text-left lg:block">
+                    <strong className="block text-sm font-black">{userName}</strong>
+                    <small className="block text-xs text-on-surface-variant">Pro Member</small>
+                  </span>
+                </Link>
+                <div className="invisible absolute right-0 top-[calc(100%+14px)] z-50 w-80 translate-y-2 rounded-3xl border border-outline-variant/30 bg-white p-4 text-left opacity-0 shadow-2xl shadow-slate-900/10 transition-all duration-200 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
+                  <div className="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
+                    <img className="h-12 w-12 rounded-2xl border-2 border-primary-container object-cover" src={avatarUrl} alt={userName} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-black text-on-surface">{userName}</p>
+                      <p className="text-xs font-bold text-on-surface-variant">Member profile</p>
+                    </div>
+                    <span className="ml-auto rounded-full bg-primary/10 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-primary">Pro</span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-2">
+                    {[
+                      ['Free', 'bg-surface-container text-on-surface-variant border-outline-variant/30'],
+                      ['Pro', 'bg-primary text-on-primary border-primary'],
+                      ['Premium', 'bg-energy-orange/10 text-energy-orange border-energy-orange/20']
+                    ].map(([plan, className]) => (
+                      <div className={`rounded-2xl border px-3 py-3 text-center ${className}`} key={plan}>
+                        <p className="text-[11px] font-black uppercase tracking-wider">{plan}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 grid gap-2">
+                    <Link className="flex items-center gap-3 rounded-2xl bg-surface-container-low px-4 py-3 text-sm font-black text-on-surface transition hover:bg-surface-container" to="/app/profile">
+                      <User size={18} />
+                      Lihat Profile
+                    </Link>
+                    <button className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-black text-error-red transition hover:bg-error-red/10" onClick={logout} type="button">
+                      <LogOut size={18} />
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           {shellError && <p className="mx-auto mt-3 max-w-[1280px] rounded-xl bg-error-red/10 px-4 py-2 text-sm font-bold text-error-red">{shellError}</p>}
@@ -3542,60 +3581,490 @@ function ProNotificationsPage({ shellData }) {
     shellData?.notifications || [],
     [shellData?.notifications?.length]
   )
-  const visibleNotifications = notifications.length
-    ? notifications
-    : [
-        { id: 'fallback-1', title: 'Lunch reminder in 30 minutes', created_at: new Date().toISOString() },
-        { id: 'fallback-2', title: 'Hydration streak maintained', created_at: new Date().toISOString() },
-        { id: 'fallback-3', title: 'Weekly nutrition report ready', created_at: new Date().toISOString() },
-        { id: 'fallback-4', title: 'Community challenge updated', created_at: new Date().toISOString() }
-      ]
+  const location = useLocation()
+  const [drawerOpen, setDrawerOpen] = useState(true)
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [localReadIds, setLocalReadIds] = useState([])
+  const referenceNotifications = useMemo(
+    () => [
+      {
+        id: 'meal-lunch',
+        type: 'reminders',
+        section: 'Meal Reminders',
+        sectionTone: 'text-primary',
+        badge: '2 NEW',
+        title: 'Lunch Time!',
+        time: '12:30 PM',
+        message: "You haven't logged your Mediterranean salad yet. Stay consistent!",
+        Icon: Utensils,
+        iconClass: 'bg-mint-surface border-primary/10 text-primary',
+        cardClass: 'bg-card-light border-outline-variant',
+        read: false,
+        actions: [{ label: 'Log Now', className: 'bg-primary text-on-primary hover:bg-on-primary-container', to: '/app/log-food' }]
+      },
+      {
+        id: 'achievement-hydration',
+        type: 'achievements',
+        section: 'Achievements',
+        sectionTone: 'text-achievement-purple',
+        badge: 'JUST NOW',
+        title: 'Hydration Hero',
+        time: '5m ago',
+        message: "You've hit your water goal 7 days in a row! New badge unlocked.",
+        Icon: Trophy,
+        iconClass: 'bg-white border-achievement-purple/30 text-achievement-purple rounded-full shadow-inner',
+        cardClass: 'bg-surface-container-low border-achievement-purple/20',
+        glowClass: 'bg-achievement-purple/10',
+        read: false,
+        actions: [
+          { label: 'View Badge', className: 'bg-achievement-purple text-on-primary hover:opacity-90', to: '/app/profile' },
+          { label: 'Share', icon: Share2, className: 'border border-achievement-purple/30 text-achievement-purple hover:bg-achievement-purple/5' }
+        ]
+      },
+      {
+        id: 'weekly-report',
+        type: 'reports',
+        section: 'Weekly Reports',
+        sectionTone: 'text-secondary',
+        title: 'Week 4 Analysis',
+        time: 'Yesterday',
+        message: 'Your protein intake is up by 12% compared to last week. See full breakdown.',
+        Icon: BarChart3,
+        iconClass: 'bg-secondary-fixed text-secondary',
+        cardClass: 'bg-card-light border-outline-variant',
+        read: true,
+        actions: [{ label: 'Open Report', className: 'border border-outline-variant text-on-surface-variant hover:bg-surface-container', to: '/app/progress' }]
+      },
+      {
+        id: 'community-keto',
+        type: 'community',
+        section: 'Community',
+        sectionTone: 'text-energy-orange',
+        title: '3 friends joined the Keto Challenge',
+        time: 'Today',
+        message: '',
+        read: true,
+        avatars: [
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuBBpQPwTBwAJxrBRuPURt2LDf1aHST1fGbefEwuj4lM3Vbs1fI25t61kuANVrc-OEmFD4e3cUjQ2bg5etQFVjWEY3HVVAgsmiP4pKwy0OFhKu9c-zkylRoYANYVSsW51XVocxPFL9LgeXp4sUPzpqJioSpuD74YQHbqpT9yq-kiAGPLtPtO_qTksB9skkP5bu0U4_e1LmuuIzFLhDynmexYmkjzFnOQcf_9STuHPSMmECT0c5dOfEvhb1IOLTiAuhsqmuX3zcwszDc',
+          'https://lh3.googleusercontent.com/aida-public/AB6AXuAWBqTUP85IPw_yaaXv8SoWxioAqLFcjved4K-WjZZ-RAc56pY9oQQ0Zhmz-Vh4QcCM0lnDkY34quxhNUaT0QNdhldL8AjuQMngTgp-Y0MHHnBZCHtgCKhHTbXvRl9uOhwyfTgX1JTN1j9_ao4vX1SuksVWi6f64VkjRrAd6P-eFboemtO_oMGw4c_n1W5_b0xGG8sdmicxX2A2BMK8EfHUPPO1fx6H_Q6m_nfdgReXXFZY6mYCdjp5El5BYevrXDnSBzC7ZLaQdWE'
+        ]
+      }
+    ],
+    []
+  )
+  const hubItems = useMemo(
+    () =>
+      referenceNotifications.map((item) => ({
+        ...item,
+        read: item.read || localReadIds.includes(item.id) || notifications.some((backendItem) => backendItem.id === item.id && backendItem.status === 'read')
+      })),
+    [localReadIds, notifications, referenceNotifications]
+  )
+  const unreadCount = hubItems.filter((item) => !item.read).length
+  const filteredItems = activeFilter === 'all' ? hubItems : hubItems.filter((item) => item.type === activeFilter)
+  const groupedItems = filteredItems.reduce((acc, item) => {
+    if (!acc[item.section]) acc[item.section] = []
+    acc[item.section].push(item)
+    return acc
+  }, {})
+
+  useEffect(() => {
+    if (location.search.includes('open=activity')) setDrawerOpen(true)
+  }, [location.search])
+
+  useEffect(() => {
+    if (!drawerOpen) return undefined
+    const originalOverflow = document.body.style.overflow
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setDrawerOpen(false)
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [drawerOpen])
 
   const markAllRead = async () => {
     const unread = notifications.filter((item) => item.status === 'unread')
-    await Promise.all(unread.map((item) => apiRequest(`/api/notifications/${item.id}/read`, { method: 'PATCH' })))
+    try {
+      await Promise.all(unread.map((item) => apiRequest(`/api/notifications/${item.id}/read`, { method: 'PATCH' })))
+    } catch (err) {
+      // Preserve the local interaction when the backend preview is offline.
+    }
     setNotifications(notifications.map((item) => ({ ...item, status: 'read' })))
+    setLocalReadIds(hubItems.map((item) => item.id))
   }
 
   return (
-    <ProPage title="Activity Hub" subtitle="Reminders, achievements, reports, and system health signals." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" onClick={markAllRead} type="button">Mark All Read</button>}>
-      <div className="grid gap-4">
-        {visibleNotifications.map((item, index) => (
-          <ProPanel className="flex items-center gap-4 p-4" key={item.id || item.title}>
-            <span className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
-              <Bell size={20} />
-            </span>
-            <div className="min-w-0">
-              <h3 className="font-black">{item.title}</h3>
-              <p className="text-sm text-on-surface-variant">{item.message || `${index + 1}h ago`}</p>
+    <ProPage title="Notifications" subtitle="Your wellness journey is 85% on track this week." showHeader={false}>
+      <section aria-hidden={drawerOpen} className={`mx-auto max-w-5xl transition-opacity duration-300 ${drawerOpen ? 'opacity-40' : 'opacity-100'}`}>
+        <header className="mb-8">
+          <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Good Morning, Alex</h2>
+          <p className="mt-2 text-body-lg text-on-surface-variant">Your wellness journey is 85% on track this week.</p>
+        </header>
+
+        <div className="grid select-none grid-cols-1 gap-6 pointer-events-none md:grid-cols-3">
+          {[
+            [Activity, 'Daily energy', '85%', 'bg-primary/20 text-primary', 'bg-primary/40'],
+            [Droplets, 'Hydration', '7/8', 'bg-secondary/20 text-secondary', 'bg-secondary/40'],
+            [Dumbbell, 'Streak', '12d', 'bg-achievement-purple/20 text-achievement-purple', 'bg-achievement-purple/40']
+          ].map(([Icon, label, value, iconClass, pillClass]) => (
+            <motion.article className="rounded-3xl border border-outline-variant bg-white p-6 shadow-sm" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} key={label}>
+              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${iconClass}`}>
+                <Icon size={24} />
+              </div>
+              <div className="mb-3 h-4 w-28 rounded-full bg-surface-variant" />
+              <div className={`inline-flex h-9 items-center rounded-full px-4 font-metrics-mono text-lg font-black text-on-surface ${pillClass}`}>{value}</div>
+            </motion.article>
+          ))}
+        </div>
+      </section>
+
+      <button className="fixed bottom-8 right-8 z-20 grid h-14 w-14 place-items-center rounded-full bg-primary text-on-primary shadow-2xl transition-all hover:scale-110 active:scale-95 md:hidden" onClick={() => setDrawerOpen(true)} type="button" aria-label="Open activity hub">
+        <Plus size={32} />
+      </button>
+
+      {createPortal(
+        <>
+          <AnimatePresence>
+            {drawerOpen && (
+              <motion.button
+                aria-label="Close activity hub backdrop"
+                className="fixed inset-0 z-50 bg-on-background/20 backdrop-blur-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => setDrawerOpen(false)}
+                type="button"
+              />
+            )}
+          </AnimatePresence>
+
+          <motion.aside
+            aria-labelledby="activity-hub-title"
+            aria-modal="true"
+            className="fixed right-0 top-0 z-[60] flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
+            initial={false}
+            animate={{ x: drawerOpen ? 0 : '100%' }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            role="dialog"
+          >
+            <div className="flex items-center justify-between border-b border-outline-variant bg-surface-container-lowest p-6">
+              <div>
+                <h3 id="activity-hub-title" className="font-headline-md text-headline-md font-bold text-on-surface">Activity Hub</h3>
+                <p className="font-label-sm text-label-sm text-outline">Manage your health alerts &amp; stats</p>
+              </div>
+              <button className="rounded-full p-2 text-on-surface transition-colors hover:bg-surface-container active:scale-90" onClick={() => setDrawerOpen(false)} type="button" aria-label="Close notifications">
+                <X size={22} />
+              </button>
             </div>
-          </ProPanel>
-        ))}
-      </div>
+
+            <div className="scroll-hide flex gap-2 overflow-x-auto bg-surface-container-lowest p-4" role="tablist" aria-label="Notification filters">
+              {[
+                ['all', 'All'],
+                ['reminders', 'Reminders'],
+                ['achievements', 'Achievements'],
+                ['reports', 'Reports']
+              ].map(([id, label]) => (
+                <button
+                  className={`rounded-full px-4 py-2 font-label-md text-label-md transition-all active:scale-95 ${activeFilter === id ? 'bg-primary text-on-primary shadow-md' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`}
+                  key={id}
+                  onClick={() => setActiveFilter(id)}
+                  role="tab"
+                  aria-selected={activeFilter === id}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="scroll-hide flex-1 space-y-6 overflow-y-auto p-4">
+              {Object.entries(groupedItems).map(([section, items]) => (
+                <section key={section}>
+                  <div className="mb-3 flex items-center justify-between px-2">
+                    <h4 className={`font-label-md text-label-md font-bold uppercase tracking-wider ${items[0].sectionTone}`}>{section}</h4>
+                    {items[0].badge && <span className="text-[10px] font-bold text-outline">{items[0].badge}</span>}
+                  </div>
+                  <div className="space-y-3">
+                    {items.map((item) => (
+                      item.type === 'community' ? <CommunityNotificationCard item={item} key={item.id} /> : <ActivityNotificationCard item={item} key={item.id} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            <div className="border-t border-outline-variant bg-surface-container-low p-6 text-center">
+              <button className="font-label-md text-label-md font-bold text-primary underline-offset-4 transition-all hover:underline active:scale-95 disabled:opacity-50" onClick={markAllRead} disabled={!unreadCount} type="button">
+                Mark all as read
+              </button>
+            </div>
+          </motion.aside>
+        </>,
+        document.body
+      )}
     </ProPage>
   )
 }
 
-function ProHelpPage() {
+function ActivityNotificationCard({ item }) {
+  const Icon = item.Icon
   return (
-    <ProPage title="Help Center" subtitle="Search articles, tutorials, subscriptions, macro tracking, and device sync." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Contact Support</button>}>
-      <ProPanel className="bg-mint p-8 text-center">
-        <h3 className="text-4xl font-black">Apa yang bisa kami bantu?</h3>
-        <label className="mx-auto mt-6 flex h-14 max-w-3xl items-center gap-3 rounded-2xl bg-white px-5 text-left shadow-lg">
-          <Search className="text-primary" />
-          <input className="min-w-0 flex-1 border-0 bg-transparent p-0 focus:ring-0" placeholder="Cari artikel, tutorial, dan lainnya..." />
-        </label>
-      </ProPanel>
-      <div className="grid gap-6 md:grid-cols-4">
-        {['Akun', 'Nutrisi', 'Teknis', 'Langganan'].map((item) => (
-          <ProPanel key={item}>
-            <HelpCircle className="text-primary" />
-            <h3 className="mt-4 text-xl font-black">{item}</h3>
-            <p className="mt-2 text-sm leading-6 text-on-surface-variant">Panduan dan FAQ untuk kategori {item.toLowerCase()}.</p>
-          </ProPanel>
+    <motion.article className={`group relative overflow-hidden rounded-2xl border p-4 shadow-sm transition-all hover:shadow-md ${item.cardClass}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+      {item.glowClass && <div className={`absolute -right-10 -top-10 h-24 w-24 rounded-full blur-2xl ${item.glowClass}`} />}
+      <div className="relative z-10 flex gap-4">
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center border ${item.iconClass}`}>
+          <Icon size={22} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-start justify-between gap-3">
+            <h5 className="font-label-md text-label-md font-bold text-on-surface">{item.title}</h5>
+            <span className="shrink-0 font-label-sm text-label-sm text-outline">{item.time}</span>
+          </div>
+          <p className="mb-3 font-label-md text-label-md text-on-surface-variant">{item.message}</p>
+          <div className="flex gap-2">
+            {item.actions.map((action) => {
+              const ActionIcon = action.icon
+              const className = `rounded-lg py-2 font-label-md text-label-md font-bold transition-all active:scale-95 ${action.icon ? 'px-3' : 'flex-1'} ${action.className}`
+              return action.to ? (
+                <Link className={className} key={action.label} to={action.to}>
+                  {action.label}
+                </Link>
+              ) : (
+                <button className={className} key={action.label} type="button" aria-label={action.label}>
+                  {ActionIcon ? <ActionIcon size={18} /> : action.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </motion.article>
+  )
+}
+
+function CommunityNotificationCard({ item }) {
+  return (
+    <motion.article className="flex items-center gap-4 rounded-2xl border border-outline-variant bg-white p-4 shadow-sm transition-all hover:shadow-md" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+      <div className="flex -space-x-2">
+        {item.avatars.map((avatar, index) => (
+          <img className="h-8 w-8 rounded-full border-2 border-white object-cover" src={avatar} alt={`Community member ${index + 1}`} key={avatar} />
         ))}
       </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-label-md text-label-md text-on-surface">3 friends joined the <span className="font-bold">Keto Challenge</span></p>
+      </div>
+      <ChevronRight className="text-outline" size={20} />
+    </motion.article>
+  )
+}
+
+function ProHelpPage() {
+  const [query, setQuery] = useState('')
+  const popularLinks = ['Tingkatan langganan', 'Dasar pelacakan makro', 'Menghubungkan perangkat']
+  const categories = [
+    { title: 'Akun', description: 'Pengaturan profil, pemulihan kata sandi, dan keamanan.', Icon: User, iconClass: 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white' },
+    { title: 'Nutrisi', description: 'Perencanaan makan, pelacakan kalori, dan target harian.', Icon: Utensils, iconClass: 'bg-energy-orange/10 text-energy-orange group-hover:bg-energy-orange group-hover:text-white' },
+    { title: 'Teknis', description: 'Sinkronisasi perangkat, bug aplikasi, dan tips performa.', Icon: Wrench, iconClass: 'bg-secondary-container/10 text-secondary group-hover:bg-secondary group-hover:text-white' },
+    { title: 'Langganan', description: 'Riwayat tagihan, fitur Premium, dan perpanjangan.', Icon: CreditCard, iconClass: 'bg-achievement-purple/10 text-achievement-purple group-hover:bg-achievement-purple group-hover:text-white' }
+  ]
+  const tutorials = [
+    {
+      title: 'Mencatat makanan pertama Anda',
+      description: 'Pelajari cara menggunakan alat pengenalan foto AI kami.',
+      duration: '2:45',
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBiCr2m1zBxsEnVO2yVDcjunmBInh2Guabi6DEuRI-GsI-AUdSlxaa-1nWwR_LxrCb9q9T-itSCmtr6uMPY-pR1snzJFcB2muPtNOlFCLss7I2zavV-4z5189iU-VPhYVtzF-cOES0jC7sPM7Qq_OR5BbppSdjrqg0jmL_kRPD5vx-pA20fUvGUW3f_VIomtx4vMiGnQ95wKflG179S36cOQNv-9TtW6m8rXdKKN9HQHPtkldjAgWf4uShK3VlFSYaD9GzXJIkqzbU'
+    },
+    {
+      title: 'Menghubungkan Google Fit',
+      description: 'Sinkronkan langkah dan menit aktif Anda dengan mulus.',
+      duration: '3:12',
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAwC-j6AMR63hIgsoXz4PYrvu1vyXoRVwjn1kXo5RIuAmB5FczExsL-kRcILp84RJEMrgibigpa45nMT2SfHPcO1OYp2w5vjhas8ZGFdUMxAVLmRWyX_5R6wxHMifkKlUpbB699GQlIshEwmTYW6n3IVdIDBUsM_1bGtjhvlEaxyMr3ICYSFvD2-2MzqjpbzWPXZbrzr6iI8eApJcwQTHj7zogNQY1lkU20pjqEuiBKGsfRwZKHW7bTfS_I4kkRzqMEKSxiVDH5Na8'
+    },
+    {
+      title: 'Menyesuaikan Dashboard Anda',
+      description: 'Buat NutriTrack bekerja sesuai dengan tujuan spesifik Anda.',
+      duration: '1:50',
+      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBVUilpbVyCwIgsBtuA-VNmkhIeMF7ONCayV98HsoWoe4OfN8qPL3c6xsb9U4EbZMCYisZlh3iPVWcOfyxaqEZWACm0FaYY7CLaFQXLcdPVJrZz1AEtPYEC6aDpdM48j-VvMCxhAaNbT72vS0RzC54nkBoled4XtTwSY5nY5tYmxtkVVmX0c8iE1_lOwJzz4SXdJzjakhWaiUtnKptyJ5KxwZJht6e76MZz6PUKYEsgh_LKAUj-Md3mOa4h2YAuiKihldTxU8xotcg'
+    }
+  ]
+  const faqs = [
+    ['Bagaimana cara membatalkan langganan Premium saya?', 'Anda dapat membatalkan langganan kapan saja melalui menu Pengaturan > Langganan di aplikasi. Jika Anda berlangganan melalui App Store atau Google Play, Anda harus mengelola pembatalan melalui alat manajemen langganan mereka masing-masing.'],
+    ['Apakah NutriTrack sinkron dengan MyFitnessPal?', 'Saat ini, NutriTrack beroperasi sebagai ekosistem independen untuk memberikan akurasi data yang lebih tinggi melalui NutriEngine milik kami. Namun, Anda dapat mengekspor data dalam format CSV untuk diunggah ke layanan lain.'],
+    ['Bisakah saya melacak puasa intermiten?', 'Ya! Anggota Premium memiliki akses ke alat Protokol Puasa yang mencakup pengatur waktu untuk 16:8, 20:4, dan jendela puasa khusus langsung di dashboard.'],
+    ['Apa yang terjadi jika saya menghapus aplikasi?', 'Menghapus aplikasi tidak menghapus akun Anda. Data Anda tetap tersimpan dengan aman di cloud kami. Untuk menghapus akun dan semua data terkait, silakan gunakan tombol Permintaan Penghapusan Data di pengaturan Profil Anda.']
+  ]
+  const filteredFaqs = query.trim()
+    ? faqs.filter(([question, answer]) => `${question} ${answer}`.toLowerCase().includes(query.toLowerCase()))
+    : faqs
+
+  return (
+    <ProPage title="Help Center" subtitle="Apa yang bisa kami bantu?" showHeader={false} wide>
+      <div className="overflow-hidden rounded-[2rem] bg-mint-surface">
+        <section className="relative flex flex-col items-center justify-center overflow-hidden px-4 py-20 text-center md:py-24">
+          <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-secondary/5 blur-3xl" />
+          <div className="relative z-10 w-full max-w-3xl">
+            <h2 className="mb-8 font-headline-xl text-4xl font-black text-on-background md:text-[48px]">Apa yang bisa kami bantu?</h2>
+            <label className="group mx-auto flex h-16 w-full items-center gap-4 rounded-3xl border border-white/70 bg-white/80 px-6 text-left shadow-xl shadow-primary/5 backdrop-blur-xl transition-all focus-within:ring-4 focus-within:ring-primary/10">
+              <Search className="h-8 w-8 flex-shrink-0 text-primary" />
+              <input className="min-w-0 flex-1 border-0 bg-transparent p-0 text-body-lg text-on-surface outline-none ring-0 placeholder:text-on-surface-variant/70 focus:ring-0" placeholder="Cari artikel, tutorial, dan lainnya..." value={query} onChange={(event) => setQuery(event.target.value)} />
+            </label>
+            <div className="mt-6 flex flex-wrap justify-center gap-4 text-label-md">
+              <span className="font-bold text-on-surface-variant">Populer:</span>
+              {popularLinks.map((link, index) => (
+                <span className="flex items-center gap-4" key={link}>
+                  <a className="font-bold text-primary transition hover:underline" href="#faq">{link}</a>
+                  {index < popularLinks.length - 1 && <span className="text-outline-variant/60">•</span>}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {categories.map(({ title, description, Icon, iconClass }) => (
+          <motion.button className="group flex min-h-[220px] flex-col justify-between rounded-[1.5rem] border border-slate-200/50 bg-white/80 p-6 text-left shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl transition-transform hover:-translate-y-1" key={title} whileHover={{ y: -4 }} type="button">
+            <div className="mb-10 flex items-start justify-between">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${iconClass}`}>
+                <Icon size={28} />
+              </div>
+              <ArrowRight className="text-on-surface-variant/40" size={22} />
+            </div>
+            <div>
+              <h3 className="mb-2 font-headline-md text-lg font-bold text-on-surface">{title}</h3>
+              <p className="text-sm leading-relaxed text-on-surface-variant">{description}</p>
+            </div>
+          </motion.button>
+        ))}
+      </section>
+
+      <section className="-mx-5 bg-surface-container-low px-5 py-20 lg:-mx-8 lg:px-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="font-headline-lg text-headline-lg font-bold text-on-background">Tutorial Singkat</h2>
+              <p className="mt-2 text-on-surface-variant">Kuasai NutriTrack dalam hitungan menit dengan panduan video kami.</p>
+            </div>
+            <button className="flex items-center gap-2 font-bold text-primary transition-all hover:gap-3" type="button">
+              Lihat semua video <ArrowRight size={18} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+            {tutorials.map((item) => (
+              <motion.article className="group overflow-hidden rounded-3xl border border-slate-200/50 bg-white/80 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" key={item.title} whileHover={{ y: -4 }}>
+                <div className="relative h-48 overflow-hidden bg-surface-dim">
+                  <img className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src={item.image} alt={item.title} loading="lazy" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors group-hover:bg-black/10">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition-transform group-hover:scale-110">
+                      <Play size={30} fill="currentColor" />
+                    </div>
+                  </div>
+                  <span className="absolute bottom-4 right-4 rounded-lg bg-black/60 px-2 py-1 font-metrics-mono text-xs text-white backdrop-blur-md">{item.duration}</span>
+                </div>
+                <div className="p-6">
+                  <h4 className="mb-2 font-headline-md text-lg font-bold text-on-surface">{item.title}</h4>
+                  <p className="text-sm text-on-surface-variant">{item.description}</p>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-[1200px] py-6" id="faq">
+        <h2 className="mb-12 text-center font-headline-lg text-headline-lg font-bold text-on-background">Pertanyaan yang Sering Diajukan</h2>
+        <div className="mx-auto max-w-3xl space-y-6">
+          {filteredFaqs.length ? filteredFaqs.map(([question, answer]) => (
+            <details className="group overflow-hidden rounded-2xl border border-slate-200/50 bg-white/80 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl transition-all duration-300 open:ring-2 open:ring-primary/20" key={question}>
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6">
+                <span className="font-headline-md text-lg font-bold text-on-surface">{question}</span>
+                <ChevronRight className="flex-shrink-0 text-primary transition-transform duration-300 group-open:rotate-90" size={22} />
+              </summary>
+              <div className="border-t border-outline-variant/10 px-6 pb-6 pt-6 font-body-md text-on-surface-variant">{answer}</div>
+            </details>
+          )) : (
+            <div className="rounded-2xl border border-outline-variant/30 bg-white/80 p-6 text-center text-on-surface-variant">Tidak ada FAQ yang cocok dengan pencarian Anda.</div>
+          )}
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-[1200px] pb-12">
+        <motion.div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-achievement-purple to-energy-orange p-10 text-center text-white shadow-2xl md:p-20" whileHover={{ y: -3 }}>
+          <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-primary-container/20 blur-3xl" />
+          <div className="relative z-10 mx-auto max-w-2xl">
+            <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
+              <Headphones size={48} />
+            </div>
+            <h2 className="mb-6 font-headline-lg text-4xl font-bold">Masih butuh bantuan?</h2>
+            <p className="mb-12 font-body-lg text-white/90">Tim dukungan kami tersedia 24/7 untuk memastikan perjalanan kesehatan Anda tetap di jalurnya. Pilih cara yang Anda sukai untuk terhubung.</p>
+            <div className="flex flex-col justify-center gap-6 sm:flex-row">
+              <button className="flex items-center justify-center gap-3 rounded-2xl bg-white px-8 py-4 font-bold text-primary shadow-xl transition-transform hover:scale-105" type="button">
+                <MessageCircle size={20} fill="currentColor" />
+                Mulai Obrolan Langsung
+              </button>
+              <button className="flex items-center justify-center gap-3 rounded-2xl border border-white/30 bg-white/20 px-8 py-4 font-bold text-white backdrop-blur-md transition-colors hover:bg-white/30" type="button">
+                <Mail size={20} />
+                Kirim Email Dukungan
+              </button>
+            </div>
+            <p className="mt-10 font-label-sm text-xs uppercase tracking-widest text-white/60">Waktu respon rata-rata: 2 jam</p>
+          </div>
+        </motion.div>
+      </section>
+
+      <HelpFooter />
     </ProPage>
+  )
+}
+
+function HelpFooter() {
+  return (
+    <footer className="-mx-5 -mb-24 border-t border-outline-variant/20 bg-surface-container px-5 py-16 lg:-mx-8 lg:px-8">
+      <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-12 md:grid-cols-4">
+        <div>
+          <div className="mb-8 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white">
+              <Apple size={22} />
+            </div>
+            <span className="font-headline-md text-2xl font-black text-primary">NutriTrack</span>
+          </div>
+          <p className="text-sm leading-relaxed text-on-surface-variant">Memberdayakan perjalanan kesehatan Anda melalui data dan pengalaman yang menyenangkan.</p>
+        </div>
+        {[
+          ['Produk', ['Fitur', 'Premium', 'Komunitas']],
+          ['Perusahaan', ['Tentang Kami', 'Kebijakan Privasi', 'Syarat Layanan']]
+        ].map(([title, links]) => (
+          <div key={title}>
+            <h5 className="mb-6 text-xs font-bold uppercase tracking-wider text-on-surface">{title}</h5>
+            <ul className="space-y-4 text-sm text-on-surface-variant">
+              {links.map((link) => <li key={link}><a className="transition-colors hover:text-primary" href="#top">{link}</a></li>)}
+            </ul>
+          </div>
+        ))}
+        <div>
+          <h5 className="mb-6 text-xs font-bold uppercase tracking-wider text-on-surface">Newsletter</h5>
+          <label className="flex gap-2 rounded-xl border border-outline-variant/30 bg-white p-1">
+            <input className="w-full rounded-lg border-0 bg-transparent px-4 py-2 text-sm focus:ring-0" placeholder="Email Anda" type="email" />
+            <button className="rounded-lg bg-primary p-3 text-white transition-transform hover:scale-105" type="button" aria-label="Send newsletter email">
+              <Send size={18} />
+            </button>
+          </label>
+        </div>
+      </div>
+      <div className="mx-auto mt-16 flex max-w-[1200px] flex-col items-center justify-between gap-6 border-t border-outline-variant/10 pt-10 text-xs font-medium text-on-surface-variant md:flex-row">
+        <span>© 2024 NutriTrack. Seluruh hak cipta dilindungi.</span>
+        <div className="flex gap-8 uppercase tracking-widest">
+          {['Twitter', 'Instagram', 'LinkedIn'].map((item) => <a className="transition-colors hover:text-primary" href="#top" key={item}>{item}</a>)}
+        </div>
+      </div>
+    </footer>
   )
 }
 
