@@ -966,8 +966,8 @@ const proPageMeta = {
   '/app/meal-planner': { title: 'Meal Architecture', subtitle: 'Weekly Plan', search: 'Search recipes or ingredients...' },
   '/app/progress': { title: 'Weight Journey', subtitle: "You've lost 2.4kg in the last 30 days. Stay consistent!", search: 'Search data...' },
   '/app/nutrition': { title: 'Nutrition Analysis', subtitle: 'Macro, vitamin, mineral, and hydration', search: 'Search nutrients...' },
-  '/app/foods': { title: 'Food Database', subtitle: 'Verified meals and quick logging', search: 'Search foods...' },
-  '/app/foods/gado-gado': { title: 'Food Detail', subtitle: 'Gado-gado nutrition breakdown', search: 'Search foods...' },
+  '/app/foods': { title: 'Food Database', subtitle: 'Browse, filter, favorite, and add foods', search: 'Search foods...' },
+  '/app/foods/gado-gado': { title: 'Food Detail', subtitle: 'Nutrition facts and portion calculator', search: 'Search foods...' },
   '/app/community': { title: 'Community Hub', subtitle: 'Challenges, buddies, and streaks', search: 'Search buddies...' },
   '/app/profile': { title: 'Profile Detail', subtitle: 'Goals, preferences, and achievements', search: 'Search activity...' },
   '/app/settings': { title: 'Settings', subtitle: 'Personalize your NutriTrack experience', search: 'Search settings...' },
@@ -1109,10 +1109,12 @@ function ProAppLayout() {
         </div>
 
         <nav className="mt-8 grid gap-2">
-          {proNavItems.map(({ to, label, icon: Icon }) => (
+          {proNavItems.map(({ to, label, icon: Icon }) => {
+            const active = location.pathname === to || (to === '/app/foods' && location.pathname.startsWith('/app/foods/'))
+            return (
             <NavLink
               className={({ isActive }) =>
-                `group flex min-h-11 items-center gap-3 rounded-xl px-4 text-label-md font-bold transition-all duration-200 ${isActive ? 'bg-primary-container text-on-primary-container shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface'}`
+                `group flex min-h-11 items-center gap-3 rounded-xl px-4 text-label-md font-bold transition-all duration-200 ${isActive || active ? 'bg-primary-container text-on-primary-container shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/40 hover:text-on-surface'}`
               }
               key={to}
               onClick={() => setMobileOpen(false)}
@@ -1121,7 +1123,8 @@ function ProAppLayout() {
               <Icon className="h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110" />
               <span className="truncate">{label}</span>
             </NavLink>
-          ))}
+            )
+          })}
         </nav>
 
         <motion.div
@@ -2599,54 +2602,208 @@ function NutritionMacroCard({ item, index }) {
 }
 
 function ProFoodsPage() {
-  const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=9'), [], [])
-  const fallbackImages = [
-    'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80',
-    'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=80'
+  useBackendData(() => apiRequest('/api/foods?limit=9'), [], [])
+  const [activeCategory, setActiveCategory] = useState('Semua')
+  const foodCatalog = [
+    {
+      id: 'gado-gado',
+      name: 'Gado-Gado',
+      category: 'Lunch',
+      calories: 320,
+      protein: 12,
+      carbs: 38,
+      fat: 14,
+      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+      id: 'nasi-ayam-panggang',
+      name: 'Nasi Ayam Panggang',
+      category: 'Lunch',
+      calories: 520,
+      protein: 34,
+      carbs: 58,
+      fat: 16,
+      image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+      id: 'oatmeal-pisang',
+      name: 'Oatmeal Pisang',
+      category: 'Sarapan',
+      calories: 290,
+      protein: 10,
+      carbs: 51,
+      fat: 5,
+      image: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+      id: 'greek-yogurt-parfait',
+      name: 'Greek Yogurt Parfait',
+      category: 'Snack',
+      calories: 240,
+      protein: 18,
+      carbs: 26,
+      fat: 6,
+      image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+      id: 'tempe-bakar',
+      name: 'Tempe Bakar',
+      category: 'Lunch',
+      calories: 180,
+      protein: 16,
+      carbs: 12,
+      fat: 8,
+      image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'
+    }
   ]
-  const visibleFoods = foods.length
-    ? foods
-    : [
-        { name: 'Gado-Gado', calories: 320 },
-        { name: 'Chicken Rice', calories: 510 },
-        { name: 'Oatmeal Banana', calories: 280 }
-      ]
+  const visibleFoods = foodCatalog.filter((food) => activeCategory === 'Semua' || food.category === activeCategory)
+  const categories = ['Semua', 'Sarapan', 'Lunch', 'Snack']
+
   return (
-    <ProPage title="Food Database" subtitle="Browse verified foods with clean responsive cards and online assets." action={<button className="h-11 rounded-xl bg-primary px-5 text-sm font-black text-white" type="button">Add Food</button>}>
-      <div className="grid gap-6 md:grid-cols-3">
-        {visibleFoods.map((food, index) => (
-          <motion.article className="overflow-hidden rounded-[1.5rem] border border-outline-variant/40 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]" key={food.id || food.name} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }} whileHover={{ y: -5 }}>
-            <img className="h-52 w-full object-cover" src={food.image_url || fallbackImages[index % fallbackImages.length]} alt={food.name} />
-            <div className="p-5">
-              <h3 className="text-xl font-black">{food.name}</h3>
-              <p className="mt-2 font-metrics-mono font-black text-primary">{formatNumber(food.calories)} kcal</p>
-              <Link className="mt-4 inline-flex font-black text-primary" to="/app/foods/gado-gado">Detail nutrisi</Link>
+    <ProPage title="Food Database" subtitle="Browse, filter, favorite, and add foods" showHeader={false} wide>
+      <div className="space-y-8 pb-10">
+        <NutritionGlassCard className="p-6 md:p-8">
+          <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="mb-2 text-label-md font-medium text-on-surface-variant">Database makanan Indonesia</p>
+              <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface">Browse Foods</h1>
             </div>
-          </motion.article>
-        ))}
+            <div className="flex flex-wrap gap-3">
+              {categories.map((category) => (
+                <button
+                  className={`rounded-xl px-4 py-2 font-bold transition-all duration-200 active:scale-[0.98] ${activeCategory === category ? 'bg-primary text-white shadow-md shadow-primary/15' : 'bg-surface-container text-on-surface hover:bg-surface-variant'}`}
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  type="button"
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-3">
+            {visibleFoods.map((food, index) => (
+              <motion.div key={food.id || food.name} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05, duration: 0.3 }}>
+                <Link className="block overflow-hidden rounded-2xl border border-outline-variant/40 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg active:scale-[0.98]" to="/app/foods/gado-gado">
+                  <img className="h-40 w-full object-cover" src={food.image} alt={food.name} loading="lazy" />
+                  <div className="p-5">
+                    <div className="flex justify-between gap-4">
+                      <b className="min-w-0 text-on-surface">{food.name}</b>
+                      <span className="whitespace-nowrap font-bold text-primary">{formatNumber(food.calories)} kcal</span>
+                    </div>
+                    <p className="mt-2 text-sm text-on-surface-variant">Protein {formatNumber(food.protein)}g / Carbs {formatNumber(food.carbs)}g / Fat {formatNumber(food.fat)}g</p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+
+            <motion.button className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-primary/40 bg-mint-surface p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-primary/10 active:scale-[0.98]" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.3 }} type="button">
+              <Plus className="mb-4 h-12 w-12 text-primary" />
+              <b>Tambah Makanan Custom</b>
+              <p className="mt-2 text-sm leading-6 text-on-surface-variant">Frontend placeholder untuk upload foto dan data nutrisi.</p>
+            </motion.button>
+          </div>
+        </NutritionGlassCard>
+
+        <section className="grid gap-6 lg:grid-cols-3">
+          {[
+            ['Favorite Foods', 'Quick-add dari makanan yang sering disimpan.'],
+            ['Filters', 'Kategori, kalori, protein, dan tag diet.'],
+            ['Skeleton Loading', 'Slot infinite scroll untuk integrasi data nanti.']
+          ].map(([title, body], index) => (
+            <NutritionGlassCard className="p-7" key={title}>
+              <h3 className="mb-3 font-headline-md text-headline-md font-bold text-on-surface">{title}</h3>
+              <p className="leading-7 text-on-surface-variant">{body}</p>
+              <motion.div className="mt-5 h-2 rounded-full bg-surface-container" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ transformOrigin: 'left center' }} transition={{ delay: index * 0.08, duration: 0.6 }} />
+            </NutritionGlassCard>
+          ))}
+        </section>
       </div>
     </ProPage>
   )
 }
 
 function ProFoodDetailPage() {
+  const [portion, setPortion] = useState(1)
+  const [isFavorite, setIsFavorite] = useState(false)
+  const food = {
+    id: 'gado-gado',
+    name: 'Gado-Gado',
+    category: 'Indonesian',
+    tags: ['Vegetarian friendly'],
+    description: 'Sayuran rebus, tahu, tempe, telur, dan saus kacang. Cocok untuk makan siang kaya serat.',
+    servingLabel: 'plate',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80',
+    calories: 320,
+    protein: 12,
+    carbs: 38,
+    fat: 14,
+    nutrients: [
+      ['Fiber', '8g'],
+      ['Calcium', '12%'],
+      ['Iron', '15%'],
+      ['Sodium', '420mg']
+    ]
+  }
+  const summary = [
+    ['Kalori', Math.round(food.calories * portion), 'text-primary'],
+    ['Protein', `${formatNumber(food.protein * portion)}g`, ''],
+    ['Carbs', `${formatNumber(food.carbs * portion)}g`, ''],
+    ['Fat', `${formatNumber(food.fat * portion)}g`, '']
+  ]
+
   return (
-    <ProPage title="Gado-Gado" subtitle="Portion calculator and nutrition breakdown for an Indonesian classic." action={<Link className="h-11 rounded-xl bg-surface-container px-5 py-3 text-sm font-black text-primary" to="/app/foods">Back to Foods</Link>}>
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <img className="h-[520px] min-h-0 w-full rounded-[1.75rem] object-cover shadow-[0_24px_70px_rgba(15,23,42,0.16)]" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1400&q=80" alt="Gado-gado" />
-        <ProPanel>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">Indonesian food</p>
-          <h3 className="mt-3 text-3xl font-black">Gado-Gado</h3>
-          <p className="mt-3 leading-7 text-on-surface-variant">Vegetables, tofu, tempeh, egg, and peanut sauce. Great for a fiber-rich lunch.</p>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <ProMetric label="Calories" value="320" />
-            <ProMetric label="Protein" value="12g" />
-            <ProMetric label="Carbs" value="38g" />
-            <ProMetric label="Fat" value="14g" />
+    <ProPage title="Food Detail" subtitle="Nutrition facts and portion calculator" showHeader={false}>
+      <div className="mx-auto w-full max-w-[1200px] space-y-8 pb-10">
+        <Link className="inline-flex items-center gap-2 font-bold text-primary transition-colors hover:text-on-primary-container" to="/app/foods">
+          <ArrowLeft size={20} />
+          Kembali ke database
+        </Link>
+
+        <section className="grid items-start gap-8 lg:grid-cols-2">
+          <motion.img className="h-[320px] w-full rounded-[2rem] object-cover shadow-xl transition-transform duration-500 hover:scale-[1.01] md:h-[460px]" src={food.image} alt={food.name} loading="lazy" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.45 }} />
+
+          <NutritionGlassCard>
+            <p className="mb-2 font-bold text-primary">{food.category} / {food.tags.join(', ')}</p>
+            <h1 className="mb-4 font-headline-lg text-headline-lg font-bold text-on-surface">{food.name}</h1>
+            <p className="mb-8 leading-7 text-on-surface-variant">{food.description}</p>
+
+            <div className="mb-8 grid grid-cols-2 gap-4">
+              {summary.map(([label, value, tone], index) => (
+                <motion.div className="rounded-2xl bg-surface-container p-4" key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                  <span className="text-sm text-on-surface-variant">{label}</span>
+                  <b className={`block text-2xl font-bold ${tone}`}>{value}</b>
+                </motion.div>
+              ))}
+            </div>
+
+            <label className="mb-6 block">
+              <span className="font-bold">Porsi: {formatNumber(portion)} {food.servingLabel}</span>
+              <input className="mt-3 w-full accent-primary" type="range" min="1" max="3" step="0.5" value={portion} onChange={(event) => setPortion(Number(event.target.value))} />
+            </label>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link className="flex h-12 items-center justify-center rounded-2xl bg-primary font-extrabold text-white transition-all hover:brightness-110 active:scale-[0.98]" to={`/app/log-food?foodId=${food.id}&portion=${portion}`}>
+                Tambah ke Log
+              </Link>
+              <button className={`h-12 rounded-2xl font-extrabold transition-all active:scale-[0.98] ${isFavorite ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container text-on-surface hover:bg-surface-variant'}`} type="button" aria-pressed={isFavorite} onClick={() => setIsFavorite((value) => !value)}>
+                {isFavorite ? 'Tersimpan' : 'Simpan Favorit'}
+              </button>
+            </div>
+          </NutritionGlassCard>
+        </section>
+
+        <NutritionGlassCard>
+          <h2 className="mb-6 font-headline-md text-headline-md font-bold text-on-surface">Tabel Nutrisi Lengkap</h2>
+          <div className="grid gap-4 text-sm md:grid-cols-4">
+            {food.nutrients.map(([name, value]) => (
+              <div className="rounded-xl border border-outline-variant/40 bg-white p-4 font-bold text-on-surface" key={name}>
+                <span className="text-on-surface-variant">{name}</span> {value}
+              </div>
+            ))}
           </div>
-          <button className="mt-6 h-12 w-full rounded-xl bg-primary font-black text-white" type="button">Add to Log</button>
-        </ProPanel>
+        </NutritionGlassCard>
       </div>
     </ProPage>
   )
