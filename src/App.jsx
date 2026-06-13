@@ -3141,24 +3141,24 @@ function ProfileHero({ user }) {
         <img className="absolute inset-0 h-full w-full object-cover" src={user.bannerUrl} alt="Profile Banner" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
 
-        <motion.div className="absolute bottom-5 left-5 right-5 z-10 flex flex-col gap-5 rounded-[2rem] border border-white/30 bg-white/95 p-5 shadow-2xl shadow-slate-900/10 backdrop-blur-xl sm:bottom-8 sm:left-8 sm:right-8 sm:flex-row sm:items-end sm:gap-6 sm:p-6" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.35 }}>
+        <motion.div className="absolute bottom-5 left-5 right-5 z-10 flex flex-col gap-5 sm:bottom-8 sm:left-8 sm:right-8 sm:flex-row sm:items-end sm:gap-6" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.35 }}>
           <div className="h-28 w-28 flex-shrink-0 overflow-hidden rounded-[2rem] border-4 border-white bg-surface shadow-xl sm:h-36 sm:w-36 sm:rounded-[2.5rem]">
             <img className="h-full w-full object-cover" src={user.avatarUrl} alt={user.name} loading="lazy" />
           </div>
           <div className="min-w-0 flex-1 space-y-2 pb-1">
             <div className="flex flex-wrap items-center gap-3">
-              <h2 className="font-headline-lg text-3xl font-bold text-on-surface md:text-headline-lg">{user.name}</h2>
-              <span className="flex items-center gap-1 rounded-full border border-achievement-purple/30 bg-achievement-purple/10 px-3 py-1 text-[10px] font-bold tracking-widest text-achievement-purple shadow-sm">
+              <h2 className="font-headline-lg text-3xl font-bold text-white drop-shadow-lg md:text-headline-lg">{user.name}</h2>
+              <span className="flex items-center gap-1 rounded-full border border-white/25 bg-white/20 px-3 py-1 text-[10px] font-bold tracking-widest text-white shadow-sm backdrop-blur-md">
                 <Check size={14} />
                 PRO MEMBER
               </span>
             </div>
-            <p className="flex items-center gap-2 text-on-surface-variant">
+            <p className="flex items-center gap-2 text-white/90 drop-shadow">
               <MapPin size={18} />
               {user.location} - Joined {user.joined}
             </p>
           </div>
-          <button className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-8 py-3 font-bold text-on-primary shadow-xl transition-all hover:scale-105 active:scale-95" type="button" aria-label="Edit profile">
+          <button className="flex items-center justify-center gap-2 rounded-2xl bg-white px-8 py-3 font-bold text-primary shadow-xl transition-all hover:scale-105 hover:bg-mint-surface active:scale-95" type="button" aria-label="Edit profile">
             <Edit3 size={20} />
             Edit Profile
           </button>
