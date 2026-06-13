@@ -1932,12 +1932,46 @@ function ReferencePage({ html }) {
       drawerBackdrop?.setAttribute('aria-hidden', 'true')
     }
 
+    const revealObserver =
+      'IntersectionObserver' in window
+        ? new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  entry.target.classList.add('visible')
+                  revealObserver.unobserve(entry.target)
+                }
+              })
+            },
+            { threshold: 0.1 }
+          )
+        : null
+    const revealItems = Array.from(container.querySelectorAll('.staggered-item'))
+    revealItems.forEach((item) => revealObserver?.observe(item))
+
+    const ringCards = Array.from(container.querySelectorAll('.hover\\:scale-\\[1\\.02\\]'))
+    const addRing = (event) => event.currentTarget.classList.add('active-ring')
+    const removeRing = (event) => event.currentTarget.classList.remove('active-ring')
+    ringCards.forEach((card) => {
+      card.addEventListener('mouseenter', addRing)
+      card.addEventListener('mouseleave', removeRing)
+    })
+
+    const onScroll = () => {
+      const publicHeader = container.querySelector('header')
+      if (!publicHeader || sidebar) return
+      publicHeader.classList.toggle('shadow-md', window.scrollY > 50)
+      publicHeader.classList.toggle('shadow-sm', window.scrollY <= 50)
+    }
+
     container.addEventListener('click', onClick)
     container.addEventListener('submit', onSubmit)
     collapseBtn?.addEventListener('click', onCollapse)
     hideBtn?.addEventListener('click', onHide)
     mobileMenuBtn?.addEventListener('click', onOpenDrawer)
     drawerBackdrop?.addEventListener('click', onCloseDrawer)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
 
     return () => {
       container.removeEventListener('click', onClick)
@@ -1946,6 +1980,12 @@ function ReferencePage({ html }) {
       hideBtn?.removeEventListener('click', onHide)
       mobileMenuBtn?.removeEventListener('click', onOpenDrawer)
       drawerBackdrop?.removeEventListener('click', onCloseDrawer)
+      window.removeEventListener('scroll', onScroll)
+      revealObserver?.disconnect()
+      ringCards.forEach((card) => {
+        card.removeEventListener('mouseenter', addRing)
+        card.removeEventListener('mouseleave', removeRing)
+      })
     }
   }, [bodyClass, navigate, title])
 
