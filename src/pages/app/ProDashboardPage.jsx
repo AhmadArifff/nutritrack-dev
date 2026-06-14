@@ -37,6 +37,29 @@ function ProDashboardPage({ shellData }) {
   ], [macros.carbs, macros.fat, macros.fiber, macros.protein])
 
   const scheduleCards = useMemo(() => {
+    if (summary?.schedule?.length) {
+      return schedule.map((item, index) => {
+        const mealType = item.mealType || item.meal_type
+        const title = {
+          breakfast: 'Breakfast',
+          morning_snack: 'Morning Snack',
+          lunch: 'Lunch',
+          afternoon_snack: 'Snack',
+          dinner: 'Dinner',
+          late_snack: 'Late Snack'
+        }[mealType] || mealType
+        const rawTime = String(item.scheduledTime || item.scheduled_time || '00:00').slice(0, 5)
+        return {
+          key: item.id || `${mealType}-${index}`,
+          title,
+          time: rawTime,
+          meal: item.foodName || item.food_name || title,
+          subtitle: `${formatNumber(item.calories || 0)} kcal`,
+          image: index === 0 ? '/assets/remote/remote-021-4b187a0dfb.jpg' : index === 1 ? '/assets/remote/remote-022-20bb4f819b.jpg' : null,
+          done: Boolean(item.isCompleted || item.is_completed || Number(item.loggedItems || 0) > 0)
+        }
+      })
+    }
     const getMeal = (mealType) => schedule.find((item) => item.mealType === mealType)
     return [
       {
@@ -76,7 +99,7 @@ function ProDashboardPage({ shellData }) {
         done: Number(getMeal('dinner')?.loggedItems || 0) > 0
       }
     ]
-  }, [schedule])
+  }, [schedule, summary?.schedule?.length])
 
   return (
     <motion.main className="pro-dashboard-page mx-auto max-w-[1400px] space-y-section-gap px-5 py-7 pb-28 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>

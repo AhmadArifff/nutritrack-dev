@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Activity, Apple, Check, Flame, Plus, Search, Utensils, Droplets, X } from 'lucide-react'
+import { Activity, Apple, Check, Flame, Plus, Utensils, Droplets, X } from 'lucide-react'
 import { apiRequest } from '../../api'
 import { getTodayOrdinalLabel } from '../../utils/dateLabels'
 
@@ -88,69 +88,13 @@ function ProLogFoodPage() {
   const location = useLocation()
   const params = new URLSearchParams(location.search)
   const requestedPlanDate = params.get('planDate') || todayIso()
-  const requestedMealType = params.get('mealType') || 'breakfast'
-  const requestedPlanId = params.get('planId') || ''
-  const { data: logs, error: logsError } = useBackendData(() => apiRequest(`/api/food-logs?date=${todayIso()}`), [], [])
-  const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=500'), [], [])
+  const { data: logs, error: logsError } = useBackendData(() => apiRequest(`/api/food-logs?date=${requestedPlanDate}`), [], [requestedPlanDate])
   const { data: planRows, setData: setPlanRows } = useBackendData(() => apiRequest(`/api/meal-plans?from=${requestedPlanDate}&to=${requestedPlanDate}`), [], [requestedPlanDate])
-  const [planSaving, setPlanSaving] = useState(false)
+  const [reminders, setReminders] = useState([])
   const [planToast, setPlanToast] = useState('')
-  const [planForm, setPlanForm] = useState({
-    foodId: '',
-    foodIds: [],
-    mealType: requestedMealType,
-    plannedTime: requestedMealType === 'lunch' ? '12:30' : requestedMealType === 'dinner' ? '19:00' : '07:30',
-    servingAmount: 1,
-    notes: ''
-  })
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'afternoon_snack']
   const hasLogs = logs.length > 0
-  const selectedPlan = useMemo(() => planRows.find((plan) => plan.id === requestedPlanId), [planRows, requestedPlanId])
   const sortedPlanRows = useMemo(() => [...planRows].sort((a, b) => cleanTime(a.planned_time || a.plannedTime || '99:99').localeCompare(cleanTime(b.planned_time || b.plannedTime || '99:99'))), [planRows])
-  const selectedPlanGroupRows = useMemo(() => {
-    if (!selectedPlan) return []
-    return sortedPlanRows
-  }, [selectedPlan, sortedPlanRows])
-
-  useEffect(() => {
-    if (!selectedPlan) return
-    const groupFoodIds = selectedPlanGroupRows
-      .map((plan) => plan.food_id || plan.foodId)
-      .filter(Boolean)
-    setPlanForm({
-      foodId: groupFoodIds[0] || selectedPlan.food_id || selectedPlan.foodId || '',
-      foodIds: groupFoodIds.length ? groupFoodIds : selectedPlan.food_id || selectedPlan.foodId ? [selectedPlan.food_id || selectedPlan.foodId] : [],
-      mealType: selectedPlan.meal_type || selectedPlan.mealType || requestedMealType,
-      plannedTime: cleanTime(selectedPlan.planned_time || selectedPlan.plannedTime),
-      servingAmount: Number(selectedPlan.serving_amount || selectedPlan.servingAmount || 1),
-      notes: selectedPlan.notes || ''
-    })
-  }, [requestedMealType, selectedPlan, selectedPlanGroupRows])
-
-  const selectedFoodIds = planForm.foodIds || []
-  const foodOptions = useMemo(() => {
-    const existingIds = new Set(foods.map((food) => food.id))
-    const missingSelectedRows = selectedPlanGroupRows
-      .filter((row) => {
-        const rowFoodId = row.food_id || row.foodId || row.id
-        return selectedFoodIds.includes(rowFoodId) && !existingIds.has(rowFoodId)
-      })
-      .map((row) => ({
-        id: row.food_id || row.foodId || row.id,
-        foodId: row.food_id || row.foodId || null,
-        isMealPlanFallback: true,
-        name: row.food_name || row.foodName || 'Meal planner item',
-        category: row.meal_type || row.mealType || '',
-        sub_category: row.serving_unit || row.servingUnit || '',
-        serving_unit: row.serving_unit || row.servingUnit || 'porsi',
-        calories: Number(row.target_calories || row.targetCalories || row.calories || 0),
-        protein_g: Number(row.target_protein_g || row.targetProteinG || 0),
-        carbohydrates_g: Number(row.target_carbs_g || row.targetCarbsG || 0),
-        fat_g: Number(row.target_fat_g || row.targetFatG || 0)
-      }))
-    return [...missingSelectedRows, ...foods]
-  }, [foods, selectedFoodIds, selectedPlanGroupRows])
-  const selectedFoods = useMemo(() => foodOptions.filter((food) => selectedFoodIds.includes(food.id)), [foodOptions, selectedFoodIds])
 
   const groupedLogs = useMemo(() => mealOrder.map((mealType) => {
     const backendItems = logs.filter((log) => (log.meal_type || log.mealType) === mealType)
@@ -167,91 +111,57 @@ function ProLogFoodPage() {
     return {
       mealType,
       kcal: items.reduce((total, item) => total + Number(item.target_calories || item.targetCalories || item.calories || 0), 0),
+      consumedKcal: items.filter((item) => item.is_completed || item.isCompleted).reduce((total, item) => total + Number(item.target_calories || item.targetCalories || item.calories || 0), 0),
       items
     }
   }), [sortedPlanRows])
   const historyItems = sortedPlanRows.length ? sortedPlanRows : fallbackRecentItems
   const recentItems = historyItems.slice(0, 3)
-  const consumed = sortedPlanRows.length ? groupedPlannerMeals.reduce((total, meal) => total + meal.kcal, 0) : hasLogs ? groupedLogs.reduce((total, meal) => total + meal.kcal, 0) : 1450
+  const completedPlanRows = useMemo(() => sortedPlanRows.filter((plan) => plan.is_completed || plan.isCompleted), [sortedPlanRows])
+  const consumed = sortedPlanRows.length ? completedPlanRows.reduce((total, item) => total + Number(item.target_calories || item.targetCalories || item.calories || 0), 0) : hasLogs ? groupedLogs.reduce((total, meal) => total + meal.kcal, 0) : 1450
   const dailyGoal = 2100
   const remaining = Math.max(dailyGoal - consumed, 0)
   const todayLabel = getTodayOrdinalLabel()
+  const consumedMacros = useMemo(() => completedPlanRows.reduce((total, item) => ({
+    calories: total.calories + Number(item.target_calories || item.targetCalories || 0),
+    protein: total.protein + Number(item.target_protein_g || item.targetProteinG || 0),
+    carbs: total.carbs + Number(item.target_carbs_g || item.targetCarbsG || 0),
+    fat: total.fat + Number(item.target_fat_g || item.targetFatG || 0)
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 }), [completedPlanRows])
 
-  const macroTotals = useMemo(() => {
-    const editingIds = new Set(selectedPlanGroupRows.map((item) => item.id))
-    const currentRows = sortedPlanRows.filter((item) => !editingIds.has(item.id))
-    const stored = currentRows.reduce((total, item) => ({
-      protein: total.protein + Number(item.target_protein_g || item.targetProteinG || 0),
-      carbs: total.carbs + Number(item.target_carbs_g || item.targetCarbsG || 0),
-      fat: total.fat + Number(item.target_fat_g || item.targetFatG || 0),
-      calories: total.calories + Number(item.target_calories || item.targetCalories || 0)
-    }), { protein: 0, carbs: 0, fat: 0, calories: 0 })
-    const servingAmount = Number(planForm.servingAmount || 1)
-    const pending = selectedFoods.reduce((total, food) => ({
-      protein: total.protein + Number(food.protein_g || 0) * servingAmount,
-      carbs: total.carbs + Number(food.carbohydrates_g || 0) * servingAmount,
-      fat: total.fat + Number(food.fat_g || 0) * servingAmount,
-      calories: total.calories + Number(food.calories || 0) * servingAmount
-    }), { protein: 0, carbs: 0, fat: 0, calories: 0 })
-    return {
-      protein: stored.protein + pending.protein,
-      carbs: stored.carbs + pending.carbs,
-      fat: stored.fat + pending.fat,
-      calories: stored.calories + pending.calories,
-      source: selectedFoods.length ? `${selectedFoods.length} makanan dipilih` : 'Meal planner harian'
-    }
-  }, [planForm.servingAmount, selectedFoods, selectedPlanGroupRows, sortedPlanRows])
-
-  async function saveMealPlan(event) {
-    event.preventDefault()
-    if (!selectedFoods.length || planSaving) return
-    setPlanSaving(true)
-    setPlanToast('')
-    const servingAmount = Number(planForm.servingAmount || 1)
-    const payload = {
-      planName: 'Weekly Plan',
-      planDate: requestedPlanDate,
-      mealType: planForm.mealType,
-      plannedTime: planForm.plannedTime,
-      servingAmount,
-      notes: planForm.notes
-    }
+  async function toggleMealConsumed(plan) {
+    const nextCompleted = !(plan.is_completed || plan.isCompleted)
+    setPlanRows((current) => current.map((item) => item.id === plan.id ? { ...item, is_completed: nextCompleted, isCompleted: nextCompleted } : item))
     try {
-      const nextFoodIds = new Set(selectedFoods.map((food) => food.id))
-      const existingRowsByFoodId = new Map(selectedPlanGroupRows.map((row) => [row.food_id || row.foodId || row.id, row]))
-      const removedRows = selectedPlanGroupRows.filter((row) => !nextFoodIds.has(row.food_id || row.foodId || row.id))
-      await Promise.all([
-        ...selectedFoods.map((food) => {
-          const existingRow = existingRowsByFoodId.get(food.id)
-          const keepExistingSchedule = existingRow && existingRow.id !== requestedPlanId
-          const body = {
-            ...payload,
-            mealType: keepExistingSchedule ? existingRow.meal_type || existingRow.mealType || payload.mealType : payload.mealType,
-            plannedTime: keepExistingSchedule ? cleanTime(existingRow.planned_time || existingRow.plannedTime || payload.plannedTime) : payload.plannedTime,
-            foodId: food.isMealPlanFallback ? food.foodId : food.id,
-            foodName: food.name,
-            servingUnit: food.serving_unit || 'porsi',
-            targetCalories: Number(food.calories || 0) * servingAmount,
-            targetProteinG: Number(food.protein_g || 0) * servingAmount,
-            targetCarbsG: Number(food.carbohydrates_g || 0) * servingAmount,
-            targetFatG: Number(food.fat_g || 0) * servingAmount
-          }
-          return apiRequest(existingRow ? `/api/meal-plans/${existingRow.id}` : '/api/meal-plans', {
-            method: existingRow ? 'PUT' : 'POST',
-            body
-          })
-        }),
-        ...removedRows.map((row) => apiRequest(`/api/meal-plans/${row.id}`, { method: 'DELETE' }))
-      ])
+      await apiRequest(`/api/meal-plans/${plan.id}/complete`, {
+        method: 'PATCH',
+        body: { completed: nextCompleted }
+      })
       setPlanRows(await apiRequest(`/api/meal-plans?from=${requestedPlanDate}&to=${requestedPlanDate}`))
-      setPlanForm((current) => ({ ...current, foodId: '', foodIds: requestedPlanId ? current.foodIds : [] }))
-      setPlanToast(requestedPlanId ? 'Meal plan berhasil diperbarui.' : 'Meal plan berhasil ditambahkan.')
+      setPlanToast(nextCompleted ? `${plan.food_name || plan.foodName} ditandai sudah dimakan.` : `${plan.food_name || plan.foodName} dikembalikan ke rencana makan.`)
     } catch (error) {
-      setPlanToast(error.message || 'Meal plan gagal disimpan.')
-    } finally {
-      setPlanSaving(false)
+      setPlanRows(await apiRequest(`/api/meal-plans?from=${requestedPlanDate}&to=${requestedPlanDate}`))
+      setPlanToast(error.message || 'Gagal mengubah status makan.')
     }
   }
+
+  useEffect(() => {
+    let active = true
+    async function loadReminders() {
+      try {
+        const data = await apiRequest(`/api/meal-plans/reminders?date=${requestedPlanDate}`)
+        if (active) setReminders(data.items || [])
+      } catch {
+        if (active) setReminders([])
+      }
+    }
+    loadReminders()
+    const interval = window.setInterval(loadReminders, 60_000)
+    return () => {
+      active = false
+      window.clearInterval(interval)
+    }
+  }, [requestedPlanDate])
 
   return (
     <motion.main
@@ -270,18 +180,8 @@ function ProLogFoodPage() {
         <LogFoodSummaryCard consumed={consumed} dailyGoal={dailyGoal} remaining={remaining} />
       </section>
 
-      <MealPlanBuilderPanel
-        foods={foodOptions}
-        form={planForm}
-        macroTotals={macroTotals}
-        planDate={requestedPlanDate}
-        planRows={planRows}
-        saving={planSaving}
-        selectedFoods={selectedFoods}
-        toast={planToast}
-        onChange={setPlanForm}
-        onSubmit={saveMealPlan}
-      />
+      <LogFoodReminderStack reminders={reminders} />
+      <ConsumedMacroCards macros={consumedMacros} plannedCount={sortedPlanRows.length} completedCount={completedPlanRows.length} toast={planToast} />
 
       <section className="mt-8 grid grid-cols-1 gap-7 xl:grid-cols-12">
         <div className="grid content-start gap-7 xl:col-span-4">
@@ -291,7 +191,7 @@ function ProLogFoodPage() {
         <div className="grid gap-7 xl:col-span-8">
           <div className="grid grid-cols-1 gap-7 md:grid-cols-2">
             {groupedPlannerMeals.map((meal, index) => (
-              <LogFoodMealCard key={meal.mealType} meal={meal} index={index} />
+              <LogFoodMealCard key={meal.mealType} meal={meal} index={index} onToggle={toggleMealConsumed} />
             ))}
           </div>
         </div>
@@ -322,122 +222,48 @@ function LogFoodSummaryCard({ consumed, dailyGoal, remaining }) {
   )
 }
 
-function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, saving, selectedFoods, toast, onChange, onSubmit }) {
-  const [foodSearch, setFoodSearch] = useState('')
-  const mealTypes = [
-    ['breakfast', 'Breakfast'],
-    ['morning_snack', 'Morning Snack'],
-    ['lunch', 'Lunch'],
-    ['afternoon_snack', 'Afternoon Snack'],
-    ['dinner', 'Dinner'],
-    ['late_snack', 'Late Snack']
-  ]
-  const dateLabel = new Date(`${planDate}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
-  const selectedIds = form.foodIds || []
-  const filteredFoods = useMemo(() => {
-    const keyword = foodSearch.trim().toLowerCase()
-    const selectedRows = foods.filter((food) => selectedIds.includes(food.id))
-    const searchRows = foods
-      .filter((food) => !keyword || `${food.name} ${food.category || ''} ${food.sub_category || ''}`.toLowerCase().includes(keyword))
-      .filter((food) => !selectedIds.includes(food.id))
-    return [...selectedRows, ...searchRows]
-  }, [foodSearch, foods, selectedIds])
+function LogFoodReminderStack({ reminders }) {
+  if (!reminders.length) return null
+  return (
+    <div className="mt-6 grid gap-3">
+      {reminders.map((reminder) => (
+        <motion.div className={`rounded-2xl border px-5 py-4 shadow-sm ${reminder.urgency === 'before' ? 'border-energy-orange/25 bg-energy-orange/10 text-energy-orange' : 'border-error-red/25 bg-error-red/10 text-error-red'}`} key={reminder.mealPlanId} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="text-xs font-black uppercase tracking-[0.18em]">{reminder.urgency === 'before' ? '3-minute reminder' : 'Meal time reminder'}</p>
+          <h3 className="mt-1 font-headline-md text-lg font-black">{reminder.title}</h3>
+          <p className="mt-1 text-sm font-bold opacity-80">{reminder.message}</p>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
 
-  function toggleFood(foodId) {
-    onChange((current) => {
-      const currentIds = current.foodIds || []
-      const exists = currentIds.includes(foodId)
-      const nextIds = exists ? currentIds.filter((id) => id !== foodId) : [...currentIds, foodId]
-      return { ...current, foodId: nextIds[0] || '', foodIds: nextIds }
-    })
-  }
+function ConsumedMacroCards({ macros, plannedCount, completedCount, toast }) {
+  const cards = [
+    ['Kalori', macros.calories, 'kcal', 'text-primary', 'bg-primary/10'],
+    ['Protein', macros.protein, 'g', 'text-[#9e4036]', 'bg-[#9e4036]/10'],
+    ['Carbs', macros.carbs, 'g', 'text-secondary', 'bg-secondary/10'],
+    ['Fat', macros.fat, 'g', 'text-energy-orange', 'bg-energy-orange/10']
+  ]
 
   return (
-    <motion.section className="mt-8 overflow-hidden rounded-[2rem] border border-primary/15 bg-white/90 shadow-[0_18px_45px_rgba(15,23,42,0.06)] backdrop-blur-xl" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.34 }}>
-      <div className="grid gap-6 bg-gradient-to-r from-mint-surface via-white to-secondary-fixed/45 p-5 md:grid-cols-[minmax(0,1fr)_300px] md:p-6">
+    <motion.section className="mt-8 rounded-[2rem] border border-outline-variant/35 bg-white/85 p-5 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl md:p-6" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.34 }}>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Meal Planner Builder</p>
-          <h2 className="mt-2 font-headline-md text-2xl font-black text-on-surface">Tambahkan atau edit menu untuk {dateLabel}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-on-surface-variant">Pilih jam makan, slot waktu makan, dan makanan dari database. Slot waktu tidak memfilter kategori foods.</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Consumed from Meal Planner</p>
+          <h2 className="mt-1 font-headline-md text-2xl font-black text-on-surface">Makan yang sudah dimakan hari ini</h2>
+          <p className="mt-1 text-sm font-bold text-on-surface-variant">{completedCount} dari {plannedCount} menu meal planner sudah dicentang di Log Food.</p>
         </div>
-        <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-on-surface-variant">Plan hari ini</p>
-          <p className="mt-2 font-metrics-mono text-3xl font-black text-primary">{planRows.length}</p>
-          <p className="text-sm text-on-surface-variant">meal item tersimpan</p>
-        </div>
+        {toast ? <span className="rounded-2xl bg-mint-surface px-4 py-3 text-sm font-bold text-primary">{toast}</span> : null}
       </div>
-
-      <form className="grid gap-5 p-5 md:grid-cols-[1.1fr_0.9fr] md:p-6" onSubmit={onSubmit}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-2">
-            <span className="text-sm font-black text-on-surface">Waktu makan</span>
-            <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" type="time" value={form.plannedTime} onChange={(event) => onChange((current) => ({ ...current, plannedTime: event.target.value }))} />
-          </label>
-          <label className="grid gap-2">
-            <span className="text-sm font-black text-on-surface">Jenis waktu makan</span>
-            <select className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" value={form.mealType} onChange={(event) => onChange((current) => ({ ...current, mealType: event.target.value }))}>
-              {mealTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </select>
-          </label>
-          <div className="grid gap-3 sm:col-span-2">
-            <div>
-              <h3 className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Search Food Database</h3>
-              <p className="mt-1 text-sm font-bold text-primary">{selectedIds.length} menu dipilih untuk tanggal ini</p>
-              <p className="mt-1 text-xs font-bold text-on-surface-variant">Menampilkan {filteredFoods.length} dari {foods.length} data foods tanpa filter kategori.</p>
-              <label className="relative mt-3 block">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
-                <input className="h-[52px] w-full rounded-2xl border-none bg-surface-container py-3 pl-12 pr-4 font-body-md text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary" placeholder="Search for chicken, rice, coffee..." value={foodSearch} onChange={(event) => setFoodSearch(event.target.value)} aria-label="Search food database" />
-              </label>
-            </div>
-            <div className="custom-scrollbar grid max-h-72 gap-2 overflow-y-auto pr-1">
-              {filteredFoods.map((food) => {
-                const active = selectedIds.includes(food.id)
-                return (
-                  <button className={`flex items-center justify-between gap-3 rounded-2xl border p-3 text-left transition ${active ? 'border-primary bg-mint-surface shadow-sm' : 'border-outline-variant/25 bg-white hover:border-primary/30 hover:bg-surface-container-low'}`} key={food.id} onClick={() => toggleFood(food.id)} type="button">
-                    <span className="min-w-0">
-                      <strong className="block truncate text-on-surface">{food.name}</strong>
-                      <small className="block text-on-surface-variant">{formatNumber(food.calories)} kcal / {food.serving_unit || 'porsi'}</small>
-                    </span>
-                    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${active ? 'bg-primary text-white' : 'bg-surface-container text-on-surface-variant'}`}>
-                      {active ? <Check size={16} /> : <Plus size={16} />}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map(([label, value, unit, tone, tint]) => (
+          <div className="rounded-[1.5rem] border border-outline-variant/25 bg-surface-container-low p-5" key={label}>
+            <span className={`inline-flex rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-wide ${tone} ${tint}`}>{label}</span>
+            <p className={`mt-4 font-metrics-mono text-3xl font-black ${tone}`}>{formatNumber(value)} <span className="text-sm text-on-surface-variant">{unit}</span></p>
+            <p className="mt-2 text-sm font-bold text-on-surface-variant">Terhitung dari item yang sudah dicentang.</p>
           </div>
-          <label className="grid gap-2">
-            <span className="text-sm font-black text-on-surface">Jumlah porsi</span>
-            <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" min="0.25" step="0.25" type="number" value={form.servingAmount} onChange={(event) => onChange((current) => ({ ...current, servingAmount: event.target.value }))} />
-          </label>
-          <label className="grid gap-2">
-            <span className="text-sm font-black text-on-surface">Catatan</span>
-            <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="Contoh: meal prep Senin" value={form.notes} onChange={(event) => onChange((current) => ({ ...current, notes: event.target.value }))} />
-          </label>
-          <button className="h-12 rounded-2xl bg-primary px-6 font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2" disabled={!selectedFoods.length || saving} type="submit">
-            {saving ? 'Menyimpan...' : 'Simpan ke Meal Planner'}
-          </button>
-          {toast && <p className="rounded-xl bg-mint-surface px-4 py-3 text-sm font-bold text-primary sm:col-span-2">{toast}</p>}
-        </div>
-
-        <div className="rounded-[1.5rem] border border-outline-variant/30 bg-surface-container-low p-5">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Preview kandungan</p>
-          <h3 className="mt-2 font-headline-md text-xl font-black text-on-surface">{selectedFoods.length ? `${selectedFoods.length} makanan dipilih` : 'Pilih makanan dulu'}</h3>
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            {[
-              ['Kalori', macroTotals.calories, 'kcal', 'text-primary'],
-              ['Protein', macroTotals.protein, 'g', 'text-[#9e4036]'],
-              ['Carbs', macroTotals.carbs, 'g', 'text-secondary'],
-              ['Fat', macroTotals.fat, 'g', 'text-energy-orange']
-            ].map(([label, value, unit, tone]) => (
-              <div className="rounded-2xl bg-white p-4 shadow-sm" key={label}>
-                <p className="text-xs font-black uppercase tracking-wide text-on-surface-variant">{label}</p>
-                <p className={`mt-1 font-metrics-mono text-xl font-black ${tone}`}>{formatNumber(value)} <span className="text-xs text-on-surface-variant">{unit}</span></p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </form>
+        ))}
+      </div>
     </motion.section>
   )
 }
@@ -513,11 +339,11 @@ function MealHistoryModal({ items, onClose }) {
   )
 }
 
-function LogFoodMealCard({ meal, index }) {
+function LogFoodMealCard({ meal, index, onToggle }) {
   const style = mealStyles[index]
   const Icon = style.Icon
   const hasItems = meal.items.length > 0
-  const pct = style.target ? Math.min(100, Math.round((meal.kcal / style.target) * 100)) : 0
+  const pct = style.target ? Math.min(100, Math.round((meal.consumedKcal / style.target) * 100)) : 0
 
   return (
     <motion.article className={`flex min-h-[230px] flex-col rounded-[2rem] border-l-4 bg-white/85 p-5 shadow-sm ring-1 ring-outline-variant/25 backdrop-blur-xl transition-all hover:shadow-md ${style.border}`} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06, duration: 0.32 }} whileHover={{ y: -4 }}>
@@ -529,7 +355,8 @@ function LogFoodMealCard({ meal, index }) {
         <div className="text-right">
           {hasItems ? (
             <>
-              <p className="font-metrics-mono text-lg font-bold text-on-surface">{formatNumber(meal.kcal)} <span className="text-xs font-normal uppercase text-on-surface-variant">kcal</span></p>
+              <p className="font-metrics-mono text-lg font-bold text-on-surface">{formatNumber(meal.consumedKcal)} <span className="text-xs font-normal uppercase text-on-surface-variant">kcal</span></p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-on-surface-variant">consumed / {formatNumber(meal.kcal)} planned</p>
               <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-surface-container">
                 <motion.div className="h-full rounded-full" style={{ backgroundColor: style.color, width: `${pct}%`, transformOrigin: 'left center' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.65 }} />
               </div>
@@ -542,11 +369,19 @@ function LogFoodMealCard({ meal, index }) {
 
       {hasItems ? (
         <div className="mb-5 grid flex-grow gap-2">
-          {meal.items.slice(0, 3).map((item, itemIndex) => (
-            <div className="flex justify-between gap-3 text-sm" key={item.id || item.food_name || item.name || itemIndex}>
-              <span className="min-w-0 truncate text-on-surface-variant">{item.food_name || item.foodName || item.name}</span>
-              <span className="font-metrics-mono">{formatNumber(item.target_calories || item.targetCalories || item.calories || 0)}</span>
-            </div>
+          {meal.items.slice(0, 5).map((item, itemIndex) => (
+            <button className={`flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-sm transition ${item.is_completed || item.isCompleted ? 'border-primary/20 bg-mint-surface text-primary' : 'border-outline-variant/25 bg-surface-container-low text-on-surface-variant hover:border-primary/25'}`} key={item.id || item.food_name || item.name || itemIndex} onClick={() => onToggle?.(item)} type="button">
+              <span className="min-w-0">
+                <span className="block truncate font-bold">{item.food_name || item.foodName || item.name}</span>
+                <small className="block text-xs opacity-80">{cleanTime(item.planned_time || item.plannedTime || '00:00')} - {item.is_completed || item.isCompleted ? 'Sudah dimakan' : 'Akan dimakan'}</small>
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                <span className="font-metrics-mono">{formatNumber(item.target_calories || item.targetCalories || item.calories || 0)}</span>
+                <span className={`grid h-7 w-7 place-items-center rounded-full ${item.is_completed || item.isCompleted ? 'bg-primary text-white' : 'bg-white text-on-surface-variant'}`}>
+                  {item.is_completed || item.isCompleted ? <Check size={15} /> : <Plus size={15} />}
+                </span>
+              </span>
+            </button>
           ))}
         </div>
       ) : (
@@ -556,7 +391,7 @@ function LogFoodMealCard({ meal, index }) {
         </div>
       )}
 
-      <p className="mt-auto rounded-xl bg-surface-container-low px-4 py-3 text-center text-sm font-bold text-on-surface-variant">Loaded from selected Meal Planner day</p>
+      <p className="mt-auto rounded-xl bg-surface-container-low px-4 py-3 text-center text-sm font-bold text-on-surface-variant">Checklist dari Meal Planner hari ini</p>
     </motion.article>
   )
 }

@@ -1,8 +1,8 @@
 import { memo, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Apple, CalendarDays, ChevronLeft, ChevronRight, Clock, Edit3, Flame, Plus, ShoppingBasket, Sparkles, Utensils } from 'lucide-react'
 import { apiRequest } from '../../api'
+import MealPlanBuilderModal from '../../components/app/MealPlanBuilderModal'
 import { useBackendData } from '../../hooks/useBackendData'
 
 const weekPlan = [
@@ -245,12 +245,14 @@ function ProMealPlannerPage() {
   const [rangeStart, setRangeStart] = useState(plannerTodayIndex)
   const [rangeEnd, setRangeEnd] = useState(plannerTodayIndex + 6)
   const [rangePickMode, setRangePickMode] = useState('start')
+  const [builderState, setBuilderState] = useState({ open: false, planDate: addDaysIso(0), mealType: 'breakfast', planId: '' })
+  const [refreshToken, setRefreshToken] = useState(0)
   const from = addDaysIso(-plannerPastDays)
   const to = addDaysIso(plannerFutureDays)
   const { data: plannerPlan } = useBackendData(
     () => apiRequest(`/api/meal-plans?from=${from}&to=${to}`).then(mapMealPlans),
     mapMealPlans([]),
-    [from, to]
+    [from, to, refreshToken]
   )
   const plannerOptions = plannerPlan
   const visiblePlan = useMemo(() => {
@@ -280,6 +282,14 @@ function ProMealPlannerPage() {
       if (index < rangeStart) setRangeStart(index)
       setRangePickMode('start')
     }
+  }
+
+  function openBuilder(planDate, mealType = 'breakfast', planId = '') {
+    setBuilderState({ open: true, planDate, mealType, planId })
+  }
+
+  function closeBuilder() {
+    setBuilderState((current) => ({ ...current, open: false }))
   }
 
   return (
@@ -327,10 +337,10 @@ function ProMealPlannerPage() {
               <p className="mt-1 text-on-surface-variant">Board mengikuti range tanggal yang dipilih. Tanggal lampau hanya aktif jika punya data meal plan.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link className="inline-flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition hover:-translate-y-0.5 active:scale-[0.98]" to={`/app/log-food?planDate=${selected.iso || addDaysIso(0)}&mealType=breakfast`}>
+              <button className="inline-flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition hover:-translate-y-0.5 active:scale-[0.98]" type="button" onClick={() => openBuilder(selected.iso || addDaysIso(0), 'breakfast')}>
                 <Plus size={18} />
                 Add Meals
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -339,7 +349,7 @@ function ProMealPlannerPage() {
           <div className="max-w-full overflow-hidden">
             <div className="custom-scrollbar flex w-full max-w-full snap-x gap-5 overflow-x-auto overscroll-x-contain p-5">
             {visiblePlan.map((day, index) => (
-              <DayColumn day={day} index={index} key={day.iso} selected={selectedIso === day.iso} onSelect={() => setSelectedIso(day.iso)} />
+              <DayColumn day={day} index={index} key={day.iso} selected={selectedIso === day.iso} onSelect={() => setSelectedIso(day.iso)} onEdit={openBuilder} />
             ))}
             </div>
           </div>
@@ -350,7 +360,7 @@ function ProMealPlannerPage() {
             <ShoppingList shoppingItems={shoppingData} />
             <InsightsPanel />
           </div>
-          <SelectedDayCard day={selected} />
+          <SelectedDayCard day={selected} onEdit={openBuilder} />
         </section>
 
         <motion.section className="relative overflow-hidden rounded-[3rem] border border-primary/15 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,#006e2f_0%,#0aa44f_42%,#ff8a2a_125%)] p-8 text-white shadow-2xl shadow-primary/25 md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.34 }} whileHover={{ y: -4 }}>
@@ -395,11 +405,19 @@ function ProMealPlannerPage() {
           </div>
         </motion.section>
       </div>
+      <MealPlanBuilderModal
+        open={builderState.open}
+        planDate={builderState.planDate}
+        mealType={builderState.mealType}
+        planId={builderState.planId}
+        onClose={closeBuilder}
+        onSaved={() => setRefreshToken((value) => value + 1)}
+      />
     </AppPageShell>
   )
 }
 
-function DayColumn({ day, index, selected, onSelect }) {
+function DayColumn({ day, index, selected, onSelect, onEdit }) {
   const isEmpty = day.meals.length === 0
   const planDate = day.iso || addDaysIso(index)
   const [expanded, setExpanded] = useState(false)
@@ -425,9 +443,9 @@ function DayColumn({ day, index, selected, onSelect }) {
                 <Utensils size={32} />
               </div>
               <p className="mt-5 font-bold text-on-surface-variant">Plan is currently empty</p>
-              <Link className="mt-5 inline-flex rounded-2xl bg-primary-container/30 px-6 py-3 font-black text-on-primary-container transition hover:bg-primary hover:text-white active:scale-[0.98]" to={`/app/log-food?planDate=${planDate}&mealType=breakfast`}>
+              <button className="mt-5 inline-flex rounded-2xl bg-primary-container/30 px-6 py-3 font-black text-on-primary-container transition hover:bg-primary hover:text-white active:scale-[0.98]" onClick={() => onEdit(planDate, 'breakfast')} type="button">
                 Add Meals
-              </Link>
+              </button>
             </div>
           </div>
         ) : (
@@ -443,9 +461,9 @@ function DayColumn({ day, index, selected, onSelect }) {
                   <p className="mt-2 text-sm text-on-surface-variant">{meal.meta}</p>
                   <p className="mt-2 text-xs font-bold text-primary">P {formatNumber(meal.protein)}g - C {formatNumber(meal.carbs)}g - F {formatNumber(meal.fat)}g</p>
                 </div>
-                <Link className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface-container text-on-surface-variant opacity-0 transition group-hover:opacity-100 hover:bg-primary hover:text-white" to={`/app/log-food?planDate=${planDate}&mealType=${meal.mealType}&planId=${meal.id || ''}`} aria-label={`Edit ${meal.title}`}>
+                <button className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface-container text-on-surface-variant opacity-0 transition group-hover:opacity-100 hover:bg-primary hover:text-white" onClick={() => onEdit(planDate, meal.mealType, meal.id || '')} type="button" aria-label={`Edit ${meal.title}`}>
                   <Edit3 size={16} />
-                </Link>
+                </button>
               </div>
             </div>
             )
@@ -582,19 +600,34 @@ function MetricCard({ value, label, tone }) {
 function MacroDistributionCard({ totals, label }) {
   const macroTotal = Number(totals.protein || 0) + Number(totals.carbs || 0) + Number(totals.fat || 0)
   const pct = (value) => macroTotal ? Math.round((Number(value || 0) / macroTotal) * 100) : 0
+  const items = [
+    ['Kalori', totals.calories, 'kcal', 'text-primary', 'bg-primary/10'],
+    ['Protein', totals.protein, 'g', 'text-[#9e4036]', 'bg-[#9e4036]/10', pct(totals.protein)],
+    ['Carbs', totals.carbs, 'g', 'text-secondary', 'bg-secondary/10', pct(totals.carbs)],
+    ['Fat', totals.fat, 'g', 'text-energy-orange', 'bg-energy-orange/10', pct(totals.fat)]
+  ]
   return (
-    <motion.section className="relative flex min-h-56 w-full items-center justify-center overflow-hidden rounded-[2rem] border border-outline-variant/30 bg-gradient-to-br from-mint-surface to-surface-container-low p-6 shadow-inner" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.34 }} whileHover={{ y: -3 }}>
-      <motion.div className="absolute h-64 w-64 rounded-full border-[18px] border-primary/20" animate={{ rotate: 360 }} transition={{ duration: 18, repeat: Infinity, ease: 'linear' }} />
-      <motion.div className="absolute h-40 w-40 rounded-full border-[14px] border-secondary/20" animate={{ rotate: -360 }} transition={{ duration: 16, repeat: Infinity, ease: 'linear' }} />
-      <div className="relative z-10 text-center">
-        <BarChartIcon />
-        <h3 className="font-headline-md text-2xl font-black text-on-primary-container">Macro Distribution</h3>
-        <p className="mt-1 text-sm font-bold text-on-surface-variant">{label} - {formatNumber(totals.calories)} kcal</p>
-        <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <span className="rounded-full bg-primary/20 px-4 py-2 text-xs font-bold text-primary">Protein: {pct(totals.protein)}% ({formatNumber(totals.protein)}g)</span>
-          <span className="rounded-full bg-secondary/20 px-4 py-2 text-xs font-bold text-secondary">Carbs: {pct(totals.carbs)}% ({formatNumber(totals.carbs)}g)</span>
-          <span className="rounded-full bg-energy-orange/20 px-4 py-2 text-xs font-bold text-energy-orange">Fat: {pct(totals.fat)}% ({formatNumber(totals.fat)}g)</span>
+    <motion.section className="rounded-[2rem] border border-outline-variant/35 bg-white/85 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.34 }} whileHover={{ y: -3 }}>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Macro Distribution</p>
+          <h3 className="mt-1 font-headline-md text-2xl font-black text-on-surface">Range nutrition cards</h3>
+          <p className="mt-1 text-sm font-bold text-on-surface-variant">{label}</p>
         </div>
+        <BarChartIcon />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {items.map(([name, value, unit, tone, tint, percent]) => (
+          <div className="rounded-[1.5rem] border border-outline-variant/25 bg-surface-container-low p-5" key={name}>
+            <div className={`mb-4 inline-flex rounded-2xl px-3 py-2 text-xs font-black uppercase tracking-wide ${tone} ${tint}`}>{name}</div>
+            <p className={`font-metrics-mono text-3xl font-black ${tone}`}>{formatNumber(value)} <span className="text-sm text-on-surface-variant">{unit}</span></p>
+            {percent !== undefined ? (
+              <p className="mt-2 text-sm font-bold text-on-surface-variant">{percent}% dari total macro range</p>
+            ) : (
+              <p className="mt-2 text-sm font-bold text-on-surface-variant">Total kalori dari tanggal terpilih</p>
+            )}
+          </div>
+        ))}
       </div>
     </motion.section>
   )
@@ -675,7 +708,7 @@ function InsightsPanel() {
   )
 }
 
-function SelectedDayCard({ day }) {
+function SelectedDayCard({ day, onEdit }) {
   const planDate = day.iso || addDaysIso(0)
   return (
     <motion.aside className="rounded-[2rem] border border-outline-variant/40 bg-white/85 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.18, duration: 0.34 }} whileHover={{ y: -4 }}>
@@ -685,10 +718,10 @@ function SelectedDayCard({ day }) {
       <p className="text-label-md font-bold text-primary">Selected day</p>
       <h3 className="mt-1 font-headline-md text-2xl font-black text-on-surface">{day.day}</h3>
       <p className="mt-2 text-on-surface-variant">{day.date} - {formatNumber(day.calories)} kcal planned</p>
-      <Link className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-primary font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 active:scale-[0.98]" to={`/app/log-food?planDate=${planDate}&mealType=breakfast`}>
+      <button className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-primary font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => onEdit(planDate, 'breakfast')} type="button">
         <Plus size={17} />
         Add meal for this day
-      </Link>
+      </button>
       <div className="mt-6 grid gap-3">
         {(day.meals.length ? day.meals : [['Open slot', 'Add breakfast, lunch, and dinner', '0 kcal']]).map((rawMeal, index) => {
           const meal = mealToView(rawMeal, index)
@@ -701,9 +734,9 @@ function SelectedDayCard({ day }) {
                   <p className="mt-1 text-sm text-on-surface-variant">{meal.meta}</p>
                 </div>
                 {meal.id ? (
-                  <Link className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-on-surface-variant transition hover:bg-primary hover:text-white" to={`/app/log-food?planDate=${planDate}&mealType=${meal.mealType}&planId=${meal.id}`} aria-label={`Edit ${meal.title}`}>
+                  <button className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-on-surface-variant transition hover:bg-primary hover:text-white" onClick={() => onEdit(planDate, meal.mealType, meal.id)} type="button" aria-label={`Edit ${meal.title}`}>
                     <Edit3 size={15} />
-                  </Link>
+                  </button>
                 ) : null}
               </div>
             </div>
