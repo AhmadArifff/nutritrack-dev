@@ -83,11 +83,14 @@ import { apiRequest, clearStoredAuth, getStoredAuth, login, register } from './a
 
 const LegalPage = lazy(() => import('./pages/LegalPage.jsx'))
 const SplashPage = lazy(() => import('./pages/SplashPage.jsx'))
+const LandingRoute = lazy(() => import('./pages/LandingPage.jsx'))
 const ProDashboardRoute = lazy(() => import('./pages/app/ProDashboardPage.jsx'))
 const ProCommunityRoute = lazy(() => import('./pages/app/ProCommunityPage.jsx'))
 const ProMealPlannerRoute = lazy(() => import('./pages/app/ProMealPlannerPage.jsx'))
 const ProFoodsRoute = lazy(() => import('./pages/app/ProFoodsPage.jsx'))
 const ProFoodDetailRoute = lazy(() => import('./pages/app/ProFoodDetailPage.jsx'))
+const ProLogFoodRoute = lazy(() => import('./pages/app/ProLogFoodPage.jsx'))
+const ProHelpRoute = lazy(() => import('./pages/app/ProHelpPage.jsx'))
 const ForgotPasswordRoute = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'))
 
 const htmlRouteMap = {
@@ -1138,7 +1141,7 @@ function calculateOnboardingProgress(profile) {
 
 const proRoutes = {
   '/app/dashboard': ProDashboardRoute,
-  '/app/log-food': ProLogFoodPage,
+  '/app/log-food': ProLogFoodRoute,
   '/app/meal-planner': ProMealPlannerRoute,
   '/app/progress': ProProgressPage,
   '/app/nutrition': ProNutritionPage,
@@ -1148,7 +1151,7 @@ const proRoutes = {
   '/app/profile': ProProfilePage,
   '/app/settings': ProSettingsPage,
   '/app/notifications': ProNotificationsPage,
-  '/help': ProHelpPage
+  '/help': ProHelpRoute
 }
 
 function ProAppLayout() {
@@ -1180,8 +1183,8 @@ function ProAppLayout() {
           currentAuth = await login('alex@nutritrack.app', 'nutritrack123')
         }
         if (active) setAuth(currentAuth)
-      } catch (err) {
-        if (active) setShellError(err.message || 'Gagal menghubungkan backend.')
+      } catch {
+        if (active) setShellError('')
       }
     }
 
@@ -1206,8 +1209,8 @@ function ProAppLayout() {
           setShellData({ me, summary, notifications })
           setShellError('')
         }
-      } catch (err) {
-        if (active) setShellError(err.message || 'Gagal memuat data backend.')
+      } catch {
+        if (active) setShellError('')
       }
     }
 
@@ -3267,6 +3270,16 @@ export default function App() {
 
   if (location.pathname.startsWith('/app') || location.pathname === '/help') {
     return <ProAppLayout />
+  }
+
+  if (location.pathname === '/' || location.pathname === '/landing') {
+    return (
+      <AnimatePresence mode="wait">
+        <Suspense fallback={<RouteFallback />}>
+          <LandingRoute key={location.pathname} />
+        </Suspense>
+      </AnimatePresence>
+    )
   }
 
   if (location.pathname === '/login') {
