@@ -109,7 +109,7 @@ function ProFoodsPage() {
   const [foodModal, setFoodModal] = useState({ open: false, food: null })
   const [foodToast, setFoodToast] = useState('')
   const { data: foods, setData: setFoods } = useBackendData(
-    () => apiRequest('/api/foods?limit=60').then((rows) => rows.map(mapBackendFood)),
+    () => apiRequest('/api/foods?limit=500').then((rows) => rows.map(mapBackendFood)),
     foodCatalog,
     []
   )
@@ -205,7 +205,7 @@ function ProFoodsPage() {
             setFoodModal({ open: false, food: null })
             setFoodToast(message)
             window.setTimeout(() => setFoodToast(''), 2200)
-            const rows = await apiRequest('/api/foods?limit=60')
+            const rows = await apiRequest('/api/foods?limit=500')
             setFoods(rows.map(mapBackendFood))
           }}
         />

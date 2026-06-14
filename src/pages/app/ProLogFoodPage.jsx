@@ -90,7 +90,7 @@ function ProLogFoodPage() {
   const requestedMealType = params.get('mealType') || 'breakfast'
   const requestedPlanId = params.get('planId') || ''
   const { data: logs, error: logsError } = useBackendData(() => apiRequest(`/api/food-logs?date=${todayIso()}`), [], [])
-  const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=50'), [], [])
+  const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=500'), [], [])
   const { data: planRows, setData: setPlanRows } = useBackendData(() => apiRequest(`/api/meal-plans?from=${requestedPlanDate}&to=${requestedPlanDate}`), [], [requestedPlanDate])
   const [planSaving, setPlanSaving] = useState(false)
   const [planToast, setPlanToast] = useState('')
@@ -338,7 +338,6 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
     const searchRows = foods
       .filter((food) => !keyword || `${food.name} ${food.category || ''} ${food.sub_category || ''}`.toLowerCase().includes(keyword))
       .filter((food) => !selectedIds.includes(food.id))
-      .slice(0, 8)
     return [...selectedRows, ...searchRows]
   }, [foodSearch, foods, selectedIds])
 
@@ -357,7 +356,7 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
         <div>
           <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Meal Planner Builder</p>
           <h2 className="mt-2 font-headline-md text-2xl font-black text-on-surface">Tambahkan atau edit menu untuk {dateLabel}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-on-surface-variant">Pilih waktu, tipe makan, dan makanan dari database. Nilai kalori dan makro otomatis mengikuti data dari menu Foods.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-on-surface-variant">Pilih jam makan, slot waktu makan, dan makanan dari database. Slot waktu tidak memfilter kategori foods.</p>
         </div>
         <div className="rounded-2xl bg-white/80 p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-on-surface-variant">Plan hari ini</p>
@@ -373,7 +372,7 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
             <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" type="time" value={form.plannedTime} onChange={(event) => onChange((current) => ({ ...current, plannedTime: event.target.value }))} />
           </label>
           <label className="grid gap-2">
-            <span className="text-sm font-black text-on-surface">Jenis makan</span>
+            <span className="text-sm font-black text-on-surface">Jenis waktu makan</span>
             <select className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" value={form.mealType} onChange={(event) => onChange((current) => ({ ...current, mealType: event.target.value }))}>
               {mealTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
@@ -382,6 +381,7 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
             <div>
               <h3 className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Search Food Database</h3>
               <p className="mt-1 text-sm font-bold text-primary">{selectedIds.length} menu dipilih untuk tanggal ini</p>
+              <p className="mt-1 text-xs font-bold text-on-surface-variant">Menampilkan {filteredFoods.length} dari {foods.length} data foods tanpa filter kategori.</p>
               <label className="relative mt-3 block">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
                 <input className="h-[52px] w-full rounded-2xl border-none bg-surface-container py-3 pl-12 pr-4 font-body-md text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary" placeholder="Search for chicken, rice, coffee..." value={foodSearch} onChange={(event) => setFoodSearch(event.target.value)} aria-label="Search food database" />
