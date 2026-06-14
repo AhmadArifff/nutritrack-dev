@@ -87,11 +87,16 @@ const LandingRoute = lazy(() => import('./pages/LandingPage.jsx'))
 const ProDashboardRoute = lazy(() => import('./pages/app/ProDashboardPage.jsx'))
 const ProCommunityRoute = lazy(() => import('./pages/app/ProCommunityPage.jsx'))
 const ProMealPlannerRoute = lazy(() => import('./pages/app/ProMealPlannerPage.jsx'))
+const ProProgressRoute = lazy(() => import('./pages/app/ProProgressPage.jsx'))
 const ProFoodsRoute = lazy(() => import('./pages/app/ProFoodsPage.jsx'))
 const ProFoodDetailRoute = lazy(() => import('./pages/app/ProFoodDetailPage.jsx'))
 const ProLogFoodRoute = lazy(() => import('./pages/app/ProLogFoodPage.jsx'))
 const ProHelpRoute = lazy(() => import('./pages/app/ProHelpPage.jsx'))
 const ProNotificationsRoute = lazy(() => import('./pages/app/ProNotificationsPage.jsx'))
+const ProNutritionRoute = lazy(() => import('./pages/app/ProNutritionPage.jsx'))
+const ProProfileRoute = lazy(() => import('./pages/app/ProProfilePage.jsx'))
+const ProSettingsRoute = lazy(() => import('./pages/app/ProSettingsPage.jsx'))
+const OnboardingRoute = lazy(() => import('./pages/OnboardingPage.jsx'))
 const ForgotPasswordRoute = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'))
 
 const htmlRouteMap = {
@@ -1144,13 +1149,13 @@ const proRoutes = {
   '/app/dashboard': ProDashboardRoute,
   '/app/log-food': ProLogFoodRoute,
   '/app/meal-planner': ProMealPlannerRoute,
-  '/app/progress': ProProgressPage,
-  '/app/nutrition': ProNutritionPage,
+  '/app/progress': ProProgressRoute,
+  '/app/nutrition': ProNutritionRoute,
   '/app/foods': ProFoodsRoute,
   '/app/foods/gado-gado': ProFoodDetailRoute,
   '/app/community': ProCommunityRoute,
-  '/app/profile': ProProfilePage,
-  '/app/settings': ProSettingsPage,
+  '/app/profile': ProProfileRoute,
+  '/app/settings': ProSettingsRoute,
   '/app/notifications': ProNotificationsRoute,
   '/help': ProHelpRoute
 }
@@ -3302,7 +3307,9 @@ export default function App() {
   if (location.pathname === '/onboarding') {
     return (
       <AnimatePresence mode="wait">
-        <OnboardingPage key={location.pathname} />
+        <Suspense fallback={<RouteFallback />}>
+          <OnboardingRoute key={location.pathname} />
+        </Suspense>
       </AnimatePresence>
     )
   }
