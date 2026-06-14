@@ -1290,9 +1290,9 @@ function ProAppLayout() {
               <button className="relative grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" onClick={() => setActivityHubOpen(true)} type="button" aria-label="Open notifications">
                 <Bell size={20} />
                 {notificationBadgeCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center">
-                    <motion.span className="absolute inline-flex h-full w-full rounded-full bg-error-red opacity-70" animate={{ scale: [1, 1.65, 1], opacity: [0.7, 0.15, 0.7] }} transition={{ duration: 1.35, repeat: Infinity, ease: 'easeInOut' }} />
-                    <motion.span className="relative grid h-6 min-w-6 place-items-center rounded-full bg-error-red px-1.5 text-[11px] font-black leading-none text-white shadow-lg shadow-error-red/25 ring-2 ring-white" initial={{ scale: 0.82 }} animate={{ y: [0, -2, 0], scale: [1, 1.08, 1] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}>
+                  <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center">
+                    <motion.span className="absolute inline-flex h-full w-full rounded-full bg-[#ef4444] opacity-35" animate={{ scale: [1, 1.45, 1], opacity: [0.35, 0.08, 0.35] }} transition={{ duration: 1.35, repeat: Infinity, ease: 'easeInOut' }} />
+                    <motion.span className="relative grid h-6 min-w-6 place-items-center rounded-full border border-white bg-[#ef4444] px-1.5 text-[11px] font-black leading-none text-white shadow-[0_8px_18px_rgba(239,68,68,0.42)] ring-2 ring-white" initial={{ scale: 0.82 }} animate={{ y: [0, -2, 0], scale: [1, 1.08, 1] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}>
                       {notificationBadgeCount > 9 ? '9+' : notificationBadgeCount}
                     </motion.span>
                   </span>

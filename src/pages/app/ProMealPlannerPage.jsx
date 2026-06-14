@@ -312,53 +312,59 @@ function DayColumn({ day, index, selected, onSelect }) {
 }
 
 function DateRangePlanner({ options, rangeStart, rangeEnd, rangePickMode, onPick }) {
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const start = Math.min(rangeStart, rangeEnd)
   const end = Math.max(rangeStart, rangeEnd)
+  const dateLabel = (date) => {
+    const [month, day] = String(date || '').split(' ')
+    return `${day || ''} ${month || ''} 2023`.trim()
+  }
   return (
     <div className="border-b border-outline-variant/20 bg-gradient-to-r from-mint-surface via-white to-secondary-fixed/35 px-5 py-5">
-      <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
         <div>
           <div className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.14em] text-primary">
             <CalendarDays size={18} />
             Date range filter
           </div>
-          <p className="mt-1 text-sm font-bold text-on-surface-variant">Klik tanggal pertama sebagai parameter mulai, lalu klik tanggal kedua sebagai parameter selesai.</p>
+          <p className="mt-1 text-sm font-bold text-on-surface-variant">Klik field tanggal, lalu pilih tanggal pertama sebagai parameter mulai dan tanggal kedua sebagai parameter selesai.</p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <div className="rounded-2xl border border-primary/15 bg-white px-4 py-3 shadow-sm">
-            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-primary">Start</span>
-            <strong className="mt-1 block text-lg text-on-surface">{options[start]?.date}</strong>
-          </div>
-          <div className="rounded-2xl border border-energy-orange/25 bg-white px-4 py-3 shadow-sm">
-            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-energy-orange">End</span>
-            <strong className="mt-1 block text-lg text-on-surface">{options[end]?.date}</strong>
-          </div>
-        </div>
-      </div>
-      <div className="overflow-x-auto pb-1">
-        <div className="min-w-[680px] rounded-[1.75rem] border border-outline-variant/25 bg-white/90 p-3 shadow-sm">
-          <div className="grid grid-cols-7 gap-2 px-1 pb-2">
-            {calendarWeekdays.map((weekday) => (
-              <div className="py-2 text-center text-[11px] font-black uppercase tracking-[0.16em] text-on-surface-variant" key={weekday}>{weekday}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-2">
-            {options.map((day, index) => {
-              const inRange = index >= start && index <= end
-              const isStart = index === rangeStart
-              const isEnd = index === rangeEnd
-              const isEdge = isStart || isEnd
-              const dateNumber = day.date.replace(/^[A-Za-z]+\s/, '')
-              return (
-                <button className={`relative min-h-[88px] overflow-hidden rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20' : inRange ? 'border-primary/20 bg-mint-surface text-primary shadow-sm' : 'border-outline-variant/35 bg-white text-on-surface-variant hover:border-primary/25 hover:bg-surface-container-lowest'}`} key={`${day.day}-${day.date}`} onClick={() => onPick(index)} type="button">
-                  {inRange ? <span className={`absolute inset-x-3 top-0 h-1 rounded-b-full ${isEdge ? 'bg-white' : 'bg-energy-orange'}`} /> : null}
-                  <span className={`grid h-9 w-9 place-items-center rounded-full font-metrics-mono text-lg font-black ${isEdge ? 'bg-white text-primary' : inRange ? 'bg-primary text-white' : 'bg-surface-container text-on-surface'}`}>{dateNumber}</span>
-                  <span className="mt-3 block truncate text-[11px] font-black uppercase tracking-[0.14em]">{day.day.split(' ')[0]}</span>
-                  {isEdge ? <span className="mt-2 inline-block rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black">{isStart ? 'Start' : 'End'}</span> : null}
-                </button>
-              )
-            })}
-          </div>
+        <div className="relative">
+          <button className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-left text-sm font-bold text-white shadow-lg shadow-slate-950/10 outline-none transition hover:border-energy-orange/70 hover:bg-slate-800 active:scale-[0.99]" onClick={() => setCalendarOpen((value) => !value)} type="button">
+            <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Tanggal Meal Plan</span>
+            <span className="mt-1 block">{dateLabel(options[start]?.date)} - {dateLabel(options[end]?.date)}</span>
+          </button>
+
+          {calendarOpen ? (
+            <motion.div className="absolute right-0 top-[calc(100%+10px)] z-30 w-full overflow-hidden rounded-[1.5rem] border border-outline-variant/25 bg-white p-4 shadow-2xl shadow-slate-900/15 lg:w-[520px]" initial={{ opacity: 0, y: -8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.18 }}>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-on-surface">Pilih rentang tanggal</p>
+                  <p className="text-xs font-bold text-on-surface-variant">{rangePickMode === 'start' ? 'Pilih tanggal mulai' : 'Pilih tanggal selesai'}</p>
+                </div>
+                <span className="rounded-full bg-mint-surface px-3 py-1 text-xs font-black text-primary">{options.length} hari</span>
+              </div>
+              <div className="grid grid-cols-7 gap-1.5">
+                {calendarWeekdays.map((weekday) => (
+                  <div className="py-1 text-center text-[10px] font-black uppercase tracking-[0.12em] text-on-surface-variant" key={weekday}>{weekday}</div>
+                ))}
+                {options.map((day, index) => {
+                  const inRange = index >= start && index <= end
+                  const isStart = index === rangeStart
+                  const isEnd = index === rangeEnd
+                  const isEdge = isStart || isEnd
+                  const dateNumber = day.date.replace(/^[A-Za-z]+\s/, '')
+                  return (
+                    <button className={`relative min-h-14 rounded-xl border px-2 py-2 text-center transition hover:-translate-y-0.5 active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-md shadow-primary/20' : inRange ? 'border-primary/20 bg-mint-surface text-primary' : 'border-outline-variant/35 bg-white text-on-surface-variant hover:border-primary/25'}`} key={`${day.day}-${day.date}`} onClick={() => onPick(index)} type="button">
+                      <span className="block font-metrics-mono text-base font-black">{dateNumber}</span>
+                      <span className="mt-1 block text-[9px] font-black uppercase tracking-wide">{day.day.slice(0, 3)}</span>
+                      {isEdge ? <span className="mt-1 inline-block rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-black">{isStart ? 'Start' : 'End'}</span> : null}
+                    </button>
+                  )
+                })}
+              </div>
+            </motion.div>
+          ) : null}
         </div>
       </div>
       <p className="mt-3 text-xs font-bold text-on-surface-variant">Mode pilih: <span className="text-primary">{rangePickMode === 'start' ? 'parameter 1 tanggal mulai' : 'parameter 2 tanggal selesai'}</span></p>
