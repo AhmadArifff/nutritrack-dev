@@ -140,27 +140,28 @@ function ProSettingsPage() {
         <SettingsActionCard title="Data export" body="Download your meal logs, progress data, and reports." Icon={Download} action="Export data" />
       </section>
 
-      <motion.section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-container p-8 text-white shadow-2xl shadow-primary/20 transition-transform hover:scale-[1.01] md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.34 }}>
-        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+      <motion.section className="relative overflow-hidden rounded-[2.5rem] border border-primary/20 bg-[radial-gradient(circle_at_12%_20%,rgba(255,255,255,0.28),transparent_30%),linear-gradient(135deg,#006e2f_0%,#07a14a_48%,#d8f5e4_100%)] p-8 text-white shadow-2xl shadow-primary/25 transition-transform hover:scale-[1.01] md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.34 }}>
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
+        <div className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-energy-orange/30 blur-3xl" />
+        <div className="absolute inset-x-6 bottom-0 h-px bg-white/40" />
         <div className="relative z-10 flex flex-col justify-between gap-8 md:flex-row md:items-center">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-white/30 bg-white/20 backdrop-blur-md">
+            <motion.div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-white/35 bg-white/20 text-white shadow-2xl shadow-primary/20 backdrop-blur-md" animate={{ rotate: [0, -4, 4, 0], y: [0, -3, 0] }} transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}>
               <Award size={48} />
-            </div>
+            </motion.div>
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-3">
-                <h3 className="font-headline-md text-2xl font-black">NutriTrack Pro</h3>
-                <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-widest text-primary shadow-sm">Aktif</span>
+                <h3 className="font-headline-md text-3xl font-black drop-shadow-sm">NutriTrack Pro</h3>
+                <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-widest text-primary shadow-lg">Aktif</span>
               </div>
-              <p className="text-lg leading-7 text-white/90">Paket Anda diperbarui pada 12 Okt 2024 seharga $12.99/bln</p>
+              <p className="max-w-2xl text-lg leading-7 text-white/90 drop-shadow-sm">Paket Anda diperbarui pada 12 Okt 2024 seharga $12.99/bln, lengkap dengan AI meal planning, macro insights, dan challenge komunitas.</p>
             </div>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
-            <button className="rounded-2xl bg-white px-8 py-4 font-black text-primary shadow-lg transition-all hover:scale-105 active:scale-95" type="button" onClick={() => showToast('Kelola paket dibuka.')}>
+            <button className="rounded-2xl bg-white px-8 py-4 font-black text-primary shadow-xl shadow-primary/20 transition-all hover:scale-105 hover:bg-mint-surface active:scale-95" type="button" onClick={() => showToast('Kelola paket dibuka.')}>
               Kelola Paket
             </button>
-            <button className="rounded-2xl border border-white/30 bg-white/20 px-8 py-4 font-black text-white backdrop-blur-md transition-all hover:bg-white/30 active:scale-95" type="button" onClick={() => showToast('Riwayat tagihan dibuka.')}>
+            <button className="rounded-2xl border border-white/35 bg-white/20 px-8 py-4 font-black text-white shadow-lg backdrop-blur-md transition-all hover:scale-105 hover:bg-white/30 active:scale-95" type="button" onClick={() => showToast('Riwayat tagihan dibuka.')}>
               Riwayat Tagihan
             </button>
           </div>

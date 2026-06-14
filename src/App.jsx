@@ -1235,6 +1235,7 @@ function ProAppLayout() {
     shellData.summary?.user?.avatarUrl ||
     auth?.user?.avatarUrl ||
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80'
+  const unreadNotifications = (shellData.notifications || []).filter((item) => item.status === 'unread').length
 
   const logout = () => {
     clearStoredAuth()
@@ -1287,7 +1288,14 @@ function ProAppLayout() {
               </label>
               <button className="relative grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" onClick={() => setActivityHubOpen(true)} type="button" aria-label="Open notifications">
                 <Bell size={20} />
-                {(shellData.notifications || []).some((item) => item.status === 'unread') && <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-error-red ring-2 ring-surface" />}
+                {unreadNotifications > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center">
+                    <motion.span className="absolute inline-flex h-full w-full rounded-full bg-error-red opacity-70" animate={{ scale: [1, 1.65, 1], opacity: [0.7, 0.15, 0.7] }} transition={{ duration: 1.35, repeat: Infinity, ease: 'easeInOut' }} />
+                    <motion.span className="relative grid h-5 min-w-5 place-items-center rounded-full bg-error-red px-1.5 text-[10px] font-black leading-none text-white ring-2 ring-surface" initial={{ scale: 0.82 }} animate={{ y: [0, -2, 0], scale: [1, 1.08, 1] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}>
+                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                    </motion.span>
+                  </span>
+                )}
               </button>
               <Link className="grid h-11 w-11 flex-shrink-0 place-items-center rounded-full text-on-surface-variant transition hover:bg-surface-container" to="/app/settings">
                 <Settings size={20} />

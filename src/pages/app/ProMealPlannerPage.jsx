@@ -104,19 +104,27 @@ function ProMealPlannerPage() {
   const weeklyCalories = weekPlan.reduce((total, day) => total + day.calories, 0)
   const monthPlan = useMemo(() => Array.from({ length: 28 }, (_, index) => {
     const source = weekPlan[index % weekPlan.length]
+    const date = new Date(2023, 9, 23 + index)
     return {
       ...source,
       day: `${source.day} ${Math.floor(index / 7) + 1}`,
-      date: `Oct ${23 + index}`,
+      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       active: index === 1
     }
   }), [])
+  const plannerOptions = boardView === 'month' ? monthPlan : weekPlan
   const visiblePlan = useMemo(() => {
-    if (boardView === 'month') return monthPlan
     const start = Math.min(rangeStart, rangeEnd)
     const end = Math.max(rangeStart, rangeEnd)
-    return weekPlan.slice(start, end + 1)
-  }, [boardView, monthPlan, rangeEnd, rangeStart])
+    return plannerOptions.slice(start, end + 1)
+  }, [plannerOptions, rangeEnd, rangeStart])
+
+  function setPlannerPreset(id) {
+    setBoardView(id)
+    setRangeStart(0)
+    setRangeEnd(id === 'month' ? monthPlan.length - 1 : 6)
+    setRangePickMode('start')
+  }
 
   function chooseRange(index) {
     if (rangePickMode === 'start') {
@@ -178,7 +186,7 @@ function ProMealPlannerPage() {
                   ['week', '7 Hari'],
                   ['month', 'Bulan']
                 ].map(([id, label]) => (
-                  <button className={`h-9 rounded-xl px-4 text-sm font-black transition ${boardView === id ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`} key={id} onClick={() => setBoardView(id)} type="button">
+                  <button className={`h-9 rounded-xl px-4 text-sm font-black transition ${boardView === id ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`} key={id} onClick={() => setPlannerPreset(id)} type="button">
                     {label}
                   </button>
                 ))}
@@ -190,7 +198,7 @@ function ProMealPlannerPage() {
             </div>
           </div>
 
-          <DateRangePlanner rangeEnd={rangeEnd} rangePickMode={rangePickMode} rangeStart={rangeStart} onPick={chooseRange} />
+          <DateRangePlanner options={plannerOptions} rangeEnd={rangeEnd} rangePickMode={rangePickMode} rangeStart={rangeStart} onPick={chooseRange} />
 
           <div className="max-w-full overflow-hidden">
             <div className="custom-scrollbar flex w-full max-w-full snap-x gap-5 overflow-x-auto overscroll-x-contain p-5">
@@ -209,18 +217,45 @@ function ProMealPlannerPage() {
           <SelectedDayCard day={selected} />
         </section>
 
-        <motion.section className="relative overflow-hidden rounded-[3rem] bg-gradient-to-br from-primary to-primary-container p-8 text-white shadow-2xl shadow-primary/20 md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.34 }} whileHover={{ y: -4 }}>
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
-          <div className="relative z-10 grid gap-6 lg:grid-cols-[1fr_260px] lg:items-center">
+        <motion.section className="relative overflow-hidden rounded-[3rem] border border-primary/15 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,#006e2f_0%,#0aa44f_42%,#ff8a2a_125%)] p-8 text-white shadow-2xl shadow-primary/25 md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.34 }} whileHover={{ y: -4 }}>
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
+          <div className="absolute -bottom-16 left-1/3 h-52 w-52 rounded-full bg-energy-orange/25 blur-3xl" />
+          <motion.div className="absolute right-10 top-10 hidden h-20 w-20 rounded-[2rem] border border-white/25 bg-white/15 backdrop-blur-md lg:grid lg:place-items-center" animate={{ y: [0, -8, 0], rotate: [0, 4, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+            <ShoppingBasket size={34} />
+          </motion.div>
+          <div className="relative z-10 grid gap-7 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
               <p className="mb-2 text-sm font-black uppercase tracking-[0.18em] text-white/70">Pantry Inventory Sync</p>
-              <h3 className="font-headline-md text-3xl font-black">Smart shopping stays aligned with your pantry.</h3>
-              <p className="mt-3 max-w-3xl leading-7 text-white/82">Use planned meals to group grocery items, avoid duplicate ingredients, and keep weekend prep calm.</p>
+              <h3 className="font-headline-md text-3xl font-black drop-shadow-sm">Smart shopping stays aligned with your pantry.</h3>
+              <p className="mt-3 max-w-3xl leading-7 text-white/90">Use planned meals to group grocery items, avoid duplicate ingredients, and keep weekend prep calm.</p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                {[
+                  ['12', 'Grocery items'],
+                  ['4 pcs', 'Avocado needed'],
+                  ['900 g', 'Chicken breast']
+                ].map(([value, label]) => (
+                  <div className="rounded-2xl border border-white/20 bg-white/15 p-4 backdrop-blur-md" key={label}>
+                    <strong className="block font-metrics-mono text-2xl font-black">{value}</strong>
+                    <span className="mt-1 block text-xs font-bold uppercase tracking-wide text-white/75">{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <button className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-white px-6 font-black text-primary shadow-xl transition hover:scale-105 active:scale-[0.98]" type="button">
-              Sync Pantry
-              <ChevronRight size={19} />
-            </button>
+            <div className="rounded-[2rem] border border-white/25 bg-white/15 p-4 backdrop-blur-xl">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white text-primary shadow-lg">
+                  <Sparkles size={22} />
+                </span>
+                <div>
+                  <p className="font-black">Ready to sync</p>
+                  <p className="text-sm text-white/75">Pantry stock will update from this meal range.</p>
+                </div>
+              </div>
+              <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 font-black text-primary shadow-xl transition hover:scale-105 hover:bg-mint-surface active:scale-[0.98]" type="button">
+                Sync Pantry
+                <ChevronRight size={19} />
+              </button>
+            </div>
           </div>
         </motion.section>
       </div>
@@ -274,30 +309,45 @@ function DayColumn({ day, index, selected, onSelect }) {
   )
 }
 
-function DateRangePlanner({ rangeStart, rangeEnd, rangePickMode, onPick }) {
+function DateRangePlanner({ options, rangeStart, rangeEnd, rangePickMode, onPick }) {
   const start = Math.min(rangeStart, rangeEnd)
   const end = Math.max(rangeStart, rangeEnd)
   return (
-    <div className="border-b border-outline-variant/20 bg-surface-container-lowest px-5 py-4">
-      <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2 text-sm font-black text-on-surface">
-          <CalendarDays className="text-primary" size={18} />
-          Klik {rangePickMode === 'start' ? 'tanggal mulai' : 'tanggal selesai'}
+    <div className="border-b border-outline-variant/20 bg-gradient-to-r from-mint-surface via-white to-secondary-fixed/35 px-5 py-5">
+      <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.14em] text-primary">
+            <CalendarDays size={18} />
+            Date range filter
+          </div>
+          <p className="mt-1 text-sm font-bold text-on-surface-variant">Klik tanggal pertama sebagai parameter mulai, lalu klik tanggal kedua sebagai parameter selesai.</p>
         </div>
-        <p className="text-sm font-bold text-on-surface-variant">Range aktif: {weekPlan[start].date} - {weekPlan[end].date}</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="rounded-2xl border border-primary/15 bg-white px-4 py-3 shadow-sm">
+            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-primary">Start</span>
+            <strong className="mt-1 block text-lg text-on-surface">{options[start]?.date}</strong>
+          </div>
+          <div className="rounded-2xl border border-energy-orange/25 bg-white px-4 py-3 shadow-sm">
+            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-energy-orange">End</span>
+            <strong className="mt-1 block text-lg text-on-surface">{options[end]?.date}</strong>
+          </div>
+        </div>
       </div>
-      <div className="scroll-hide flex w-full max-w-full gap-2 overflow-x-auto overscroll-x-contain">
-        {weekPlan.map((day, index) => {
+      <div className="scroll-hide flex w-full max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1">
+        {options.map((day, index) => {
           const inRange = index >= start && index <= end
           const isEdge = index === rangeStart || index === rangeEnd
           return (
-            <button className={`min-w-[118px] rounded-2xl border px-4 py-3 text-left transition active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-md shadow-primary/15' : inRange ? 'border-primary/20 bg-mint-surface text-primary' : 'border-outline-variant/35 bg-white text-on-surface-variant hover:bg-surface-container'}`} key={day.day} onClick={() => onPick(index)} type="button">
+            <button className={`relative min-w-[124px] overflow-hidden rounded-2xl border px-4 py-3 text-left transition hover:-translate-y-0.5 active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20' : inRange ? 'border-primary/20 bg-white text-primary shadow-sm' : 'border-outline-variant/35 bg-white/75 text-on-surface-variant hover:bg-white'}`} key={`${day.day}-${day.date}`} onClick={() => onPick(index)} type="button">
+              {inRange ? <span className="absolute inset-x-3 top-0 h-1 rounded-b-full bg-energy-orange" /> : null}
               <span className="block text-[10px] font-black uppercase tracking-[0.16em]">{day.day.slice(0, 3)}</span>
               <span className="mt-1 block font-black">{day.date}</span>
+              {isEdge ? <span className="mt-2 inline-block rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black">{index === rangeStart ? 'Start' : 'End'}</span> : null}
             </button>
           )
         })}
       </div>
+      <p className="mt-3 text-xs font-bold text-on-surface-variant">Mode pilih: <span className="text-primary">{rangePickMode === 'start' ? 'parameter 1 tanggal mulai' : 'parameter 2 tanggal selesai'}</span></p>
     </div>
   )
 }
