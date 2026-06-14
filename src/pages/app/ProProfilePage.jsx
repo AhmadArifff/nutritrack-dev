@@ -42,9 +42,9 @@ function ProProfilePage() {
 function ProfileHero({ user }) {
   return (
     <section className="relative">
-      <motion.div className="relative min-h-[560px] w-full overflow-hidden rounded-[2rem] shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:min-h-[440px]" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
+      <motion.div className="relative min-h-[430px] w-full overflow-hidden rounded-[2rem] shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:min-h-[380px]" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
         <img className="absolute inset-0 h-full w-full object-cover" src={user.bannerUrl} alt="Profile Banner" loading="lazy" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-[58%] bg-gradient-to-t from-black/75 via-black/28 to-transparent" />
 
         <motion.div className="absolute bottom-5 left-5 right-5 z-10 flex flex-col gap-5 sm:bottom-8 sm:left-8 sm:right-8 sm:flex-row sm:items-end sm:gap-6" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.35 }}>
           <div className="h-28 w-28 flex-shrink-0 overflow-hidden rounded-[2rem] border-4 border-white bg-surface shadow-xl sm:h-36 sm:w-36 sm:rounded-[2.5rem]">

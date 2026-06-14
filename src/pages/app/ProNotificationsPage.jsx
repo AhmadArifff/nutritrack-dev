@@ -88,6 +88,10 @@ function ProNotificationsPage() {
     return acc
   }, {})
   const unreadCount = items.filter((item) => !item.read).length
+  const filterCounts = useMemo(() => filters.reduce((acc, [id]) => {
+    acc[id] = id === 'all' ? items.filter((item) => !item.read).length : items.filter((item) => item.type === id && !item.read).length
+    return acc
+  }, {}), [items])
 
   return (
     <motion.main className="mx-auto grid max-w-[1280px] gap-7 px-5 py-7 pb-24 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
@@ -107,8 +111,13 @@ function ProNotificationsPage() {
 
           <div className="scroll-hide flex gap-2 overflow-x-auto border-b border-outline-variant/20 bg-surface-container-lowest p-4" role="tablist" aria-label="Notification filters">
             {filters.map(([id, label]) => (
-              <button className={`shrink-0 rounded-full px-4 py-2 font-label-md text-label-md transition-all active:scale-95 ${activeFilter === id ? 'bg-primary text-white shadow-md' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} key={id} onClick={() => setActiveFilter(id)} role="tab" aria-selected={activeFilter === id} type="button">
+              <button className={`relative shrink-0 rounded-full px-4 py-2 font-label-md text-label-md transition-all active:scale-95 ${activeFilter === id ? 'bg-primary text-white shadow-md' : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'}`} key={id} onClick={() => setActiveFilter(id)} role="tab" aria-selected={activeFilter === id} type="button">
                 {label}
+                {filterCounts[id] ? (
+                  <motion.span className={`ml-2 inline-grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-black ${activeFilter === id ? 'bg-white text-primary' : 'bg-primary text-white'}`} initial={{ scale: 0.7 }} animate={{ scale: [1, 1.18, 1] }} transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}>
+                    {filterCounts[id]}
+                  </motion.span>
+                ) : null}
               </button>
             ))}
           </div>
@@ -132,7 +141,8 @@ function ProNotificationsPage() {
 
         <aside className="grid content-start gap-6">
           <motion.section className="rounded-[2rem] border border-outline-variant/35 bg-mint-surface p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)]" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08, duration: 0.34 }} whileHover={{ y: -3 }}>
-            <div className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-primary text-white">
+            <div className="relative mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-primary text-white">
+              {unreadCount ? <motion.span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-energy-orange" animate={{ scale: [1, 1.45, 1], opacity: [1, 0.65, 1] }} transition={{ duration: 1.1, repeat: Infinity }} /> : null}
               <Bell size={26} />
             </div>
             <h3 className="font-headline-md text-2xl font-black text-on-surface">{unreadCount} unread alerts</h3>
@@ -170,6 +180,12 @@ function NotificationCard({ item, index, onRead }) {
   return (
     <motion.article className={`group relative overflow-hidden rounded-2xl border p-4 shadow-sm transition-all hover:shadow-md ${item.cardClass}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.04, duration: 0.25 }} whileHover={{ y: -3 }}>
       {item.glowClass && <div className={`absolute -right-10 -top-10 h-24 w-24 rounded-full blur-2xl ${item.glowClass}`} />}
+      {!item.read && (
+        <span className="absolute right-4 top-4 flex h-3 w-3">
+          <motion.span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" animate={{ scale: [1, 2.3], opacity: [0.75, 0] }} transition={{ duration: 1.4, repeat: Infinity, ease: 'easeOut' }} />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+        </span>
+      )}
       <div className="relative z-10 flex gap-4">
         <div className={`flex h-12 w-12 shrink-0 items-center justify-center border ${item.iconClass}`}>
           <Icon size={22} />

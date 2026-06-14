@@ -61,9 +61,24 @@ const weekPlan = [
 ]
 
 const shoppingItems = [
-  ['Proteins', ['Chicken breast', 'Greek yogurt', 'Tofu', 'Eggs']],
-  ['Produce', ['Avocado', 'Spinach', 'Berries', 'Bell pepper']],
-  ['Pantry', ['Brown rice', 'Oats', 'Pesto', 'Peanut sauce']]
+  ['Proteins', [
+    { name: 'Chicken breast', amount: '900 g', meals: '3 dinners' },
+    { name: 'Greek yogurt', amount: '6 cups', meals: '4 breakfasts' },
+    { name: 'Tofu', amount: '450 g', meals: '2 lunches' },
+    { name: 'Eggs', amount: '12 pcs', meals: 'toast + omelette' }
+  ]],
+  ['Produce', [
+    { name: 'Avocado', amount: '4 pcs', meals: 'breakfast toast' },
+    { name: 'Spinach', amount: '300 g', meals: 'omelette + salad' },
+    { name: 'Berries', amount: '500 g', meals: 'parfait bowls' },
+    { name: 'Bell pepper', amount: '5 pcs', meals: 'stir-fry prep' }
+  ]],
+  ['Pantry', [
+    { name: 'Brown rice', amount: '1.2 kg', meals: 'rice bowls' },
+    { name: 'Oats', amount: '650 g', meals: 'weekday breakfast' },
+    { name: 'Pesto', amount: '220 g', meals: 'pasta lunch' },
+    { name: 'Peanut sauce', amount: '180 g', meals: 'tofu curry' }
+  ]]
 ]
 
 const insightItems = [
@@ -80,13 +95,44 @@ function formatNumber(value, fallback = '0') {
 
 function ProMealPlannerPage() {
   const [selectedDay, setSelectedDay] = useState('Tuesday')
+  const [rangeStart, setRangeStart] = useState(0)
+  const [rangeEnd, setRangeEnd] = useState(6)
+  const [rangePickMode, setRangePickMode] = useState('start')
+  const [boardView, setBoardView] = useState('week')
   const selected = useMemo(() => weekPlan.find((day) => day.day === selectedDay) || weekPlan[1], [selectedDay])
   const plannedDays = weekPlan.filter((day) => day.calories > 0).length
   const weeklyCalories = weekPlan.reduce((total, day) => total + day.calories, 0)
+  const monthPlan = useMemo(() => Array.from({ length: 28 }, (_, index) => {
+    const source = weekPlan[index % weekPlan.length]
+    return {
+      ...source,
+      day: `${source.day} ${Math.floor(index / 7) + 1}`,
+      date: `Oct ${23 + index}`,
+      active: index === 1
+    }
+  }), [])
+  const visiblePlan = useMemo(() => {
+    if (boardView === 'month') return monthPlan
+    const start = Math.min(rangeStart, rangeEnd)
+    const end = Math.max(rangeStart, rangeEnd)
+    return weekPlan.slice(start, end + 1)
+  }, [boardView, monthPlan, rangeEnd, rangeStart])
+
+  function chooseRange(index) {
+    if (rangePickMode === 'start') {
+      setRangeStart(index)
+      if (index > rangeEnd) setRangeEnd(index)
+      setRangePickMode('end')
+    } else {
+      setRangeEnd(index)
+      if (index < rangeStart) setRangeStart(index)
+      setRangePickMode('start')
+    }
+  }
 
   return (
     <AppPageShell wide>
-      <div className="space-y-8 pb-28">
+      <div className="min-w-0 space-y-8 pb-28">
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <motion.div className="overflow-hidden rounded-[2rem] border border-outline-variant/40 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
             <div className="grid gap-8 p-6 md:p-8 lg:grid-cols-[1fr_240px] lg:items-end">
@@ -120,17 +166,23 @@ function ProMealPlannerPage() {
           </motion.div>
         </section>
 
-        <section className="overflow-hidden rounded-[2rem] border border-outline-variant/35 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl">
+        <section className="min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-outline-variant/35 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl">
           <div className="flex flex-col gap-4 border-b border-outline-variant/25 p-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h3 className="font-headline-md text-2xl font-black text-on-surface">7-Day Planning Board</h3>
-              <p className="mt-1 text-on-surface-variant">Horizontal weekly board with stable card heights and clear spacing.</p>
+              <p className="mt-1 text-on-surface-variant">Pilih rentang seperti booking travel, lalu board menampilkan 7 hari atau mode bulan.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <button className="inline-flex h-11 items-center gap-2 rounded-2xl border border-outline-variant/40 bg-white px-5 font-black text-on-surface transition hover:bg-surface-container active:scale-[0.98]" type="button">
-                <CalendarDays size={18} />
-                This Week
-              </button>
+              <div className="flex rounded-2xl bg-surface-container-low p-1">
+                {[
+                  ['week', '7 Hari'],
+                  ['month', 'Bulan']
+                ].map(([id, label]) => (
+                  <button className={`h-9 rounded-xl px-4 text-sm font-black transition ${boardView === id ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`} key={id} onClick={() => setBoardView(id)} type="button">
+                    {label}
+                  </button>
+                ))}
+              </div>
               <Link className="inline-flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition hover:-translate-y-0.5 active:scale-[0.98]" to="/app/log-food">
                 <Plus size={18} />
                 Add Meals
@@ -138,10 +190,14 @@ function ProMealPlannerPage() {
             </div>
           </div>
 
-          <div className="custom-scrollbar flex gap-5 overflow-x-auto p-5">
-            {weekPlan.map((day, index) => (
+          <DateRangePlanner rangeEnd={rangeEnd} rangePickMode={rangePickMode} rangeStart={rangeStart} onPick={chooseRange} />
+
+          <div className="max-w-full overflow-hidden">
+            <div className="custom-scrollbar flex w-full max-w-full snap-x gap-5 overflow-x-auto overscroll-x-contain p-5">
+            {visiblePlan.map((day, index) => (
               <DayColumn day={day} index={index} key={day.day} selected={selectedDay === day.day} onSelect={() => setSelectedDay(day.day)} />
             ))}
+            </div>
           </div>
         </section>
 
@@ -175,7 +231,7 @@ function ProMealPlannerPage() {
 function DayColumn({ day, index, selected, onSelect }) {
   const isEmpty = day.meals.length === 0
   return (
-    <motion.article className={`w-[300px] shrink-0 overflow-hidden rounded-[1.75rem] border bg-white shadow-sm transition-all ${selected ? 'border-primary/40 ring-2 ring-primary/15' : 'border-outline-variant/35'}`} initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05, duration: 0.32 }} whileHover={{ y: -4 }}>
+    <motion.article className={`w-[280px] shrink-0 snap-start overflow-hidden rounded-[1.75rem] border bg-white shadow-sm transition-all ${selected ? 'border-primary/40 ring-2 ring-primary/15' : 'border-outline-variant/35'}`} initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.035, duration: 0.32 }} whileHover={{ y: -4 }}>
       <button className={`flex w-full items-center justify-between gap-4 border-b px-5 py-5 text-left ${day.active || selected ? 'bg-mint-surface' : 'bg-surface-container-low'}`} onClick={onSelect} type="button">
         <div>
           <p className="font-label-md text-label-md font-black uppercase tracking-[0.18em] text-primary">{day.day}</p>
@@ -218,6 +274,34 @@ function DayColumn({ day, index, selected, onSelect }) {
   )
 }
 
+function DateRangePlanner({ rangeStart, rangeEnd, rangePickMode, onPick }) {
+  const start = Math.min(rangeStart, rangeEnd)
+  const end = Math.max(rangeStart, rangeEnd)
+  return (
+    <div className="border-b border-outline-variant/20 bg-surface-container-lowest px-5 py-4">
+      <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-2 text-sm font-black text-on-surface">
+          <CalendarDays className="text-primary" size={18} />
+          Klik {rangePickMode === 'start' ? 'tanggal mulai' : 'tanggal selesai'}
+        </div>
+        <p className="text-sm font-bold text-on-surface-variant">Range aktif: {weekPlan[start].date} - {weekPlan[end].date}</p>
+      </div>
+      <div className="scroll-hide flex w-full max-w-full gap-2 overflow-x-auto overscroll-x-contain">
+        {weekPlan.map((day, index) => {
+          const inRange = index >= start && index <= end
+          const isEdge = index === rangeStart || index === rangeEnd
+          return (
+            <button className={`min-w-[118px] rounded-2xl border px-4 py-3 text-left transition active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-md shadow-primary/15' : inRange ? 'border-primary/20 bg-mint-surface text-primary' : 'border-outline-variant/35 bg-white text-on-surface-variant hover:bg-surface-container'}`} key={day.day} onClick={() => onPick(index)} type="button">
+              <span className="block text-[10px] font-black uppercase tracking-[0.16em]">{day.day.slice(0, 3)}</span>
+              <span className="mt-1 block font-black">{day.date}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function MetricCard({ value, label, tone }) {
   return (
     <div className="rounded-2xl bg-white/80 px-4 py-4 text-center shadow-sm">
@@ -228,12 +312,14 @@ function MetricCard({ value, label, tone }) {
 }
 
 function ShoppingList() {
+  const totalItems = shoppingItems.reduce((total, [, items]) => total + items.length, 0)
   return (
     <motion.section className="rounded-[2rem] border border-outline-variant/40 bg-white/85 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.34 }} whileHover={{ y: -4 }}>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
           <p className="text-label-md font-bold text-primary">Smart Shopping List</p>
-          <h3 className="mt-1 font-headline-md text-2xl font-black text-on-surface">Grouped groceries</h3>
+          <h3 className="mt-1 font-headline-md text-2xl font-black text-on-surface">Grocery needs for meal plan</h3>
+          <p className="mt-2 text-sm leading-6 text-on-surface-variant">{totalItems} bahan dihitung dari jadwal makan mingguan, lengkap dengan qty dan takaran.</p>
         </div>
         <div className="grid h-12 w-12 place-items-center rounded-2xl bg-mint-surface text-primary">
           <ShoppingBasket size={24} />
@@ -243,9 +329,15 @@ function ShoppingList() {
         {shoppingItems.map(([group, items]) => (
           <div className="rounded-2xl bg-surface-container-low p-4" key={group}>
             <p className="mb-3 font-black text-on-surface">{group}</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid gap-2">
               {items.map((item) => (
-                <span className="rounded-xl bg-white px-3 py-2 text-sm font-bold text-on-surface-variant shadow-sm" key={item}>{item}</span>
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 shadow-sm" key={item.name}>
+                  <span className="min-w-0">
+                    <strong className="block truncate text-sm text-on-surface">{item.name}</strong>
+                    <small className="block truncate text-xs text-on-surface-variant">{item.meals}</small>
+                  </span>
+                  <span className="shrink-0 rounded-full bg-mint-surface px-3 py-1 text-xs font-black text-primary">{item.amount}</span>
+                </div>
               ))}
             </div>
           </div>

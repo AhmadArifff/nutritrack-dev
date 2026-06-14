@@ -1,6 +1,6 @@
 import { memo, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Bell, Check, ChevronRight, CreditCard, Download, Eye, LogOut, Mail, MessageCircle, Moon, Settings, Shield, Smartphone, Sparkles, Sun } from 'lucide-react'
+import { Award, Bell, Check, ChevronRight, Download, Eye, LogOut, Mail, MessageCircle, Moon, Settings, Shield, Smartphone, Sun } from 'lucide-react'
 import { apiRequest } from '../../api'
 
 const fallbackSettings = {
@@ -56,7 +56,7 @@ function ProSettingsPage() {
 
   return (
     <motion.main className="mx-auto grid max-w-[1320px] gap-7 px-5 py-7 pb-24 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
-      <section className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_370px]">
+      <section className="grid gap-7">
         <motion.div className="overflow-hidden rounded-[2rem] border border-outline-variant/35 bg-white/90 shadow-[0_18px_45px_rgba(15,23,42,0.06)] backdrop-blur-xl" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.34 }}>
           <div className="grid gap-8 bg-gradient-to-br from-mint-surface via-white to-secondary-fixed/45 p-6 md:grid-cols-[minmax(0,1fr)_220px] md:p-8">
             <div>
@@ -71,22 +71,6 @@ function ProSettingsPage() {
             </motion.div>
           </div>
         </motion.div>
-
-        <motion.aside className="rounded-[2rem] border border-outline-variant/35 bg-white/90 p-6 shadow-[0_18px_45px_rgba(15,23,42,0.06)] backdrop-blur-xl" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.12, duration: 0.34 }}>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-energy-orange">Subscription</p>
-          <h3 className="mt-2 font-headline-md text-3xl font-black text-on-surface">{settings.account?.plan || 'Pro'} Plan</h3>
-          <p className="mt-3 leading-7 text-on-surface-variant">AI meal planning, macro insights, and community challenges are active.</p>
-          <div className="mt-6 rounded-2xl bg-mint-surface p-4">
-            <div className="flex items-start gap-3">
-              <Sparkles className="mt-1 text-primary" size={20} />
-              <p className="text-sm leading-6 text-on-surface-variant">Upgrade messaging now has readable contrast and no overlapping button layers.</p>
-            </div>
-          </div>
-          <button className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 active:scale-95" type="button" onClick={() => showToast('Plan management opened.')}>
-            <CreditCard size={19} />
-            Manage plan
-          </button>
-        </motion.aside>
       </section>
 
       <section className="grid gap-7 xl:grid-cols-2">
@@ -156,10 +140,39 @@ function ProSettingsPage() {
         <SettingsActionCard title="Data export" body="Download your meal logs, progress data, and reports." Icon={Download} action="Export data" />
       </section>
 
-      <motion.button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-error/20 bg-error-container px-5 font-black text-error shadow-sm transition hover:-translate-y-0.5 md:w-max" type="button" whileTap={{ scale: 0.96 }} onClick={() => showToast('Logout tersedia dari menu profile header.')}>
-        <LogOut size={19} />
-        Logout
-      </motion.button>
+      <motion.section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary to-primary-container p-8 text-white shadow-2xl shadow-primary/20 transition-transform hover:scale-[1.01] md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.34 }}>
+        <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative z-10 flex flex-col justify-between gap-8 md:flex-row md:items-center">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border border-white/30 bg-white/20 backdrop-blur-md">
+              <Award size={48} />
+            </div>
+            <div>
+              <div className="mb-2 flex flex-wrap items-center gap-3">
+                <h3 className="font-headline-md text-2xl font-black">NutriTrack Pro</h3>
+                <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-widest text-primary shadow-sm">Aktif</span>
+              </div>
+              <p className="text-lg leading-7 text-white/90">Paket Anda diperbarui pada 12 Okt 2024 seharga $12.99/bln</p>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <button className="rounded-2xl bg-white px-8 py-4 font-black text-primary shadow-lg transition-all hover:scale-105 active:scale-95" type="button" onClick={() => showToast('Kelola paket dibuka.')}>
+              Kelola Paket
+            </button>
+            <button className="rounded-2xl border border-white/30 bg-white/20 px-8 py-4 font-black text-white backdrop-blur-md transition-all hover:bg-white/30 active:scale-95" type="button" onClick={() => showToast('Riwayat tagihan dibuka.')}>
+              Riwayat Tagihan
+            </button>
+          </div>
+        </div>
+      </motion.section>
+
+      <div className="flex justify-center pt-1">
+        <motion.button className="group flex items-center gap-3 rounded-2xl px-10 py-4 font-black text-error-red transition-all hover:bg-error-red/10" type="button" whileTap={{ scale: 0.96 }} onClick={() => showToast('Logout tersedia dari menu profile header.')}>
+          <LogOut className="transition-transform group-hover:rotate-12" size={22} />
+          Logout dari NutriTrack
+        </motion.button>
+      </div>
 
       {toast ? (
         <motion.div className="fixed bottom-6 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-3 rounded-full bg-on-surface px-5 py-3 font-bold text-white shadow-2xl" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }}>
