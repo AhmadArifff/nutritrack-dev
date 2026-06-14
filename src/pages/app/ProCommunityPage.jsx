@@ -14,6 +14,8 @@ import {
   UserPlus,
   Users
 } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 const challenges = [
   {
@@ -22,7 +24,7 @@ const challenges = [
     badge: 'Hot',
     badgeTone: 'orange',
     participants: '+1.2k',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCkG6QiMiKBZNiMSsr4m6ISx4oYQMUIJW4Gsb7qZQIuS_e21XEWSQPfp47HVoq20YalHEI_oJd9-_iQtVZmXPcYU9SlCqqupK8Kez7zmIzw_3BH1lKHUnfxvuhGm9bViQNSqegIC9MBH58PoemZW_9McAw1quDkgh1q6mDJMtqyVq6V7Uu6gH6FE9KBSGSWFbRD8RLxlRZDruWj9lO9SawdME5rAzIOw7QdytYftd0qcyMMUZLRURNQFloFeLCtnA_InbD9sDbSotU'
+    image: '/assets/remote/remote-012-52e5a6df20.png'
   },
   {
     title: 'Sugar-Free Week',
@@ -39,19 +41,19 @@ const leaderboard = [
     name: 'Elena Vance',
     days: '42 Days',
     top: true,
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCfz-gcdHCC13vC2dVXCHjZoyBYPUW0Yot9uD7FxYjjvKwQszcpTNP__CXZf-XnXgLkvnR4LD0KjsoKeDvzGTso7A3Uae_XhujVYyx0QBcnQJRSzlnLDInIsA17_lrhx_QOVSX8MgEiezUIof6UA0-9Vha5UZZwlVoyehfvE6tH0Rq249AKCg5SwOmLtZ9i1j_fctYIg3nNjQpby1D915EM0VxyxoaPAlgAozI8BG80rrTLS2dnBdfESbxKlDgB7scyyhIGOhi5TC4'
+    avatar: '/assets/remote/remote-013-e6e85e46b8.png'
   },
   {
     rank: '02',
     name: 'David Chen',
     days: '38 Days',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAw1zLjVPLelW3mlOY53g-6QHryjAZLGOlb2ijqOw2Vskf5OR9UZqSF6TuK-UinRVx474ib49r4YLaxN6PmfinAxpiZe95ZkC6zZt0Sqe02hvnPNe9aXwl7OAmMFVNvRlJK37TcV97gsKGPd6uBot7BL5y5k9RJ-84oNcSc2lqGf9iK_xrY96c7Egg7KRLRNcwlIYNmgHzRx0tmXOeX_Xu43Ef4x3MRkPEMRQaVrg9nes0gCLt4IYFssYTtMXTrXlGCiziYtel-qJE'
+    avatar: '/assets/remote/remote-014-63752e73b6.png'
   },
   {
     rank: '03',
     name: 'Maria Rossi',
     days: '35 Days',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJ0Z2_b0OcAQ4ckVsD9MG5gUHEmBYlUke-c9dp1-3XsODW9E1A4NCB3qAdzfK0IpFNZMkQ6jrDZngi2Q5UuRa_xE3dsOypsE2OYCKQK1xa-B5RgJjbrasip2cUJMMzael5s-ahFgplEfrb1Jofv85KZQ9GZF8uqlVSG6TJKmVjje0MJB4yOJ9Gux_XlhdxAjXr5iLv7lvdNa_n5FicMP_676_MqdBCJmn6xtlhxicaN44Z-pXAv3iAf_BBkeqyepJaAorAMowZSSY'
+    avatar: '/assets/remote/remote-015-4cd9764a66.png'
   }
 ]
 
@@ -59,16 +61,66 @@ const buddies = [
   {
     name: 'Sophie Morel',
     meta: '92% Match - Vegan Focus',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBL_C4t2p95vD1Wgw05Iv-9uIXXZHTRWVY2xzSNy8ViNY2ynYa5P1iiXqRGKz64Pxp1FErdwtNeoDRhvcD_4xxg_K8igwkxW4qcxWEnn51VlnbeCrTV1mR3YD92ySVwxhqelOLQkn8YfkBDMF-2q-Le8rS-ErU-evOkQ136sIRPE-uvzAQnuv0WyJzAcilQ8X0AQLMkwjfkRcl9dsTNhGfdKioEzr3chbp1_2uTVMZ-lu2Vth2gAeteXWaGHcHnIy5ZTzkSA2UwxEc'
+    avatar: '/assets/remote/remote-016-1da1546472.png'
   },
   {
     name: 'James Wilson',
     meta: '88% Match - Keto Pro',
-    avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDR39zPapalQk-Jpn4fH_77ZZJ4dkN7nPTVdmF7CW_Hh4GKTxlpk9aOL3b-we4BXRTEFJbozF7CiNg5EwunWuOAIn7amp1eI_VyA7fZgaZkjSgnCcIU4nlMDTdR1MoDEnur5sTetBkGWYF69HECmU4f742LA5rG_hOE3Y-Tu5yCoNxMa8xQEA8C5JErWzbyp4DrZH91Nfd4raXBnNrs8pcxyPzwymbRJMaHJwqDUcTZEWl5jpw-0llt96pmiG1T6iB6B2OSjUIu59c'
+    avatar: '/assets/remote/remote-017-24a1ccbbc5.png'
   }
 ]
 
+const feedFallback = {
+  authorName: 'Sarah Jenkins',
+  authorBadge: 'Sugar-Free Finisher',
+  authorAvatar: '/assets/remote/remote-018-77400e5ef4.png',
+  body: '"Just finished my 30-day streak! I have never felt more energetic. Dropped 5 lbs but the mental clarity is the real trophy. Thanks to everyone for the motivation!"',
+  image: '/assets/remote/remote-019-2dfeadae7e.png',
+  cheersCount: 124,
+  commentsCount: 18
+}
+
+function mapCommunityData(payload) {
+  return {
+    challenges: (payload.challenges || []).map((item) => ({
+      title: item.title,
+      description: item.description,
+      badge: item.badge,
+      badgeTone: item.badge_tone || item.badgeTone,
+      participants: item.participants_label || item.participants,
+      image: item.image_url || item.image
+    })),
+    leaderboard: (payload.leaderboard || []).map((item, index) => ({
+      rank: String(index + 1).padStart(2, '0'),
+      name: item.name,
+      days: `${item.streak_days || item.streakDays || 0} Days`,
+      top: Boolean(item.is_top || item.isTop),
+      avatar: item.avatar_url || item.avatar
+    })),
+    buddies: (payload.buddies || []).map((item) => ({
+      name: item.name,
+      meta: item.meta || `${item.match_percent || item.matchPercent || 0}% Match - ${item.focus || 'Wellness'}`,
+      avatar: item.avatar_url || item.avatar
+    })),
+    posts: (payload.posts || []).map((item) => ({
+      authorName: item.author_name || item.authorName,
+      authorBadge: item.author_badge || item.authorBadge,
+      authorAvatar: item.author_avatar_url || item.authorAvatar,
+      body: item.body,
+      image: item.image_url || item.image,
+      cheersCount: item.cheers_count || item.cheersCount || 0,
+      commentsCount: item.comments_count || item.commentsCount || 0
+    }))
+  }
+}
+
 function ProCommunityPage() {
+  const { data } = useBackendData(
+    () => apiRequest('/api/community').then(mapCommunityData),
+    { challenges, leaderboard, buddies, posts: [feedFallback] },
+    []
+  )
+
   return (
     <AppPageShell title="Community Hub" subtitle="Tuesday, October 24" showHeader={false} wide>
       <div className="space-y-8 pb-28">
@@ -105,13 +157,13 @@ function ProCommunityPage() {
                 <button className="font-bold text-primary hover:underline" type="button">View All</button>
               </div>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {challenges.map((challenge, index) => <CommunityChallengeCard challenge={challenge} index={index} key={challenge.title} />)}
+                {data.challenges.map((challenge, index) => <CommunityChallengeCard challenge={challenge} index={index} key={challenge.title} />)}
               </div>
             </section>
 
             <section className="space-y-6">
               <h3 className="font-headline-md text-headline-md font-bold text-on-surface">Community Success &amp; Wins</h3>
-              <CommunityFeedPost />
+              <CommunityFeedPost post={data.posts[0] || feedFallback} />
             </section>
           </div>
 
@@ -121,13 +173,13 @@ function ProCommunityPage() {
                 <h3 className="font-headline-md text-headline-md font-bold text-on-surface">Top Streaks</h3>
                 <Trophy className="text-warning-yellow" size={28} />
               </div>
-              <div className="space-y-4">{leaderboard.map((item) => <CommunityRankItem item={item} key={item.rank} />)}</div>
+              <div className="space-y-4">{data.leaderboard.map((item) => <CommunityRankItem item={item} key={item.rank} />)}</div>
               <button className="mt-8 w-full rounded-xl border border-outline-variant/30 py-3 text-label-sm font-bold text-on-surface-variant transition-all hover:bg-surface-container" type="button">View Full Leaderboard</button>
             </GlassCard>
 
             <GlassCard>
               <h3 className="mb-8 font-headline-md text-headline-md font-bold text-on-surface">Suggested Buddies</h3>
-              <div className="space-y-8">{buddies.map((buddy) => <CommunityBuddyItem buddy={buddy} key={buddy.name} />)}</div>
+              <div className="space-y-8">{data.buddies.map((buddy) => <CommunityBuddyItem buddy={buddy} key={buddy.name} />)}</div>
             </GlassCard>
 
             <motion.section className="achievement-gradient relative overflow-hidden rounded-[2rem] p-8 text-white shadow-xl transition-transform hover:scale-[1.01]" whileHover={{ y: -3 }}>
@@ -190,32 +242,32 @@ function CommunityChallengeCard({ challenge, index }) {
 function CommunityAvatarStack({ countLabel }) {
   return (
     <div className="flex -space-x-3">
-      <img className="h-8 w-8 rounded-full border-2 border-white object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSC7xCK-qAPfiPGiDCGpvqcqQiRVFE3ZwLgPVnM63MUXTtcrABnnBj0hPwh3XpfmJjBjImNbbkBzAeAsEcZoFMt5r7fRezOYlNx4g1U72JO61pz3CevrGK_sTfqo4qKRcNBlFSCxHvpA_NthxUaY4oNHfZFM2imCypitF4G5bWeBDz0inNVizvGPSrwiPf_gb5EPZtGH20kZVxWXT4eZPIPiSc8LuFlZ_JXUL82FH_wodPZEVzWSsG2aqja0mAbYuhMbOgG8RhRl0" alt="Challenge participant" loading="lazy" />
+      <img className="h-8 w-8 rounded-full border-2 border-white object-cover" src="/assets/remote/remote-020-236ec5b55c.png" alt="Challenge participant" loading="lazy" />
       <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-surface-container-high text-[10px] font-bold">{countLabel}</div>
     </div>
   )
 }
 
-function CommunityFeedPost() {
+function CommunityFeedPost({ post }) {
   return (
     <motion.article className="rounded-[2rem] border border-outline-variant/40 bg-white/80 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl transition-all hover:shadow-xl md:p-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.35 }}>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <img className="h-12 w-12 rounded-full border-2 border-primary-container/30 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHi9rfB7p3znkHCNRXjLABna3cN6QDvVRd11U-Tfkv977mxl6myU09Zqby9mbihzReT42o-EYkBmnqkHNAqM2FD3gdK_dt3fNkwRJKZ6wNUjnPqEYe2OZdYwqLo2XDpfriLC1xW_ECZ7ScRhCO8INJWWi5jSvigiccsQPKndHMTxfUZsg8F1ib216ulv9sHCjnBRU83X7lnxbYwa3lOgKxhimCGejOyqaQySeZkjrbib57I6eK40mJwJVY7NwBf6bWKPRrUNKnKEw" alt="Sarah Jenkins" loading="lazy" />
+          <img className="h-12 w-12 rounded-full border-2 border-primary-container/30 object-cover" src={post.authorAvatar} alt={post.authorName} loading="lazy" />
           <div>
-            <h5 className="font-bold text-on-surface">Sarah Jenkins</h5>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">2 hours ago - <span className="text-achievement-purple">Sugar-Free Finisher</span></p>
+            <h5 className="font-bold text-on-surface">{post.authorName}</h5>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">2 hours ago - <span className="text-achievement-purple">{post.authorBadge}</span></p>
           </div>
         </div>
         <button className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-surface-variant" type="button" aria-label="Post actions"><MoreHorizontal size={20} /></button>
       </div>
-      <p className="mb-6 leading-7 text-on-surface">"Just finished my 30-day streak! I have never felt more energetic. Dropped 5 lbs but the mental clarity is the real trophy. Thanks to everyone for the motivation!"</p>
+      <p className="mb-6 leading-7 text-on-surface">{post.body}</p>
       <div className="mb-6 h-72 overflow-hidden rounded-2xl border border-outline-variant/10 shadow-sm">
-        <img className="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeqD7oX7GgoMFp9tFcqdEilitOoAe516IHe57AUMjn8K28vg8nXh2SK8KGNPUhRtwlNUt4a6VKlvuR2dFJfsEa1XvsM7PNKGyg2zf2hmeXdCeTC_2D4GMUwcsQqr1tfGT87Jd_8-F0CmTTFU3EgQARrCKIJUE3Ad-0qcjibS6n-seOuSCvmoUKK1iKImH0gmgxmWfA1HeoL_n9Gw-o1xhMLdBoyFr0nFGFBd34kSTPlt75V394rN_2n9Z3LAEjaGRHkfx3bpd-uwU" alt="Meal Prep" loading="lazy" />
+        <img className="h-full w-full object-cover" src={post.image} alt="Meal Prep" loading="lazy" />
       </div>
       <div className="flex flex-wrap items-center gap-6 border-t border-outline-variant/20 pt-4">
-        <button className="flex items-center gap-2 text-label-sm font-bold text-primary transition-all hover:scale-105 active:scale-95" type="button"><Heart size={18} fill="currentColor" />124 Cheers</button>
-        <button className="flex items-center gap-2 text-label-sm font-bold text-on-surface-variant transition-all hover:scale-105 hover:text-primary active:scale-95" type="button"><MessageCircle size={18} />18 Comments</button>
+        <button className="flex items-center gap-2 text-label-sm font-bold text-primary transition-all hover:scale-105 active:scale-95" type="button"><Heart size={18} fill="currentColor" />{post.cheersCount} Cheers</button>
+        <button className="flex items-center gap-2 text-label-sm font-bold text-on-surface-variant transition-all hover:scale-105 hover:text-primary active:scale-95" type="button"><MessageCircle size={18} />{post.commentsCount} Comments</button>
         <button className="ml-auto flex items-center gap-2 text-label-sm font-bold text-on-surface-variant transition-colors hover:text-primary" type="button" aria-label="Share post"><Share2 size={18} /></button>
       </div>
     </motion.article>

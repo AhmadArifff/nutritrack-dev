@@ -67,7 +67,7 @@ function ProProgressPage() {
         time: '7:15 AM',
         weight: 78.5,
         delta: -0.2,
-        photoUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=220&q=80'
+        photoUrl: '/assets/remote/remote-003-9bc2d6a1af.jpg'
       },
       { id: 'sep-27', date: 'Sep 27, 2023', session: 'Morning Entry', time: '7:30 AM', weight: 78.7, delta: 0.1, photoUrl: null },
       {
@@ -77,7 +77,7 @@ function ProProgressPage() {
         time: '7:20 AM',
         weight: 78.6,
         delta: -0.4,
-        photoUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=220&q=80'
+        photoUrl: '/assets/remote/remote-004-7059e33400.jpg'
       }
     ]
   }, [currentWeight, weights])

@@ -2,6 +2,8 @@ import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { BarChart3, Bell, Check, Share2, Trophy, Utensils, Users } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 const notificationItems = [
   {
@@ -74,12 +76,48 @@ const filters = [
   ['community', 'Community']
 ]
 
+function mapNotificationType(type) {
+  return {
+    meal_reminder: ['reminders', 'Meal Reminders', 'text-primary', Utensils, 'bg-mint-surface border-primary/10 text-primary', [{ label: 'Log Now', className: 'bg-primary text-white hover:bg-on-primary-container', to: '/app/log-food' }]],
+    hydration: ['reminders', 'Meal Reminders', 'text-secondary', Bell, 'bg-secondary-fixed text-secondary border-secondary/10', [{ label: 'Open Nutrition', className: 'bg-secondary text-white hover:opacity-90', to: '/app/nutrition' }]],
+    achievement: ['achievements', 'Achievements', 'text-achievement-purple', Trophy, 'bg-white border-achievement-purple/30 text-achievement-purple rounded-full shadow-inner', [{ label: 'View Badge', className: 'bg-achievement-purple text-white hover:opacity-90', to: '/app/profile' }]],
+    weekly_report: ['reports', 'Weekly Reports', 'text-secondary', BarChart3, 'bg-secondary-fixed text-secondary border-secondary/10', [{ label: 'Open Report', className: 'border border-outline-variant text-on-surface-variant hover:bg-surface-container', to: '/app/progress' }]],
+    system: ['community', 'Community', 'text-energy-orange', Users, 'bg-energy-orange/10 text-energy-orange border-energy-orange/10', [{ label: 'Open Community', className: 'border border-outline-variant text-on-surface-variant hover:bg-surface-container', to: '/app/community' }]]
+  }[type] || []
+}
+
+function mapBackendNotifications(rows) {
+  if (!rows.length) return notificationItems
+  return rows.map((row) => {
+    const [type, section, sectionTone, Icon, iconClass, actions] = mapNotificationType(row.type)
+    return {
+      id: row.id,
+      type,
+      section,
+      sectionTone,
+      title: row.title,
+      time: row.created_at ? new Date(row.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today',
+      message: row.message,
+      Icon,
+      iconClass,
+      cardClass: row.status === 'read' ? 'bg-white border-outline-variant/35' : 'bg-surface-container-low border-primary/20',
+      read: row.status === 'read',
+      actions
+    }
+  })
+}
+
 function ProNotificationsPage() {
   const [activeFilter, setActiveFilter] = useState('all')
   const [readIds, setReadIds] = useState([])
+  const { data: notificationData, setData: setNotificationData } = useBackendData(
+    () => apiRequest('/api/notifications?limit=50').then(mapBackendNotifications),
+    notificationItems,
+    []
+  )
   const items = useMemo(
-    () => notificationItems.map((item) => ({ ...item, read: item.read || readIds.includes(item.id) })),
-    [readIds]
+    () => notificationData.map((item) => ({ ...item, read: item.read || readIds.includes(item.id) })),
+    [notificationData, readIds]
   )
   const filteredItems = activeFilter === 'all' ? items : items.filter((item) => item.type === activeFilter)
   const groupedItems = filteredItems.reduce((acc, item) => {
@@ -103,7 +141,15 @@ function ProNotificationsPage() {
               <h2 className="mt-2 font-headline-md text-3xl font-black text-on-surface">Notifications</h2>
               <p className="mt-2 text-on-surface-variant">Manage your health alerts, reminders, reports, and community activity.</p>
             </div>
-            <button className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50" onClick={() => setReadIds(items.map((item) => item.id))} disabled={!unreadCount} type="button">
+            <button className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50" onClick={async () => {
+              setReadIds(items.map((item) => item.id))
+              setNotificationData((current) => current.map((item) => ({ ...item, read: true })))
+              try {
+                await apiRequest('/api/notifications/read-all', { method: 'PATCH' })
+              } catch {
+                // UI stays optimistic; fallback mode may not have a backend.
+              }
+            }} disabled={!unreadCount} type="button">
               <Check size={18} />
               Mark all read
             </button>
@@ -131,7 +177,15 @@ function ProNotificationsPage() {
                 </div>
                 <div className="space-y-3">
                   {sectionItems.map((item, index) => (
-                    <NotificationCard item={item} index={index} key={item.id} onRead={() => setReadIds((current) => [...new Set([...current, item.id])])} />
+                    <NotificationCard item={item} index={index} key={item.id} onRead={async () => {
+                      setReadIds((current) => [...new Set([...current, item.id])])
+                      setNotificationData((current) => current.map((entry) => entry.id === item.id ? { ...entry, read: true } : entry))
+                      try {
+                        await apiRequest(`/api/notifications/${item.id}/read`, { method: 'PATCH' })
+                      } catch {
+                        // UI stays optimistic; fallback mode may not have a backend.
+                      }
+                    }} />
                   ))}
                 </div>
               </section>

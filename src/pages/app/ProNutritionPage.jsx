@@ -1,6 +1,8 @@
 import { memo, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Activity, Apple, BarChart3, Droplets, Flame, Leaf, Plus, Sparkles, Utensils } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 function formatNumber(value, fallback = '0') {
   const number = Number(value)
@@ -28,14 +30,37 @@ const qualityItems = [
   ['Hydration rhythm', '6 cups', 'Two cups left before dinner for a smoother finish.', Droplets, 'text-secondary bg-secondary-fixed']
 ]
 
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function mapNutritionSummary(summary) {
+  const macros = summary.macros || {}
+  return {
+    calories: summary.calories || { consumed: 1450, target: 2100 },
+    hydration: summary.hydration || { cups: 6, targetCups: 8 },
+    macros: [
+      { label: 'Protein', consumed: macros.protein?.consumed || 0, target: macros.protein?.target || 180, unit: 'g', color: '#9e4036', tint: 'rgba(255, 218, 213, 0.72)', Icon: Flame },
+      { label: 'Carbs', consumed: macros.carbs?.consumed || 0, target: macros.carbs?.target || 300, unit: 'g', color: '#0058be', tint: 'rgba(216, 226, 255, 0.9)', Icon: Apple },
+      { label: 'Fats', consumed: macros.fat?.consumed || 0, target: macros.fat?.target || 75, unit: 'g', color: '#f97316', tint: 'rgba(249, 115, 22, 0.12)', Icon: Droplets },
+      { label: 'Fiber', consumed: macros.fiber?.consumed || 0, target: macros.fiber?.target || 35, unit: 'g', color: '#006e2f', tint: 'rgba(0, 110, 47, 0.1)', Icon: Leaf }
+    ]
+  }
+}
+
 function ProNutritionPage() {
-  const [waterCups, setWaterCups] = useState(6)
-  const dailyCalories = { consumed: 1450, target: 2100 }
+  const { data: nutritionData, setData: setNutritionData } = useBackendData(
+    () => apiRequest(`/api/nutrition/summary?date=${todayIso()}`).then(mapNutritionSummary),
+    { calories: { consumed: 1450, target: 2100 }, hydration: { cups: 6, targetCups: 8 }, macros: nutritionMacros },
+    []
+  )
+  const [waterCups, setWaterCups] = useState(null)
+  const dailyCalories = nutritionData.calories
   const calorieProgress = Math.min(100, Math.round((dailyCalories.consumed / dailyCalories.target) * 100))
   const averageMacroProgress = useMemo(() => {
-    const total = nutritionMacros.reduce((sum, item) => sum + Math.min(100, (item.consumed / item.target) * 100), 0)
-    return Math.round(total / nutritionMacros.length)
-  }, [])
+    const total = nutritionData.macros.reduce((sum, item) => sum + Math.min(100, (item.consumed / item.target) * 100), 0)
+    return Math.round(total / nutritionData.macros.length)
+  }, [nutritionData.macros])
 
   return (
     <motion.main className="mx-auto grid max-w-[1360px] gap-7 px-5 py-7 pb-24 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
@@ -73,11 +98,20 @@ function ProNutritionPage() {
           </div>
         </motion.div>
 
-        <HydrationPanel waterCups={waterCups} onAdd={() => setWaterCups((value) => Math.min(8, value + 1))} />
+        <HydrationPanel waterCups={waterCups ?? nutritionData.hydration.cups} onAdd={async () => {
+          const nextCups = Math.min(8, (waterCups ?? nutritionData.hydration.cups) + 1)
+          setWaterCups(nextCups)
+          setNutritionData((current) => ({ ...current, hydration: { ...current.hydration, cups: nextCups } }))
+          try {
+            await apiRequest('/api/nutrition/water', { method: 'POST', body: { amountMl: 250, logDate: todayIso() } })
+          } catch {
+            // Keep optimistic UI for offline/fallback preview.
+          }
+        }} />
       </section>
 
       <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {nutritionMacros.map((macro, index) => (
+        {nutritionData.macros.map((macro, index) => (
           <NutritionMacroCard item={macro} index={index} key={macro.label} />
         ))}
       </section>

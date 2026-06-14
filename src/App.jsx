@@ -619,7 +619,7 @@ function LoginPage() {
   return (
     <AnimatedPage className="min-h-screen bg-[#f4f7fb] font-sans text-[#071727]">
       <main className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative hidden items-end overflow-hidden bg-cover bg-center lg:flex" style={{ backgroundImage: "linear-gradient(180deg, rgba(7,23,39,0.08), rgba(7,23,39,0.78)), url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1400&q=80')" }}>
+        <section className="relative hidden items-end overflow-hidden bg-cover bg-center lg:flex" style={{ backgroundImage: "linear-gradient(180deg, rgba(7,23,39,0.08), rgba(7,23,39,0.78)), url('/assets/remote/remote-001-100fa2b2f7.jpg')" }}>
           <Link className="absolute left-8 top-8 flex items-center gap-3 text-white" to="/">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#007a35]">
               <MaterialSymbol>nutrition</MaterialSymbol>
@@ -1155,7 +1155,6 @@ const proRoutes = {
   '/app/progress': ProProgressRoute,
   '/app/nutrition': ProNutritionRoute,
   '/app/foods': ProFoodsRoute,
-  '/app/foods/gado-gado': ProFoodDetailRoute,
   '/app/community': ProCommunityRoute,
   '/app/profile': ProProfileRoute,
   '/app/settings': ProSettingsRoute,
@@ -1175,7 +1174,8 @@ function ProAppLayout() {
   const [shellError, setShellError] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const meta = proPageMeta[location.pathname] || proPageMeta['/app/dashboard']
+  const metaKey = location.pathname.startsWith('/app/foods/') ? '/app/foods/gado-gado' : location.pathname
+  const meta = proPageMeta[metaKey] || proPageMeta['/app/dashboard']
 
   useEffect(() => {
     document.title = `${meta.title} - NutriTrack`
@@ -1234,7 +1234,7 @@ function ProAppLayout() {
     shellData.me?.avatarUrl ||
     shellData.summary?.user?.avatarUrl ||
     auth?.user?.avatarUrl ||
-    'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&q=80'
+    '/assets/remote/remote-002-0eb63fe01f.jpg'
   const unreadNotifications = (shellData.notifications || []).filter((item) => item.status === 'unread').length
   const notificationBadgeCount = unreadNotifications || (shellData.notifications || []).length
 
@@ -1355,7 +1355,7 @@ function ProAppLayout() {
 
 function ProAppRoutes({ shellData }) {
   const location = useLocation()
-  const Page = proRoutes[location.pathname] || ProDashboardRoute
+  const Page = location.pathname.startsWith('/app/foods/') ? ProFoodDetailRoute : proRoutes[location.pathname] || ProDashboardRoute
   return (
     <AnimatePresence mode="wait">
       <Suspense fallback={<RouteFallback />}>
@@ -1742,7 +1742,7 @@ function ProProgressPage() {
           time: '7:15 AM',
           weight: 78.5,
           delta: -0.2,
-          photoUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=220&q=80'
+          photoUrl: '/assets/remote/remote-003-9bc2d6a1af.jpg'
         },
         { id: 'sep-27', date: 'Sep 27, 2023', session: 'Morning Entry', time: '7:30 AM', weight: 78.7, delta: 0.1, photoUrl: null },
         {
@@ -1752,7 +1752,7 @@ function ProProgressPage() {
           time: '7:20 AM',
           weight: 78.6,
           delta: -0.4,
-          photoUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=220&q=80'
+          photoUrl: '/assets/remote/remote-004-7059e33400.jpg'
         }
       ]
 
@@ -2119,9 +2119,9 @@ function ProProfilePage() {
     location: 'San Francisco, CA',
     joined: 'Jan 2023',
     avatarUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAaDy65LL1GD47aJLJE75H5pZwGpvTfi_xpMeAbshzWqm7pfZd5s7rjTi9qL7V70oN4bFSGaWbfwXgjMVn5gwNauLKnF4rvHkNeA6Alz3Bhidr73CvY3REcKZgXW3NHQY1pxf3Wci1sRt3kzmr2tVYQqOmdQsmZyW9_CnzDKUWWkDwjzzAUWcsnQJNaOZodwoIponRAdDGnQUJJ-_cL1irZRNH9Hiz0meHEUGsiEZA7EKoahXWwb9kIozPW4q70B91AMsxjvwoDy9o',
+      '/assets/remote/remote-005-1b1a2cd48e.png',
     bannerUrl:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDdCToHzWGlPcEvRqDVvLPerYpnIybFd4zoThJlRNvOdl6FH6iWqz0B0V0Ma4MbXzlS-NWIX326gVq6RZrWJJ6KsjSTZ1NhOyfrUhQvAsRufrEmw9UGg0QAjVBhbBkMykntgfLXzeOBE3ZENuBq_qDrufcGAkGaloD5M7ZCPk5Eucd-5eb27HqBK-4TVudtYJaR2GJp4grhipeNXLAP80DiA8I0X8Uzw6GSdOTkejzGy6ZW10UnFnmLF7LeLgWkaaBoCXs54DnEdPg',
+      '/assets/remote/remote-006-34c9c8c9d5.png',
     bio:
       'Nutrition enthusiast and marathon runner. Focused on high-protein plant-based diets and optimizing recovery times. Currently training for the Big Sur International Marathon. Believe in the power of data to drive transformation.',
     tags: ['MarathonRunner', 'PlantBased', 'BioHacking']
@@ -2635,8 +2635,8 @@ function ActivityHubDrawer({ shellData, open, onClose }) {
         message: '',
         read: true,
         avatars: [
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBBpQPwTBwAJxrBRuPURt2LDf1aHST1fGbefEwuj4lM3Vbs1fI25t61kuANVrc-OEmFD4e3cUjQ2bg5etQFVjWEY3HVVAgsmiP4pKwy0OFhKu9c-zkylRoYANYVSsW51XVocxPFL9LgeXp4sUPzpqJioSpuD74YQHbqpT9yq-kiAGPLtPtO_qTksB9skkP5bu0U4_e1LmuuIzFLhDynmexYmkjzFnOQcf_9STuHPSMmECT0c5dOfEvhb1IOLTiAuhsqmuX3zcwszDc',
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAWBqTUP85IPw_yaaXv8SoWxioAqLFcjved4K-WjZZ-RAc56pY9oQQ0Zhmz-Vh4QcCM0lnDkY34quxhNUaT0QNdhldL8AjuQMngTgp-Y0MHHnBZCHtgCKhHTbXvRl9uOhwyfTgX1JTN1j9_ao4vX1SuksVWi6f64VkjRrAd6P-eFboemtO_oMGw4c_n1W5_b0xGG8sdmicxX2A2BMK8EfHUPPO1fx6H_Q6m_nfdgReXXFZY6mYCdjp5El5BYevrXDnSBzC7ZLaQdWE'
+          '/assets/remote/remote-007-62c966aeae.png',
+          '/assets/remote/remote-008-9f9562b0bd.png'
         ]
       }
     ],
@@ -2832,19 +2832,19 @@ function ProHelpPage() {
       title: 'Mencatat makanan pertama Anda',
       description: 'Pelajari cara menggunakan alat pengenalan foto AI kami.',
       duration: '2:45',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBiCr2m1zBxsEnVO2yVDcjunmBInh2Guabi6DEuRI-GsI-AUdSlxaa-1nWwR_LxrCb9q9T-itSCmtr6uMPY-pR1snzJFcB2muPtNOlFCLss7I2zavV-4z5189iU-VPhYVtzF-cOES0jC7sPM7Qq_OR5BbppSdjrqg0jmL_kRPD5vx-pA20fUvGUW3f_VIomtx4vMiGnQ95wKflG179S36cOQNv-9TtW6m8rXdKKN9HQHPtkldjAgWf4uShK3VlFSYaD9GzXJIkqzbU'
+      image: '/assets/remote/remote-009-44fc94f92c.png'
     },
     {
       title: 'Menghubungkan Google Fit',
       description: 'Sinkronkan langkah dan menit aktif Anda dengan mulus.',
       duration: '3:12',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAwC-j6AMR63hIgsoXz4PYrvu1vyXoRVwjn1kXo5RIuAmB5FczExsL-kRcILp84RJEMrgibigpa45nMT2SfHPcO1OYp2w5vjhas8ZGFdUMxAVLmRWyX_5R6wxHMifkKlUpbB699GQlIshEwmTYW6n3IVdIDBUsM_1bGtjhvlEaxyMr3ICYSFvD2-2MzqjpbzWPXZbrzr6iI8eApJcwQTHj7zogNQY1lkU20pjqEuiBKGsfRwZKHW7bTfS_I4kkRzqMEKSxiVDH5Na8'
+      image: '/assets/remote/remote-010-5192dd8a2b.png'
     },
     {
       title: 'Menyesuaikan Dashboard Anda',
       description: 'Buat NutriTrack bekerja sesuai dengan tujuan spesifik Anda.',
       duration: '1:50',
-      image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBVUilpbVyCwIgsBtuA-VNmkhIeMF7ONCayV98HsoWoe4OfN8qPL3c6xsb9U4EbZMCYisZlh3iPVWcOfyxaqEZWACm0FaYY7CLaFQXLcdPVJrZz1AEtPYEC6aDpdM48j-VvMCxhAaNbT72vS0RzC54nkBoled4XtTwSY5nY5tYmxtkVVmX0c8iE1_lOwJzz4SXdJzjakhWaiUtnKptyJ5KxwZJht6e76MZz6PUKYEsgh_LKAUj-Md3mOa4h2YAuiKihldTxU8xotcg'
+      image: '/assets/remote/remote-011-9b7c67308a.png'
     }
   ]
   const faqs = [

@@ -1,6 +1,8 @@
 import { memo, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Apple, ArrowRight, ChevronRight, CreditCard, Headphones, Mail, MessageCircle, Play, Search, Send, Settings, Shield, Utensils, User } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 const popularLinks = ['Tingkatan langganan', 'Dasar pelacakan makro', 'Menghubungkan perangkat']
 const supportStats = [
@@ -41,19 +43,19 @@ const tutorials = [
     title: 'Melacak makanan pertama Anda',
     description: 'Pelajari cara menambahkan makanan, mengubah porsi, dan membaca ringkasan kalori.',
     duration: '2:14',
-    image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-029-69c4ae2e87.jpg'
   },
   {
     title: 'Membangun meal plan mingguan',
     description: 'Gunakan planner untuk menjaga protein, karbohidrat, dan jadwal makan tetap rapi.',
     duration: '3:42',
-    image: 'https://images.unsplash.com/photo-1543352634-a1c51d9f1fa7?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-030-d0fc0b3c3b.jpg'
   },
   {
     title: 'Membaca tren progress',
     description: 'Pahami grafik berat badan, BMI, milestone, dan konsistensi mingguan.',
     duration: '4:08',
-    image: 'https://images.unsplash.com/photo-1518459031867-a89b944bffe4?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-031-8ae40fa277.jpg'
   }
 ]
 
@@ -65,13 +67,38 @@ const faqs = [
   ['Apa yang terjadi jika saya menghapus aplikasi?', 'Menghapus PWA dari perangkat tidak menghapus akun. Data tetap tersimpan selama akun belum dihapus dari pengaturan.']
 ]
 
+const iconMap = { User, Utensils, Settings, CreditCard, Shield }
+
+function mapHelpData(payload) {
+  return {
+    categories: (payload.categories || []).map((item) => ({
+      title: item.title,
+      description: item.description,
+      Icon: iconMap[item.icon] || User,
+      iconClass: item.tone || 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white'
+    })),
+    tutorials: (payload.tutorials || []).map((item) => ({
+      title: item.title,
+      description: item.description,
+      duration: item.duration || '3 min',
+      image: item.image_url || item.image
+    })),
+    faqs: (payload.faqs || []).map((item) => [item.question, item.answer])
+  }
+}
+
 function ProHelpPage() {
   const [query, setQuery] = useState('')
+  const { data } = useBackendData(
+    () => apiRequest(`/api/help?search=${encodeURIComponent(query.trim())}`).then(mapHelpData),
+    { categories, tutorials, faqs },
+    [query]
+  )
   const filteredFaqs = useMemo(() => {
     const trimmed = query.trim().toLowerCase()
-    if (!trimmed) return faqs
-    return faqs.filter(([question, answer]) => `${question} ${answer}`.toLowerCase().includes(trimmed))
-  }, [query])
+    if (!trimmed) return data.faqs
+    return data.faqs.filter(([question, answer]) => `${question} ${answer}`.toLowerCase().includes(trimmed))
+  }, [data.faqs, query])
 
   return (
     <motion.main className="mx-auto grid max-w-[1400px] gap-8 px-5 py-7 pb-24 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
@@ -109,7 +136,7 @@ function ProHelpPage() {
       </section>
 
       <section className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {categories.map(({ title, description, Icon, iconClass }, index) => (
+        {data.categories.map(({ title, description, Icon, iconClass }, index) => (
           <motion.button className="group flex min-h-[220px] flex-col justify-between rounded-[1.5rem] border border-slate-200/50 bg-white/85 p-6 text-left shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl transition-transform hover:-translate-y-1" key={title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06, duration: 0.32 }} whileHover={{ y: -4 }} type="button">
             <div className="mb-10 flex items-start justify-between">
               <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${iconClass}`}>
@@ -137,7 +164,7 @@ function ProHelpPage() {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            {tutorials.map((item, index) => (
+            {data.tutorials.map((item, index) => (
               <motion.article className="group overflow-hidden rounded-3xl border border-slate-200/50 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" key={item.title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07, duration: 0.32 }} whileHover={{ y: -4 }}>
                 <div className="relative h-48 overflow-hidden bg-surface-dim">
                   <img className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src={item.image} alt={item.title} loading="lazy" />

@@ -45,7 +45,7 @@ function ProDashboardPage({ shellData }) {
         time: '7:30 AM',
         meal: 'Avocado Toast',
         subtitle: `${formatNumber(getMeal('breakfast')?.calories || 420)} kcal`,
-        image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=420&q=80',
+        image: '/assets/remote/remote-021-4b187a0dfb.jpg',
         done: Number(getMeal('breakfast')?.loggedItems || 1) > 0
       },
       {
@@ -54,7 +54,7 @@ function ProDashboardPage({ shellData }) {
         time: '12:30 PM',
         meal: 'Quinoa Power Bowl',
         subtitle: `${formatNumber(getMeal('lunch')?.calories || 680)} kcal`,
-        image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=420&q=80',
+        image: '/assets/remote/remote-022-20bb4f819b.jpg',
         done: Number(getMeal('lunch')?.loggedItems || 1) > 0
       },
       {

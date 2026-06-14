@@ -75,7 +75,7 @@ function RegisterPage() {
   return (
     <motion.main className="min-h-screen bg-[#f4f7fb] font-['Plus_Jakarta_Sans'] text-[#071727]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
       <div className="grid min-h-screen lg:grid-cols-[0.95fr_1.05fr]">
-        <section className="relative hidden items-end overflow-hidden bg-cover bg-center lg:flex" style={{ backgroundImage: "linear-gradient(180deg, rgba(7,23,39,0.08), rgba(7,23,39,0.78)), url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1500&q=80')" }}>
+        <section className="relative hidden items-end overflow-hidden bg-cover bg-center lg:flex" style={{ backgroundImage: "linear-gradient(180deg, rgba(7,23,39,0.08), rgba(7,23,39,0.78)), url('/assets/remote/remote-033-d07c3fc586.jpg')" }}>
           <Link className="absolute left-8 top-8 flex items-center gap-3 text-white" to="/">
             <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#007a35]">
               <Apple size={24} />

@@ -243,7 +243,7 @@ function HeroPreview() {
         </div>
       </motion.div>
       <div className="overflow-hidden rounded-[2.5rem] border border-outline-variant/35 bg-white/90 p-6 shadow-2xl shadow-slate-900/10 backdrop-blur-xl">
-        <img className="h-64 w-full rounded-[2rem] object-cover" src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1000&q=80" alt="Healthy nutrition bowl" loading="lazy" />
+        <img className="h-64 w-full rounded-[2rem] object-cover" src="/assets/remote/remote-034-9c9c72d360.jpg" alt="Healthy nutrition bowl" loading="lazy" />
         <div className="mt-6 flex items-start justify-between gap-4">
           <div>
             <p className="font-headline-md text-2xl font-black text-on-surface">Quinoa Power Bowl</p>

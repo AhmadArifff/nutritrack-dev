@@ -1,28 +1,47 @@
 import { memo } from 'react'
 import { motion } from 'framer-motion'
 import { Activity, Apple, Check, Droplets, Dumbbell, Edit3, Flame, Gauge, Lock, MapPin, Share2, Sparkles, TrendingUp, Trophy } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 const user = {
   name: 'Alex Rivera',
   location: 'San Francisco, CA',
   joined: 'Jan 2023',
   avatarUrl:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAaDy65LL1GD47aJLJE75H5pZwGpvTfi_xpMeAbshzWqm7pfZd5s7rjTi9qL7V70oN4bFSGaWbfwXgjMVn5gwNauLKnF4rvHkNeA6Alz3Bhidr73CvY3REcKZgXW3NHQY1pxf3Wci1sRt3kzmr2tVYQqOmdQsmZyW9_CnzDKUWWkDwjzzAUWcsnQJNaOZodwoIponRAdDGnQUJJ-_cL1irZRNH9Hiz0meHEUGsiEZA7EKoahXWwb9kIozPW4q70B91AMsxjvwoDy9o',
+    '/assets/remote/remote-005-1b1a2cd48e.png',
   bannerUrl:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDdCToHzWGlPcEvRqDVvLPerYpnIybFd4zoThJlRNvOdl6FH6iWqz0B0V0Ma4MbXzlS-NWIX326gVq6RZrWJJ6KsjSTZ1NhOyfrUhQvAsRufrEmw9UGg0QAjVBhbBkMykntgfLXzeOBE3ZENuBq_qDrufcGAkGaloD5M7ZCPk5Eucd-5eb27HqBK-4TVudtYJaR2GJp4grhipeNXLAP80DiA8I0X8Uzw6GSdOTkejzGy6ZW10UnFnmLF7LeLgWkaaBoCXs54DnEdPg',
+    '/assets/remote/remote-006-34c9c8c9d5.png',
   bio:
     'Nutrition enthusiast and marathon runner. Focused on high-protein plant-based diets and optimizing recovery times. Currently training for the Big Sur International Marathon.',
   tags: ['MarathonRunner', 'PlantBased', 'BioHacking']
 }
 
+function mapProfile(profile) {
+  return {
+    ...user,
+    name: profile.full_name || profile.fullName || user.name,
+    location: profile.location || user.location,
+    joined: profile.created_at ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : user.joined,
+    avatarUrl: profile.avatar_url || profile.avatarUrl || user.avatarUrl,
+    currentWeightKg: profile.current_weight_kg || profile.currentWeightKg,
+    targetWeightKg: profile.target_weight_kg || profile.targetWeightKg,
+    targetCalories: profile.target_calories || profile.targetCalories,
+    streakDays: profile.streak_days || profile.streakDays,
+    totalPoints: profile.total_points || profile.totalPoints
+  }
+}
+
 function ProProfilePage() {
+  const { data: profileUser } = useBackendData(() => apiRequest('/api/profile').then(mapProfile), user, [])
+
   return (
     <motion.main className="mx-auto grid max-w-[1400px] gap-7 px-5 py-7 pb-24 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
-      <ProfileHero user={user} />
+      <ProfileHero user={profileUser} />
 
       <section className="grid gap-7 xl:grid-cols-12">
-        <ProfileBioCard user={user} />
-        <ProfileHealthStatsCard />
+        <ProfileBioCard user={profileUser} />
+        <ProfileHealthStatsCard user={profileUser} />
         <ProfileRecordsCard />
         <ProfileBadgesCard />
       </section>
@@ -98,7 +117,10 @@ function ProfileBioCard({ user }) {
   )
 }
 
-function ProfileHealthStatsCard() {
+function ProfileHealthStatsCard({ user }) {
+  const currentWeight = Number(user.currentWeightKg || 76.5)
+  const targetWeight = Number(user.targetWeightKg || 74)
+  const progress = Math.max(0, Math.min(100, Math.round((targetWeight / currentWeight) * 100)))
   return (
     <ProfileGlassCard className="xl:col-span-8">
       <h2 className="mb-8 flex items-center gap-3 font-headline-md text-2xl font-black text-on-surface">
@@ -116,11 +138,11 @@ function ProfileHealthStatsCard() {
           <div className="space-y-6">
             <div>
               <div className="mb-3 flex flex-col justify-between gap-2 sm:flex-row">
-                <span className="text-lg font-black">Current: 76.5 kg</span>
-                <span className="text-lg font-black text-energy-orange">Goal: 74 kg</span>
+                <span className="text-lg font-black">Current: {currentWeight.toFixed(1)} kg</span>
+                <span className="text-lg font-black text-energy-orange">Goal: {targetWeight.toFixed(1)} kg</span>
               </div>
               <div className="h-4 w-full overflow-hidden rounded-full bg-white">
-                <motion.div className="h-full rounded-full bg-gradient-to-r from-primary to-energy-orange" initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 0.9, ease: 'easeOut' }} />
+                <motion.div className="h-full rounded-full bg-gradient-to-r from-primary to-energy-orange" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.9, ease: 'easeOut' }} />
               </div>
             </div>
             <div className="flex flex-col justify-between gap-4 pt-4 sm:flex-row sm:items-center">
@@ -128,7 +150,7 @@ function ProfileHealthStatsCard() {
                 <TrendingUp className="text-primary" size={20} />
                 <span className="font-bold">-2.5kg this month</span>
               </div>
-              <span className="rounded-full bg-primary/10 px-4 py-2 font-black text-primary">82% of Goal</span>
+              <span className="rounded-full bg-primary/10 px-4 py-2 font-black text-primary">{progress}% of Goal</span>
             </div>
           </div>
         </div>

@@ -1,7 +1,9 @@
 import { memo, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Check, Heart, Plus, Scale, Sparkles, Utensils } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 const food = {
   id: 'gado-gado',
@@ -10,7 +12,7 @@ const food = {
   tags: ['Vegetarian friendly', 'High fiber', 'Balanced lunch'],
   description: 'Sayuran rebus, tahu, tempe, telur, dan saus kacang. Cocok untuk makan siang kaya serat dengan energi yang stabil.',
   servingLabel: 'plate',
-  image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80',
+  image: '/assets/remote/remote-023-0e803ca2b2.jpg',
   calories: 320,
   protein: 12,
   carbs: 38,
@@ -28,6 +30,36 @@ const food = {
   ingredients: ['Kangkung', 'Tauge', 'Tahu', 'Tempe', 'Telur', 'Saus kacang']
 }
 
+const fallbackImage = '/assets/remote/remote-023-0e803ca2b2.jpg'
+
+function mapFoodDetail(item) {
+  const tags = Array.isArray(item.tags) ? item.tags : []
+  return {
+    id: item.id,
+    name: item.name,
+    category: item.sub_category || item.category || 'Indonesian',
+    tags: tags.length ? tags.slice(0, 3) : ['Balanced lunch', 'Database food', 'Macro tracked'],
+    description: item.description || `${item.name} tersimpan di database NutriTrack dengan perhitungan kalori dan makro per ${item.serving_unit || 'porsi'}.`,
+    servingLabel: item.serving_unit || 'porsi',
+    image: item.image_url || fallbackImage,
+    calories: item.calories,
+    protein: item.protein_g,
+    carbs: item.carbohydrates_g,
+    fat: item.fat_g,
+    nutrients: [
+      ['Fiber', `${formatNumber(item.fiber_g)}g`],
+      ['Sodium', `${formatNumber(item.sodium_mg)}mg`],
+      ['Sugar', `${formatNumber(item.sugar_g)}g`],
+      ['Serving', `${formatNumber(item.serving_size_g)}g`],
+      ['Category', item.category || '-'],
+      ['Unit', item.serving_unit || '-'],
+      ['Indonesian', item.is_indonesian ? 'Yes' : 'No'],
+      ['Calories', `${formatNumber(item.calories)} kcal`]
+    ],
+    ingredients: tags.length ? tags : [item.sub_category || item.category || 'Food', item.serving_unit || 'Portion']
+  }
+}
+
 function formatNumber(value, fallback = '0') {
   const number = Number(value)
   if (!Number.isFinite(number)) return fallback
@@ -35,14 +67,20 @@ function formatNumber(value, fallback = '0') {
 }
 
 function ProFoodDetailPage() {
+  const { foodId = 'gado-gado' } = useParams()
   const [portion, setPortion] = useState(1)
   const [isFavorite, setIsFavorite] = useState(false)
+  const { data: selectedFood } = useBackendData(
+    () => apiRequest(`/api/foods/${foodId}`).then(mapFoodDetail),
+    food,
+    [foodId]
+  )
   const summary = useMemo(() => [
-    ['Kalori', Math.round(food.calories * portion), 'text-primary'],
-    ['Protein', `${formatNumber(food.protein * portion)}g`, 'text-on-surface'],
-    ['Carbs', `${formatNumber(food.carbs * portion)}g`, 'text-[#0058be]'],
-    ['Fat', `${formatNumber(food.fat * portion)}g`, 'text-energy-orange']
-  ], [portion])
+    ['Kalori', Math.round(selectedFood.calories * portion), 'text-primary'],
+    ['Protein', `${formatNumber(selectedFood.protein * portion)}g`, 'text-on-surface'],
+    ['Carbs', `${formatNumber(selectedFood.carbs * portion)}g`, 'text-[#0058be]'],
+    ['Fat', `${formatNumber(selectedFood.fat * portion)}g`, 'text-energy-orange']
+  ], [portion, selectedFood])
 
   return (
     <AppPageShell>
@@ -56,12 +94,12 @@ function ProFoodDetailPage() {
 
         <section className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_480px]">
           <motion.div className="group relative min-h-[420px] overflow-hidden rounded-[2.5rem] border border-outline-variant/30 bg-mint-surface shadow-xl md:min-h-[540px]" initial={{ opacity: 0, scale: 0.98, rotateX: -5 }} animate={{ opacity: 1, scale: 1, rotateX: 0 }} transition={{ duration: 0.42 }} whileHover={{ y: -4 }}>
-            <img className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" src={food.image} alt={food.name} loading="lazy" />
+            <img className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" src={selectedFood.image} alt={selectedFood.name} loading="lazy" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="mb-3 inline-flex rounded-full bg-white/90 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-primary backdrop-blur">{food.category}</p>
-                <h1 className="font-headline-lg text-[42px] font-black leading-none text-white drop-shadow-lg md:text-[56px]">{food.name}</h1>
+                <p className="mb-3 inline-flex rounded-full bg-white/90 px-4 py-1.5 text-xs font-black uppercase tracking-wider text-primary backdrop-blur">{selectedFood.category}</p>
+                <h1 className="font-headline-lg text-[42px] font-black leading-none text-white drop-shadow-lg md:text-[56px]">{selectedFood.name}</h1>
               </div>
               <button className={`grid h-14 w-14 place-items-center rounded-2xl shadow-lg backdrop-blur transition-all active:scale-95 ${isFavorite ? 'bg-primary text-white' : 'bg-white/90 text-on-surface hover:text-primary'}`} type="button" aria-label="Simpan favorit" aria-pressed={isFavorite} onClick={() => setIsFavorite((value) => !value)}>
                 <Heart size={24} fill={isFavorite ? 'currentColor' : 'none'} />
@@ -71,12 +109,12 @@ function ProFoodDetailPage() {
 
           <GlassCard className="p-6 md:p-8">
             <div className="mb-5 flex flex-wrap gap-2">
-              {food.tags.map((tag) => (
+              {selectedFood.tags.map((tag) => (
                 <span className="rounded-full border border-primary/10 bg-mint-surface px-3 py-1 text-xs font-black uppercase tracking-wider text-primary" key={tag}>{tag}</span>
               ))}
             </div>
             <h2 className="font-headline-lg text-3xl font-black text-on-surface">Nutrition facts</h2>
-            <p className="mt-4 leading-7 text-on-surface-variant">{food.description}</p>
+            <p className="mt-4 leading-7 text-on-surface-variant">{selectedFood.description}</p>
 
             <div className="my-8 grid grid-cols-2 gap-4">
               {summary.map(([label, value, tone], index) => (
@@ -90,13 +128,13 @@ function ProFoodDetailPage() {
             <label className="mb-6 block rounded-2xl border border-outline-variant/30 bg-white p-5" htmlFor="portion-slider">
               <span className="flex items-center justify-between gap-3 font-black">
                 <span className="inline-flex items-center gap-2 text-on-surface"><Scale size={19} /> Porsi</span>
-                <span className="font-metrics-mono text-primary">{formatNumber(portion)} {food.servingLabel}</span>
+                <span className="font-metrics-mono text-primary">{formatNumber(portion)} {selectedFood.servingLabel}</span>
               </span>
               <input className="mt-4 w-full accent-primary" id="portion-slider" type="range" min="1" max="3" step="0.5" value={portion} onChange={(event) => setPortion(Number(event.target.value))} />
             </label>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Link className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary font-extrabold text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition-all hover:-translate-y-0.5 active:scale-[0.98]" to={`/app/log-food?foodId=${food.id}&portion=${portion}`}>
+              <Link className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-primary font-extrabold text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition-all hover:-translate-y-0.5 active:scale-[0.98]" to={`/app/log-food?foodId=${selectedFood.id}&portion=${portion}`}>
                 <Plus size={19} />
                 Tambah ke Log
               </Link>
@@ -112,7 +150,7 @@ function ProFoodDetailPage() {
           <GlassCard className="p-6 md:p-8">
             <h2 className="mb-6 font-headline-md text-headline-md font-bold text-on-surface">Tabel Nutrisi Lengkap</h2>
             <div className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-              {food.nutrients.map(([name, value], index) => (
+              {selectedFood.nutrients.map(([name, value], index) => (
                 <motion.div className="rounded-2xl border border-outline-variant/30 bg-white p-4 font-bold text-on-surface shadow-sm" key={name} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.035 }}>
                   <span className="block text-on-surface-variant">{name}</span>
                   <b className="mt-1 block font-metrics-mono text-lg text-primary">{value}</b>
@@ -127,7 +165,7 @@ function ProFoodDetailPage() {
             </div>
             <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Ingredients</h2>
             <div className="mt-5 flex flex-wrap gap-2">
-              {food.ingredients.map((ingredient) => (
+              {selectedFood.ingredients.map((ingredient) => (
                 <span className="rounded-xl bg-surface-container-low px-4 py-2 text-sm font-bold text-on-surface" key={ingredient}>{ingredient}</span>
               ))}
             </div>

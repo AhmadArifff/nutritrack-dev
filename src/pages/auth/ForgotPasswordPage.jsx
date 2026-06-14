@@ -36,7 +36,7 @@ function ForgotPasswordPage() {
     <motion.main className="min-h-screen overflow-hidden bg-[#f8fafc] font-['Plus_Jakarta_Sans'] text-slate-950" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_520px]">
         <section className="relative hidden overflow-hidden bg-[#007a35] p-10 text-white lg:block">
-          <img className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-soft-light" src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1600&q=80" alt="" aria-hidden="true" />
+          <img className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-soft-light" src="/assets/remote/remote-032-a1acec2bb1.jpg" alt="" aria-hidden="true" />
           <div className="absolute inset-0 bg-gradient-to-br from-[#003f1d] via-[#007a35] to-[#22c55e]" />
           <motion.div className="absolute right-16 top-16 h-44 w-44 rounded-full border border-white/20" animate={{ rotate: 360 }} transition={{ duration: 24, repeat: Infinity, ease: 'linear' }} />
           <motion.div className="absolute bottom-20 left-20 h-64 w-64 rounded-[3rem] border border-white/20 bg-white/10 backdrop-blur-sm" animate={{ y: [0, -18, 0], rotate: [0, 4, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }} />

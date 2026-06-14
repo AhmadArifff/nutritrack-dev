@@ -1070,7 +1070,7 @@ h3 {
   z-index: -1;
   background:
     linear-gradient(90deg, rgba(7, 23, 39, 0.9), rgba(7, 23, 39, 0.56), rgba(7, 23, 39, 0.2)),
-    url('https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=1800&q=80') center/cover;
+    url('/assets/remote/remote-035-fff49ee7b8.jpg') center/cover;
 }
 
 .hero-copy {
@@ -1274,7 +1274,7 @@ h3 {
   color: white;
   background:
     linear-gradient(180deg, rgba(7, 23, 39, 0.06), rgba(7, 23, 39, 0.86)),
-    url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=1400&q=80') center/cover;
+    url('/assets/remote/remote-001-100fa2b2f7.jpg') center/cover;
 }
 
 .auth-panel {

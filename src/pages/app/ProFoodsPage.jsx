@@ -2,6 +2,8 @@ import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Filter, Heart, Plus, Search, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 const categories = ['Semua', 'Sarapan', 'Lunch', 'Snack']
 
@@ -14,7 +16,7 @@ const foodCatalog = [
     protein: 12,
     carbs: 38,
     fat: 14,
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-024-f6dccbf5cf.jpg'
   },
   {
     id: 'nasi-ayam-panggang',
@@ -24,7 +26,7 @@ const foodCatalog = [
     protein: 34,
     carbs: 58,
     fat: 16,
-    image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-025-1db2c7b8be.jpg'
   },
   {
     id: 'oatmeal-pisang',
@@ -34,7 +36,7 @@ const foodCatalog = [
     protein: 10,
     carbs: 51,
     fat: 5,
-    image: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-026-2ff0f98ad6.jpg'
   },
   {
     id: 'greek-yogurt-parfait',
@@ -44,7 +46,7 @@ const foodCatalog = [
     protein: 18,
     carbs: 26,
     fat: 6,
-    image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-027-abd2e5dab0.jpg'
   },
   {
     id: 'tempe-bakar',
@@ -54,9 +56,38 @@ const foodCatalog = [
     protein: 16,
     carbs: 12,
     fat: 8,
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'
+    image: '/assets/remote/remote-028-14295192f8.jpg'
   }
 ]
+
+const categoryLabels = {
+  breakfast: 'Sarapan',
+  lunch: 'Lunch',
+  dinner: 'Lunch',
+  snack: 'Snack',
+  drink: 'Snack'
+}
+
+const foodImages = [
+  '/assets/remote/remote-024-f6dccbf5cf.jpg',
+  '/assets/remote/remote-025-1db2c7b8be.jpg',
+  '/assets/remote/remote-026-2ff0f98ad6.jpg',
+  '/assets/remote/remote-027-abd2e5dab0.jpg',
+  '/assets/remote/remote-028-14295192f8.jpg'
+]
+
+function mapBackendFood(food, index) {
+  return {
+    id: food.id,
+    name: food.name,
+    category: categoryLabels[food.category] || food.category || 'Lunch',
+    calories: food.calories,
+    protein: food.protein_g,
+    carbs: food.carbohydrates_g,
+    fat: food.fat_g,
+    image: food.image_url || foodImages[index % foodImages.length]
+  }
+}
 
 function formatNumber(value, fallback = '0') {
   const number = Number(value)
@@ -66,7 +97,20 @@ function formatNumber(value, fallback = '0') {
 
 function ProFoodsPage() {
   const [activeCategory, setActiveCategory] = useState('Semua')
-  const visibleFoods = useMemo(() => foodCatalog.filter((food) => activeCategory === 'Semua' || food.category === activeCategory), [activeCategory])
+  const [search, setSearch] = useState('')
+  const { data: foods } = useBackendData(
+    () => apiRequest('/api/foods?limit=60').then((rows) => rows.map(mapBackendFood)),
+    foodCatalog,
+    []
+  )
+  const visibleFoods = useMemo(() => {
+    const keyword = search.trim().toLowerCase()
+    return foods.filter((food) => {
+      const matchesCategory = activeCategory === 'Semua' || food.category === activeCategory
+      const matchesSearch = !keyword || food.name.toLowerCase().includes(keyword) || food.category.toLowerCase().includes(keyword)
+      return matchesCategory && matchesSearch
+    })
+  }, [activeCategory, foods, search])
 
   return (
     <AppPageShell wide>
@@ -91,7 +135,7 @@ function ProFoodsPage() {
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <label className="flex h-12 min-w-0 items-center gap-3 rounded-full bg-white px-5 shadow-sm ring-1 ring-outline-variant/25 xl:w-[420px]">
                 <Search className="h-5 w-5 shrink-0 text-on-surface-variant" />
-                <input className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm outline-none ring-0 focus:ring-0" placeholder="Search foods, calories, protein..." type="search" />
+                <input className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm outline-none ring-0 focus:ring-0" placeholder="Search foods, calories, protein..." type="search" value={search} onChange={(event) => setSearch(event.target.value)} />
               </label>
               <div className="scroll-hide flex gap-3 overflow-x-auto pb-1 xl:pb-0" role="tablist" aria-label="Food categories">
                 {categories.map((category) => (
@@ -147,7 +191,7 @@ function ProFoodsPage() {
 }
 
 function FoodCard({ food, index }) {
-  const to = food.id === 'gado-gado' ? '/app/foods/gado-gado' : '/app/foods/gado-gado'
+  const to = `/app/foods/${food.id}`
 
   return (
     <motion.article initial={{ opacity: 0, y: 18, rotateX: -5 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: index * 0.05, duration: 0.34 }} whileHover={{ y: -5, rotateX: 2 }}>

@@ -2,6 +2,8 @@ import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Apple, CalendarDays, Check, ChevronRight, Clock, Flame, Plus, ShoppingBasket, Sparkles, Utensils } from 'lucide-react'
+import { apiRequest } from '../../api'
+import { useBackendData } from '../../hooks/useBackendData'
 
 const weekPlan = [
   {
@@ -95,26 +97,109 @@ function formatNumber(value, fallback = '0') {
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(number)
 }
 
+function addDaysIso(offset) {
+  const date = new Date()
+  date.setDate(date.getDate() + offset)
+  return date.toISOString().slice(0, 10)
+}
+
+function formatMealDate(dateValue) {
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) return 'Today'
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function mealLabel(mealType = '') {
+  return {
+    breakfast: 'Breakfast',
+    morning_snack: 'Morning Snack',
+    lunch: 'Lunch',
+    afternoon_snack: 'Afternoon Snack',
+    dinner: 'Dinner',
+    late_snack: 'Late Snack'
+  }[mealType] || mealType
+}
+
+function mapMealPlans(rows) {
+  if (!rows.length) return weekPlan
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const iso = addDaysIso(index)
+    const date = new Date(`${iso}T00:00:00`)
+    return {
+      iso,
+      day: date.toLocaleDateString('en-US', { weekday: 'long' }),
+      date: formatMealDate(iso),
+      calories: 0,
+      active: index === 0,
+      meals: []
+    }
+  })
+
+  rows.forEach((plan) => {
+    const iso = String(plan.plan_date || plan.planDate || '').slice(0, 10)
+    const day = days.find((item) => item.iso === iso)
+    if (!day) return
+    const calories = Number(plan.target_calories || plan.targetCalories || 0)
+    const protein = Number(plan.target_protein_g || plan.targetProteinG || 0)
+    day.calories += calories
+    day.meals.push([
+      mealLabel(plan.meal_type || plan.mealType),
+      plan.food_name || plan.foodName,
+      `${formatNumber(calories)} kcal${protein ? ` - ${formatNumber(protein)}g Protein` : ''}`
+    ])
+  })
+
+  return days
+}
+
+function mapShoppingList(rows) {
+  if (!rows.length) return shoppingItems
+  const grouped = rows.reduce((acc, row) => {
+    const group = row.category || 'Pantry'
+    if (!acc[group]) acc[group] = []
+    acc[group].push({
+      name: row.foodName || row.food_name,
+      amount: `${formatNumber(row.totalAmount || row.total_amount)} ${row.unit || 'porsi'}`,
+      meals: `${row.mealCount || row.meal_count || 1} meal slots`
+    })
+    return acc
+  }, {})
+  return Object.entries(grouped)
+}
+
 function ProMealPlannerPage() {
   const [selectedDay, setSelectedDay] = useState('Tuesday')
   const [rangeStart, setRangeStart] = useState(0)
   const [rangeEnd, setRangeEnd] = useState(6)
   const [rangePickMode, setRangePickMode] = useState('start')
   const [boardView, setBoardView] = useState('week')
-  const selected = useMemo(() => weekPlan.find((day) => day.day === selectedDay) || weekPlan[1], [selectedDay])
-  const plannedDays = weekPlan.filter((day) => day.calories > 0).length
-  const weeklyCalories = weekPlan.reduce((total, day) => total + day.calories, 0)
+  const from = addDaysIso(0)
+  const to = addDaysIso(6)
+  const { data: plannerPlan } = useBackendData(
+    () => apiRequest(`/api/meal-plans?from=${from}&to=${to}`).then(mapMealPlans),
+    weekPlan,
+    [from, to]
+  )
+  const { data: shoppingData } = useBackendData(
+    () => apiRequest(`/api/meal-plans/shopping-list?from=${from}&to=${to}`).then(mapShoppingList),
+    shoppingItems,
+    [from, to]
+  )
+  const selected = useMemo(() => plannerPlan.find((day) => day.day === selectedDay) || plannerPlan[0] || weekPlan[1], [plannerPlan, selectedDay])
+  const plannedDays = plannerPlan.filter((day) => day.calories > 0).length
+  const weeklyCalories = plannerPlan.reduce((total, day) => total + day.calories, 0)
   const monthPlan = useMemo(() => Array.from({ length: 28 }, (_, index) => {
-    const source = weekPlan[index % weekPlan.length]
-    const date = new Date(2023, 9, 23 + index)
+    const source = plannerPlan[index % plannerPlan.length] || weekPlan[index % weekPlan.length]
+    const date = new Date()
+    date.setDate(date.getDate() + index)
     return {
       ...source,
       day: `${source.day} ${Math.floor(index / 7) + 1}`,
       date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       active: index === 1
     }
-  }), [])
-  const plannerOptions = boardView === 'month' ? monthPlan : weekPlan
+  }), [plannerPlan])
+  const plannerOptions = boardView === 'month' ? monthPlan : plannerPlan
   const visiblePlan = useMemo(() => {
     const start = Math.min(rangeStart, rangeEnd)
     const end = Math.max(rangeStart, rangeEnd)
@@ -213,7 +298,7 @@ function ProMealPlannerPage() {
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="grid gap-6 lg:grid-cols-2">
-            <ShoppingList />
+            <ShoppingList shoppingItems={shoppingData} />
             <InsightsPanel />
           </div>
           <SelectedDayCard day={selected} />
@@ -381,7 +466,7 @@ function MetricCard({ value, label, tone }) {
   )
 }
 
-function ShoppingList() {
+function ShoppingList({ shoppingItems }) {
   const totalItems = shoppingItems.reduce((total, [, items]) => total + items.length, 0)
   return (
     <motion.section className="rounded-[2rem] border border-outline-variant/40 bg-white/85 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.34 }} whileHover={{ y: -4 }}>
