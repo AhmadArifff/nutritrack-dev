@@ -222,9 +222,6 @@ function ProMealPlannerPage() {
         <motion.section className="relative overflow-hidden rounded-[3rem] border border-primary/15 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,#006e2f_0%,#0aa44f_42%,#ff8a2a_125%)] p-8 text-white shadow-2xl shadow-primary/25 md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.34 }} whileHover={{ y: -4 }}>
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
           <div className="absolute -bottom-16 left-1/3 h-52 w-52 rounded-full bg-energy-orange/25 blur-3xl" />
-          <motion.div className="pointer-events-none absolute right-[27rem] top-8 z-0 hidden h-20 w-20 rounded-[2rem] border border-white/25 bg-white/15 opacity-75 backdrop-blur-md lg:grid lg:place-items-center xl:right-[30rem]" animate={{ y: [0, -8, 0], rotate: [0, 4, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
-            <ShoppingBasket size={34} />
-          </motion.div>
           <div className="relative z-10 grid gap-7 lg:grid-cols-[1fr_320px] lg:items-center">
             <div>
               <p className="mb-2 text-sm font-black uppercase tracking-[0.18em] text-white/70">Pantry Inventory Sync</p>
@@ -254,7 +251,10 @@ function ProMealPlannerPage() {
                 </div>
               </div>
               <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 font-black text-primary shadow-xl transition hover:scale-105 hover:bg-mint-surface active:scale-[0.98]" type="button">
-                Sync Pantry
+                <span>Sync Pantry</span>
+                <span className="grid h-8 w-8 place-items-center rounded-xl bg-mint-surface text-primary">
+                  <ShoppingBasket size={18} />
+                </span>
                 <ChevronRight size={19} />
               </button>
             </div>
