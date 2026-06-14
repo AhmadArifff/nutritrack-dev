@@ -87,6 +87,8 @@ const insightItems = [
   ['Smart swap', 'Use tofu curry instead of beef stir-fry if Friday calories run high.', Sparkles, 'text-achievement-purple bg-achievement-purple/10']
 ]
 
+const calendarWeekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
 function formatNumber(value, fallback = '0') {
   const number = Number(value)
   if (!Number.isFinite(number)) return fallback
@@ -220,7 +222,7 @@ function ProMealPlannerPage() {
         <motion.section className="relative overflow-hidden rounded-[3rem] border border-primary/15 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.28),transparent_28%),linear-gradient(135deg,#006e2f_0%,#0aa44f_42%,#ff8a2a_125%)] p-8 text-white shadow-2xl shadow-primary/25 md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.34 }} whileHover={{ y: -4 }}>
           <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
           <div className="absolute -bottom-16 left-1/3 h-52 w-52 rounded-full bg-energy-orange/25 blur-3xl" />
-          <motion.div className="absolute right-10 top-10 hidden h-20 w-20 rounded-[2rem] border border-white/25 bg-white/15 backdrop-blur-md lg:grid lg:place-items-center" animate={{ y: [0, -8, 0], rotate: [0, 4, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+          <motion.div className="pointer-events-none absolute right-[27rem] top-8 z-0 hidden h-20 w-20 rounded-[2rem] border border-white/25 bg-white/15 opacity-75 backdrop-blur-md lg:grid lg:place-items-center xl:right-[30rem]" animate={{ y: [0, -8, 0], rotate: [0, 4, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
             <ShoppingBasket size={34} />
           </motion.div>
           <div className="relative z-10 grid gap-7 lg:grid-cols-[1fr_320px] lg:items-center">
@@ -333,19 +335,31 @@ function DateRangePlanner({ options, rangeStart, rangeEnd, rangePickMode, onPick
           </div>
         </div>
       </div>
-      <div className="scroll-hide flex w-full max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-1">
-        {options.map((day, index) => {
-          const inRange = index >= start && index <= end
-          const isEdge = index === rangeStart || index === rangeEnd
-          return (
-            <button className={`relative min-w-[124px] overflow-hidden rounded-2xl border px-4 py-3 text-left transition hover:-translate-y-0.5 active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20' : inRange ? 'border-primary/20 bg-white text-primary shadow-sm' : 'border-outline-variant/35 bg-white/75 text-on-surface-variant hover:bg-white'}`} key={`${day.day}-${day.date}`} onClick={() => onPick(index)} type="button">
-              {inRange ? <span className="absolute inset-x-3 top-0 h-1 rounded-b-full bg-energy-orange" /> : null}
-              <span className="block text-[10px] font-black uppercase tracking-[0.16em]">{day.day.slice(0, 3)}</span>
-              <span className="mt-1 block font-black">{day.date}</span>
-              {isEdge ? <span className="mt-2 inline-block rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black">{index === rangeStart ? 'Start' : 'End'}</span> : null}
-            </button>
-          )
-        })}
+      <div className="overflow-x-auto pb-1">
+        <div className="min-w-[680px] rounded-[1.75rem] border border-outline-variant/25 bg-white/90 p-3 shadow-sm">
+          <div className="grid grid-cols-7 gap-2 px-1 pb-2">
+            {calendarWeekdays.map((weekday) => (
+              <div className="py-2 text-center text-[11px] font-black uppercase tracking-[0.16em] text-on-surface-variant" key={weekday}>{weekday}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-2">
+            {options.map((day, index) => {
+              const inRange = index >= start && index <= end
+              const isStart = index === rangeStart
+              const isEnd = index === rangeEnd
+              const isEdge = isStart || isEnd
+              const dateNumber = day.date.replace(/^[A-Za-z]+\s/, '')
+              return (
+                <button className={`relative min-h-[88px] overflow-hidden rounded-2xl border p-3 text-left transition hover:-translate-y-0.5 active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-lg shadow-primary/20' : inRange ? 'border-primary/20 bg-mint-surface text-primary shadow-sm' : 'border-outline-variant/35 bg-white text-on-surface-variant hover:border-primary/25 hover:bg-surface-container-lowest'}`} key={`${day.day}-${day.date}`} onClick={() => onPick(index)} type="button">
+                  {inRange ? <span className={`absolute inset-x-3 top-0 h-1 rounded-b-full ${isEdge ? 'bg-white' : 'bg-energy-orange'}`} /> : null}
+                  <span className={`grid h-9 w-9 place-items-center rounded-full font-metrics-mono text-lg font-black ${isEdge ? 'bg-white text-primary' : inRange ? 'bg-primary text-white' : 'bg-surface-container text-on-surface'}`}>{dateNumber}</span>
+                  <span className="mt-3 block truncate text-[11px] font-black uppercase tracking-[0.14em]">{day.day.split(' ')[0]}</span>
+                  {isEdge ? <span className="mt-2 inline-block rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-black">{isStart ? 'Start' : 'End'}</span> : null}
+                </button>
+              )
+            })}
+          </div>
+        </div>
       </div>
       <p className="mt-3 text-xs font-bold text-on-surface-variant">Mode pilih: <span className="text-primary">{rangePickMode === 'start' ? 'parameter 1 tanggal mulai' : 'parameter 2 tanggal selesai'}</span></p>
     </div>
