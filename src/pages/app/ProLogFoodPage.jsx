@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Activity, Apple, BarChart3, Flame, Plus, Search, Settings, Utensils, Droplets } from 'lucide-react'
+import { Activity, Apple, Check, Flame, Plus, Search, Utensils, Droplets, X } from 'lucide-react'
 import { apiRequest } from '../../api'
 
 function todayIso() {
@@ -89,14 +89,14 @@ function ProLogFoodPage() {
   const requestedPlanDate = params.get('planDate') || todayIso()
   const requestedMealType = params.get('mealType') || 'breakfast'
   const requestedPlanId = params.get('planId') || ''
-  const { data: logs, setData: setLogs, error: logsError } = useBackendData(() => apiRequest(`/api/food-logs?date=${todayIso()}`), [], [])
+  const { data: logs, error: logsError } = useBackendData(() => apiRequest(`/api/food-logs?date=${todayIso()}`), [], [])
   const { data: foods } = useBackendData(() => apiRequest('/api/foods?limit=50'), [], [])
   const { data: planRows, setData: setPlanRows } = useBackendData(() => apiRequest(`/api/meal-plans?from=${requestedPlanDate}&to=${requestedPlanDate}`), [], [requestedPlanDate])
-  const [saving, setSaving] = useState(false)
   const [planSaving, setPlanSaving] = useState(false)
   const [planToast, setPlanToast] = useState('')
   const [planForm, setPlanForm] = useState({
     foodId: '',
+    foodIds: [],
     mealType: requestedMealType,
     plannedTime: requestedMealType === 'lunch' ? '12:30' : requestedMealType === 'dinner' ? '19:00' : '07:30',
     servingAmount: 1,
@@ -105,11 +105,13 @@ function ProLogFoodPage() {
   const mealOrder = ['breakfast', 'lunch', 'dinner', 'afternoon_snack']
   const hasLogs = logs.length > 0
   const selectedPlan = useMemo(() => planRows.find((plan) => plan.id === requestedPlanId), [planRows, requestedPlanId])
+  const sortedPlanRows = useMemo(() => [...planRows].sort((a, b) => cleanTime(a.planned_time || a.plannedTime || '99:99').localeCompare(cleanTime(b.planned_time || b.plannedTime || '99:99'))), [planRows])
 
   useEffect(() => {
     if (!selectedPlan) return
     setPlanForm({
       foodId: selectedPlan.food_id || selectedPlan.foodId || '',
+      foodIds: selectedPlan.food_id || selectedPlan.foodId ? [selectedPlan.food_id || selectedPlan.foodId] : [],
       mealType: selectedPlan.meal_type || selectedPlan.mealType || requestedMealType,
       plannedTime: cleanTime(selectedPlan.planned_time || selectedPlan.plannedTime),
       servingAmount: Number(selectedPlan.serving_amount || selectedPlan.servingAmount || 1),
@@ -117,7 +119,7 @@ function ProLogFoodPage() {
     })
   }, [requestedMealType, selectedPlan])
 
-  const selectedFood = useMemo(() => foods.find((food) => food.id === planForm.foodId), [foods, planForm.foodId])
+  const selectedFoods = useMemo(() => foods.filter((food) => (planForm.foodIds || []).includes(food.id)), [foods, planForm.foodIds])
 
   const groupedLogs = useMemo(() => mealOrder.map((mealType) => {
     const backendItems = logs.filter((log) => (log.meal_type || log.mealType) === mealType)
@@ -129,43 +131,47 @@ function ProLogFoodPage() {
     }
   }), [hasLogs, logs])
 
-  const recentItems = logs.length ? logs.slice(0, 3) : fallbackRecentItems
-  const consumed = hasLogs ? groupedLogs.reduce((total, meal) => total + meal.kcal, 0) : 1450
+  const groupedPlannerMeals = useMemo(() => mealOrder.map((mealType) => {
+    const items = sortedPlanRows.filter((plan) => (plan.meal_type || plan.mealType) === mealType)
+    return {
+      mealType,
+      kcal: items.reduce((total, item) => total + Number(item.target_calories || item.targetCalories || item.calories || 0), 0),
+      items
+    }
+  }), [sortedPlanRows])
+  const historyItems = sortedPlanRows.length ? sortedPlanRows : fallbackRecentItems
+  const recentItems = historyItems.slice(0, 3)
+  const consumed = sortedPlanRows.length ? groupedPlannerMeals.reduce((total, meal) => total + meal.kcal, 0) : hasLogs ? groupedLogs.reduce((total, meal) => total + meal.kcal, 0) : 1450
   const dailyGoal = 2100
   const remaining = Math.max(dailyGoal - consumed, 0)
-  const foodSuggestions = foods.length
-    ? foods.slice(0, 2).map((food) => ({
-        name: food.food_name || food.name,
-        calories: food.calories,
-        serving: food.serving_unit || 'serving'
-      }))
-    : [
-        { name: 'Grilled Chicken Breast', calories: 165, serving: '100g' },
-        { name: 'Brown Rice', calories: 111, serving: '100g' }
-      ]
 
   const macroTotals = useMemo(() => {
-    const base = logs.reduce((total, item) => ({
-      protein: total.protein + Number(item.protein_g || item.proteinG || 0),
-      carbs: total.carbs + Number(item.carbohydrates_g || item.carbohydratesG || 0),
-      fat: total.fat + Number(item.fat_g || item.fatG || 0),
-      calories: total.calories + Number(item.calories || 0)
+    const currentRows = sortedPlanRows.filter((item) => item.id !== requestedPlanId)
+    const stored = currentRows.reduce((total, item) => ({
+      protein: total.protein + Number(item.target_protein_g || item.targetProteinG || 0),
+      carbs: total.carbs + Number(item.target_carbs_g || item.targetCarbsG || 0),
+      fat: total.fat + Number(item.target_fat_g || item.targetFatG || 0),
+      calories: total.calories + Number(item.target_calories || item.targetCalories || 0)
     }), { protein: 0, carbs: 0, fat: 0, calories: 0 })
-    if (!base.calories && selectedFood) {
-      return {
-        protein: Number(selectedFood.protein_g || 0) * Number(planForm.servingAmount || 1),
-        carbs: Number(selectedFood.carbohydrates_g || 0) * Number(planForm.servingAmount || 1),
-        fat: Number(selectedFood.fat_g || 0) * Number(planForm.servingAmount || 1),
-        calories: Number(selectedFood.calories || 0) * Number(planForm.servingAmount || 1),
-        source: selectedFood.name
-      }
+    const servingAmount = Number(planForm.servingAmount || 1)
+    const pending = selectedFoods.reduce((total, food) => ({
+      protein: total.protein + Number(food.protein_g || 0) * servingAmount,
+      carbs: total.carbs + Number(food.carbohydrates_g || 0) * servingAmount,
+      fat: total.fat + Number(food.fat_g || 0) * servingAmount,
+      calories: total.calories + Number(food.calories || 0) * servingAmount
+    }), { protein: 0, carbs: 0, fat: 0, calories: 0 })
+    return {
+      protein: stored.protein + pending.protein,
+      carbs: stored.carbs + pending.carbs,
+      fat: stored.fat + pending.fat,
+      calories: stored.calories + pending.calories,
+      source: selectedFoods.length ? `${selectedFoods.length} makanan dipilih` : 'Meal planner harian'
     }
-    return { ...base, source: selectedFood?.name || 'Daily logs' }
-  }, [logs, planForm.servingAmount, selectedFood])
+  }, [planForm.servingAmount, requestedPlanId, selectedFoods, sortedPlanRows])
 
   async function saveMealPlan(event) {
     event.preventDefault()
-    if (!selectedFood || planSaving) return
+    if (!selectedFoods.length || planSaving) return
     setPlanSaving(true)
     setPlanToast('')
     const servingAmount = Number(planForm.servingAmount || 1)
@@ -174,49 +180,34 @@ function ProLogFoodPage() {
       planDate: requestedPlanDate,
       mealType: planForm.mealType,
       plannedTime: planForm.plannedTime,
-      foodId: selectedFood.id,
-      foodName: selectedFood.name,
       servingAmount,
-      servingUnit: selectedFood.serving_unit || 'porsi',
-      targetCalories: Number(selectedFood.calories || 0) * servingAmount,
-      targetProteinG: Number(selectedFood.protein_g || 0) * servingAmount,
-      targetCarbsG: Number(selectedFood.carbohydrates_g || 0) * servingAmount,
-      targetFatG: Number(selectedFood.fat_g || 0) * servingAmount,
       notes: planForm.notes
     }
     try {
-      await apiRequest(requestedPlanId ? `/api/meal-plans/${requestedPlanId}` : '/api/meal-plans', {
-        method: requestedPlanId ? 'PUT' : 'POST',
-        body: payload
-      })
+      await Promise.all(selectedFoods.map((food, index) => {
+        const body = {
+          ...payload,
+          foodId: food.id,
+          foodName: food.name,
+          servingUnit: food.serving_unit || 'porsi',
+          targetCalories: Number(food.calories || 0) * servingAmount,
+          targetProteinG: Number(food.protein_g || 0) * servingAmount,
+          targetCarbsG: Number(food.carbohydrates_g || 0) * servingAmount,
+          targetFatG: Number(food.fat_g || 0) * servingAmount
+        }
+        const shouldUpdate = requestedPlanId && index === 0
+        return apiRequest(shouldUpdate ? `/api/meal-plans/${requestedPlanId}` : '/api/meal-plans', {
+          method: shouldUpdate ? 'PUT' : 'POST',
+          body
+        })
+      }))
       setPlanRows(await apiRequest(`/api/meal-plans?from=${requestedPlanDate}&to=${requestedPlanDate}`))
+      setPlanForm((current) => ({ ...current, foodId: '', foodIds: requestedPlanId ? current.foodIds : [] }))
       setPlanToast(requestedPlanId ? 'Meal plan berhasil diperbarui.' : 'Meal plan berhasil ditambahkan.')
     } catch (error) {
       setPlanToast(error.message || 'Meal plan gagal disimpan.')
     } finally {
       setPlanSaving(false)
-    }
-  }
-
-  const addQuickItem = async () => {
-    const food = foods[0]
-    if (!food || saving) return
-    setSaving(true)
-    try {
-      await apiRequest('/api/food-logs', {
-        method: 'POST',
-        body: {
-          foodId: food.id,
-          mealType: 'breakfast',
-          logDate: todayIso(),
-          servingAmount: 1,
-          servingUnit: food.serving_unit || 'porsi'
-        }
-      })
-      const nextLogs = await apiRequest(`/api/food-logs?date=${todayIso()}`)
-      setLogs(nextLogs)
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -244,7 +235,7 @@ function ProLogFoodPage() {
         planDate={requestedPlanDate}
         planRows={planRows}
         saving={planSaving}
-        selectedFood={selectedFood}
+        selectedFoods={selectedFoods}
         toast={planToast}
         onChange={setPlanForm}
         onSubmit={saveMealPlan}
@@ -252,17 +243,15 @@ function ProLogFoodPage() {
 
       <section className="mt-8 grid grid-cols-1 gap-7 xl:grid-cols-12">
         <div className="grid content-start gap-7 xl:col-span-4">
-          <LogFoodSearchCard suggestions={foodSuggestions} />
-          <LogFoodRecentCard items={recentItems} onAdd={addQuickItem} saving={saving} />
+          <LogFoodRecentCard allItems={historyItems} items={recentItems} />
         </div>
 
         <div className="grid gap-7 xl:col-span-8">
           <div className="grid grid-cols-1 gap-7 md:grid-cols-2">
-            {groupedLogs.map((meal, index) => (
-              <LogFoodMealCard key={meal.mealType} meal={meal} index={index} onAdd={addQuickItem} saving={saving} />
+            {groupedPlannerMeals.map((meal, index) => (
+              <LogFoodMealCard key={meal.mealType} meal={meal} index={index} />
             ))}
           </div>
-          <LogFoodMacroDistribution totals={macroTotals} />
         </div>
       </section>
     </motion.main>
@@ -291,7 +280,8 @@ function LogFoodSummaryCard({ consumed, dailyGoal, remaining }) {
   )
 }
 
-function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, saving, selectedFood, toast, onChange, onSubmit }) {
+function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, saving, selectedFoods, toast, onChange, onSubmit }) {
+  const [foodSearch, setFoodSearch] = useState('')
   const mealTypes = [
     ['breakfast', 'Breakfast'],
     ['morning_snack', 'Morning Snack'],
@@ -301,6 +291,22 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
     ['late_snack', 'Late Snack']
   ]
   const dateLabel = new Date(`${planDate}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+  const filteredFoods = useMemo(() => {
+    const keyword = foodSearch.trim().toLowerCase()
+    return foods
+      .filter((food) => !keyword || `${food.name} ${food.category || ''} ${food.sub_category || ''}`.toLowerCase().includes(keyword))
+      .slice(0, 8)
+  }, [foodSearch, foods])
+  const selectedIds = form.foodIds || []
+
+  function toggleFood(foodId) {
+    onChange((current) => {
+      const currentIds = current.foodIds || []
+      const exists = currentIds.includes(foodId)
+      const nextIds = exists ? currentIds.filter((id) => id !== foodId) : [...currentIds, foodId]
+      return { ...current, foodId: nextIds[0] || '', foodIds: nextIds }
+    })
+  }
 
   return (
     <motion.section className="mt-8 overflow-hidden rounded-[2rem] border border-primary/15 bg-white/90 shadow-[0_18px_45px_rgba(15,23,42,0.06)] backdrop-blur-xl" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.34 }}>
@@ -329,13 +335,31 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
               {mealTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
-          <label className="grid gap-2 sm:col-span-2">
-            <span className="text-sm font-black text-on-surface">Makanan dari database</span>
-            <select className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" value={form.foodId} onChange={(event) => onChange((current) => ({ ...current, foodId: event.target.value }))}>
-              <option value="">Pilih makanan...</option>
-              {foods.map((food) => <option key={food.id} value={food.id}>{food.name} - {formatNumber(food.calories)} kcal</option>)}
-            </select>
-          </label>
+          <div className="grid gap-3 sm:col-span-2">
+            <div>
+              <h3 className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Search Food Database</h3>
+              <label className="relative mt-3 block">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
+                <input className="h-[52px] w-full rounded-2xl border-none bg-surface-container py-3 pl-12 pr-4 font-body-md text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary" placeholder="Search for chicken, rice, coffee..." value={foodSearch} onChange={(event) => setFoodSearch(event.target.value)} aria-label="Search food database" />
+              </label>
+            </div>
+            <div className="custom-scrollbar grid max-h-72 gap-2 overflow-y-auto pr-1">
+              {filteredFoods.map((food) => {
+                const active = selectedIds.includes(food.id)
+                return (
+                  <button className={`flex items-center justify-between gap-3 rounded-2xl border p-3 text-left transition ${active ? 'border-primary bg-mint-surface shadow-sm' : 'border-outline-variant/25 bg-white hover:border-primary/30 hover:bg-surface-container-low'}`} key={food.id} onClick={() => toggleFood(food.id)} type="button">
+                    <span className="min-w-0">
+                      <strong className="block truncate text-on-surface">{food.name}</strong>
+                      <small className="block text-on-surface-variant">{formatNumber(food.calories)} kcal / {food.serving_unit || 'porsi'}</small>
+                    </span>
+                    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${active ? 'bg-primary text-white' : 'bg-surface-container text-on-surface-variant'}`}>
+                      {active ? <Check size={16} /> : <Plus size={16} />}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <label className="grid gap-2">
             <span className="text-sm font-black text-on-surface">Jumlah porsi</span>
             <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" min="0.25" step="0.25" type="number" value={form.servingAmount} onChange={(event) => onChange((current) => ({ ...current, servingAmount: event.target.value }))} />
@@ -344,7 +368,7 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
             <span className="text-sm font-black text-on-surface">Catatan</span>
             <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="Contoh: meal prep Senin" value={form.notes} onChange={(event) => onChange((current) => ({ ...current, notes: event.target.value }))} />
           </label>
-          <button className="h-12 rounded-2xl bg-primary px-6 font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2" disabled={!selectedFood || saving} type="submit">
+          <button className="h-12 rounded-2xl bg-primary px-6 font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2" disabled={!selectedFoods.length || saving} type="submit">
             {saving ? 'Menyimpan...' : 'Simpan ke Meal Planner'}
           </button>
           {toast && <p className="rounded-xl bg-mint-surface px-4 py-3 text-sm font-bold text-primary sm:col-span-2">{toast}</p>}
@@ -352,7 +376,7 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
 
         <div className="rounded-[1.5rem] border border-outline-variant/30 bg-surface-container-low p-5">
           <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Preview kandungan</p>
-          <h3 className="mt-2 font-headline-md text-xl font-black text-on-surface">{selectedFood?.name || 'Pilih makanan dulu'}</h3>
+          <h3 className="mt-2 font-headline-md text-xl font-black text-on-surface">{selectedFoods.length ? `${selectedFoods.length} makanan dipilih` : 'Pilih makanan dulu'}</h3>
           <div className="mt-5 grid grid-cols-2 gap-3">
             {[
               ['Kalori', macroTotals.calories, 'kcal', 'text-primary'],
@@ -372,43 +396,25 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
   )
 }
 
-function LogFoodSearchCard({ suggestions }) {
-  return (
-    <motion.section className="rounded-[1.75rem] border border-outline-variant/45 bg-white/85 p-5 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.06)] backdrop-blur-xl focus-within:ring-2 focus-within:ring-primary/30" whileHover={{ y: -3 }}>
-      <h3 className="mb-4 font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Search Food Database</h3>
-      <label className="relative block">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
-        <input className="h-[52px] w-full rounded-2xl border-none bg-surface-container py-3 pl-12 pr-4 font-body-md text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary" placeholder="Search for chicken, rice, coffee..." aria-label="Search food database" />
-      </label>
-      <div className="mt-4 grid gap-2">
-        {suggestions.map((food) => (
-          <button className="flex items-center justify-between gap-3 rounded-xl p-3 text-left text-sm transition hover:bg-surface-variant/40" key={food.name} type="button">
-            <span className="font-bold text-on-surface">{food.name}</span>
-            <span className="shrink-0 text-on-surface-variant/70">{formatNumber(food.calories)} kcal / {food.serving}</span>
-          </button>
-        ))}
-      </div>
-    </motion.section>
-  )
-}
-
-function LogFoodRecentCard({ items, onAdd, saving }) {
+function LogFoodRecentCard({ allItems, items }) {
+  const [historyOpen, setHistoryOpen] = useState(false)
   return (
     <motion.section className="rounded-[1.75rem] border border-outline-variant/45 bg-white/85 p-5 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.06)] backdrop-blur-xl" whileHover={{ y: -3 }}>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Recent History</h3>
-        <button className="text-label-sm font-bold text-primary hover:underline" type="button">View All</button>
+        <button className="text-label-sm font-bold text-primary hover:underline" onClick={() => setHistoryOpen(true)} type="button">View All</button>
       </div>
       <div className="custom-scrollbar grid max-h-[420px] gap-3 overflow-y-auto pr-1">
         {items.map((item, index) => (
-          <LogFoodRecentItem item={item} index={index} key={item.id || item.food_name || item.name || index} onAdd={onAdd} saving={saving} />
+          <LogFoodRecentItem item={item} index={index} key={item.id || item.food_name || item.name || index} />
         ))}
       </div>
+      {historyOpen && <MealHistoryModal items={allItems} onClose={() => setHistoryOpen(false)} />}
     </motion.section>
   )
 }
 
-function LogFoodRecentItem({ item, index, onAdd, saving }) {
+function LogFoodRecentItem({ item, index }) {
   const tones = [
     { bg: 'bg-mint-surface/60', border: 'border-primary/10', iconBg: 'bg-primary-container/20', iconText: 'text-primary', Icon: Activity },
     { bg: 'bg-surface-container-low', border: 'border-outline-variant/20', iconBg: 'bg-secondary/10', iconText: 'text-secondary', Icon: Flame },
@@ -417,11 +423,11 @@ function LogFoodRecentItem({ item, index, onAdd, saving }) {
   const tone = tones[index % tones.length]
   const name = item.food_name || item.foodName || item.name || 'Food item'
   const meal = mealLabel(item.meal_type || item.mealType || item.category || 'afternoon_snack')
-  const serving = item.serving_unit || item.servingUnit || item.serving || '1 serving'
+  const serving = item.serving_unit || item.servingUnit || item.serving || item.meal_type || '1 serving'
   const Icon = tone.Icon
 
   return (
-    <motion.article className={`group relative flex min-h-[72px] items-center gap-3 overflow-hidden rounded-2xl border p-3 transition-all hover:shadow-sm ${tone.bg} ${tone.border}`} whileHover={{ x: 2 }}>
+    <motion.article className={`flex min-h-[72px] items-center gap-3 rounded-2xl border p-3 transition-all hover:shadow-sm ${tone.bg} ${tone.border}`} whileHover={{ x: 2 }}>
       <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${tone.iconBg} ${tone.iconText}`}>
         <Icon size={20} />
       </div>
@@ -430,21 +436,38 @@ function LogFoodRecentItem({ item, index, onAdd, saving }) {
         <p className="text-label-sm text-on-surface-variant">{meal} - {serving}</p>
       </div>
       <div className="text-right">
-        <p className="font-metrics-mono font-bold text-on-surface">{formatNumber(item.calories || 0)} <span className="text-[10px] uppercase">kcal</span></p>
-      </div>
-      <div className="absolute inset-0 flex translate-x-full items-center justify-center gap-4 bg-primary/95 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100">
-        <button className="rounded-full bg-white/20 p-2 text-white hover:bg-white/40 disabled:opacity-60" onClick={onAdd} disabled={saving} type="button" aria-label={`Add ${name}`}>
-          <Plus size={18} />
-        </button>
-        <button className="rounded-full bg-white/20 p-2 text-white hover:bg-white/40" type="button" aria-label={`Edit ${name}`}>
-          <Settings size={18} />
-        </button>
+        <p className="font-metrics-mono font-bold text-on-surface">{formatNumber(item.target_calories || item.targetCalories || item.calories || 0)} <span className="text-[10px] uppercase">kcal</span></p>
       </div>
     </motion.article>
   )
 }
 
-function LogFoodMealCard({ meal, index, onAdd, saving }) {
+function MealHistoryModal({ items, onClose }) {
+  return (
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <motion.section className="max-h-[88vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-outline-variant/30 bg-white p-5 shadow-2xl md:p-7" initial={{ opacity: 0, y: 22, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}>
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Recent History</p>
+            <h2 className="mt-2 font-headline-md text-2xl font-black text-on-surface">Semua makanan meal planner hari ini</h2>
+          </div>
+          <button className="grid h-10 w-10 place-items-center rounded-full bg-surface-container text-on-surface-variant transition hover:bg-error-red/10 hover:text-error-red" onClick={onClose} type="button" aria-label="Close history">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="grid gap-3">
+          {items.length ? items.map((item, index) => (
+            <LogFoodRecentItem item={item} index={index} key={item.id || item.food_name || item.name || index} />
+          )) : (
+            <div className="rounded-2xl bg-surface-container-low p-5 text-center font-bold text-on-surface-variant">Belum ada makanan di meal planner tanggal ini.</div>
+          )}
+        </div>
+      </motion.section>
+    </div>
+  )
+}
+
+function LogFoodMealCard({ meal, index }) {
   const style = mealStyles[index]
   const Icon = style.Icon
   const hasItems = meal.items.length > 0
@@ -476,7 +499,7 @@ function LogFoodMealCard({ meal, index, onAdd, saving }) {
           {meal.items.slice(0, 3).map((item, itemIndex) => (
             <div className="flex justify-between gap-3 text-sm" key={item.id || item.food_name || item.name || itemIndex}>
               <span className="min-w-0 truncate text-on-surface-variant">{item.food_name || item.foodName || item.name}</span>
-              <span className="font-metrics-mono">{formatNumber(item.calories || 0)}</span>
+              <span className="font-metrics-mono">{formatNumber(item.target_calories || item.targetCalories || item.calories || 0)}</span>
             </div>
           ))}
         </div>
@@ -487,32 +510,8 @@ function LogFoodMealCard({ meal, index, onAdd, saving }) {
         </div>
       )}
 
-      <button className="mt-auto flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-outline-variant/50 py-3 text-on-surface-variant transition-all hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60" onClick={onAdd} disabled={saving} type="button">
-        <Plus size={16} />
-        <span className="font-label-md text-label-md">{saving ? 'Adding...' : 'Add Item'}</span>
-      </button>
+      <p className="mt-auto rounded-xl bg-surface-container-low px-4 py-3 text-center text-sm font-bold text-on-surface-variant">Loaded from selected Meal Planner day</p>
     </motion.article>
-  )
-}
-
-function LogFoodMacroDistribution({ totals }) {
-  const macroTotal = Number(totals.protein || 0) + Number(totals.carbs || 0) + Number(totals.fat || 0)
-  const pct = (value) => macroTotal ? Math.round((Number(value || 0) / macroTotal) * 100) : 0
-  return (
-    <motion.section className="relative flex min-h-52 w-full items-center justify-center overflow-hidden rounded-[2rem] border border-outline-variant/30 bg-gradient-to-br from-mint-surface to-surface-container-low p-6 shadow-inner" whileHover={{ y: -3 }}>
-      <motion.div className="absolute h-56 w-56 rounded-full border-[18px] border-primary/20" animate={{ rotate: 360 }} transition={{ duration: 18, repeat: Infinity, ease: 'linear' }} />
-      <motion.div className="absolute h-36 w-36 rounded-full border-[14px] border-secondary/20" animate={{ rotate: -360 }} transition={{ duration: 16, repeat: Infinity, ease: 'linear' }} />
-      <div className="relative z-10 text-center">
-        <BarChart3 className="mx-auto mb-2 text-primary" size={48} />
-        <h3 className="font-headline-md text-xl font-black text-on-primary-container">Macro Distribution</h3>
-        <p className="mt-1 text-sm font-bold text-on-surface-variant">{totals.source || 'Daily logs'} - {formatNumber(totals.calories)} kcal</p>
-        <div className="mt-4 flex flex-wrap justify-center gap-3">
-          <span className="rounded-full bg-primary/20 px-3 py-1 text-xs font-bold text-primary">Protein: {pct(totals.protein)}% ({formatNumber(totals.protein)}g)</span>
-          <span className="rounded-full bg-secondary/20 px-3 py-1 text-xs font-bold text-secondary">Carbs: {pct(totals.carbs)}% ({formatNumber(totals.carbs)}g)</span>
-          <span className="rounded-full bg-energy-orange/20 px-3 py-1 text-xs font-bold text-energy-orange">Fat: {pct(totals.fat)}% ({formatNumber(totals.fat)}g)</span>
-        </div>
-      </div>
-    </motion.section>
   )
 }
 

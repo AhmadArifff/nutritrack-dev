@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Apple, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Edit3, Flame, Plus, ShoppingBasket, Sparkles, Utensils } from 'lucide-react'
+import { Apple, CalendarDays, ChevronLeft, ChevronRight, Clock, Edit3, Flame, Plus, ShoppingBasket, Sparkles, Utensils } from 'lucide-react'
 import { apiRequest } from '../../api'
 import { useBackendData } from '../../hooks/useBackendData'
 
@@ -89,7 +89,6 @@ const insightItems = [
   ['Smart swap', 'Use tofu curry instead of beef stir-fry if Friday calories run high.', Sparkles, 'text-achievement-purple bg-achievement-purple/10']
 ]
 
-const calendarWeekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const calendarWeekdaysId = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
 const defaultMealTimes = {
   breakfast: '07:30',
@@ -99,6 +98,9 @@ const defaultMealTimes = {
   dinner: '19:00',
   late_snack: '21:00'
 }
+const plannerPastDays = 30
+const plannerFutureDays = 90
+const plannerTodayIndex = plannerPastDays
 
 function formatNumber(value, fallback = '0') {
   const number = Number(value)
@@ -140,16 +142,15 @@ function mealLabel(mealType = '') {
 }
 
 function mapMealPlans(rows) {
-  if (!rows.length) return weekPlan
-  const days = Array.from({ length: 7 }, (_, index) => {
-    const iso = addDaysIso(index)
+  const days = Array.from({ length: plannerPastDays + plannerFutureDays + 1 }, (_, index) => {
+    const iso = addDaysIso(index - plannerPastDays)
     const date = new Date(`${iso}T00:00:00`)
     return {
       iso,
       day: date.toLocaleDateString('en-US', { weekday: 'long' }),
       date: formatMealDate(iso),
       calories: 0,
-      active: index === 0,
+      active: index === plannerTodayIndex,
       meals: []
     }
   })
@@ -176,11 +177,25 @@ function mapMealPlans(rows) {
     })
   })
 
+  days.forEach((day) => {
+    day.meals.sort((a, b) => cleanTime(a.time || '99:99').localeCompare(cleanTime(b.time || '99:99')))
+  })
+
   return days
 }
 
 function mapShoppingList(rows) {
   if (!rows.length) return shoppingItems
+  if (rows[0]?.items) {
+    return rows.map((group) => [
+      group.group || group.category || 'Pantry',
+      (group.items || []).map((item) => ({
+        name: item.name || item.foodName || item.food_name,
+        amount: item.amount || `${formatNumber(item.totalAmount || item.total_amount)} ${item.unit || 'porsi'}`,
+        meals: item.meals || `${item.mealCount || item.meal_count || 1} meal slots`
+      }))
+    ])
+  }
   const grouped = rows.reduce((acc, row) => {
     const group = row.category || 'Pantry'
     if (!acc[group]) acc[group] = []
@@ -212,51 +227,48 @@ function mealToView(meal, index = 0) {
   return meal
 }
 
+function summarizeMeals(days) {
+  return days.reduce((total, day) => {
+    day.meals.forEach((rawMeal, index) => {
+      const meal = mealToView(rawMeal, index)
+      total.calories += Number(meal.calories || 0)
+      total.protein += Number(meal.protein || 0)
+      total.carbs += Number(meal.carbs || 0)
+      total.fat += Number(meal.fat || 0)
+    })
+    return total
+  }, { calories: 0, protein: 0, carbs: 0, fat: 0 })
+}
+
 function ProMealPlannerPage() {
-  const [selectedDay, setSelectedDay] = useState('Tuesday')
-  const [rangeStart, setRangeStart] = useState(0)
-  const [rangeEnd, setRangeEnd] = useState(6)
+  const [selectedIso, setSelectedIso] = useState(addDaysIso(0))
+  const [rangeStart, setRangeStart] = useState(plannerTodayIndex)
+  const [rangeEnd, setRangeEnd] = useState(plannerTodayIndex + 6)
   const [rangePickMode, setRangePickMode] = useState('start')
-  const [boardView, setBoardView] = useState('week')
-  const from = addDaysIso(0)
-  const to = addDaysIso(6)
+  const from = addDaysIso(-plannerPastDays)
+  const to = addDaysIso(plannerFutureDays)
   const { data: plannerPlan } = useBackendData(
     () => apiRequest(`/api/meal-plans?from=${from}&to=${to}`).then(mapMealPlans),
-    weekPlan,
+    mapMealPlans([]),
     [from, to]
   )
-  const { data: shoppingData } = useBackendData(
-    () => apiRequest(`/api/meal-plans/shopping-list?from=${from}&to=${to}`).then(mapShoppingList),
-    shoppingItems,
-    [from, to]
-  )
-  const selected = useMemo(() => plannerPlan.find((day) => day.day === selectedDay) || plannerPlan[0] || weekPlan[1], [plannerPlan, selectedDay])
-  const plannedDays = plannerPlan.filter((day) => day.calories > 0).length
-  const weeklyCalories = plannerPlan.reduce((total, day) => total + day.calories, 0)
-  const monthPlan = useMemo(() => Array.from({ length: 28 }, (_, index) => {
-    const source = plannerPlan[index % plannerPlan.length] || weekPlan[index % weekPlan.length]
-    const date = new Date()
-    date.setDate(date.getDate() + index)
-    return {
-      ...source,
-      day: `${source.day} ${Math.floor(index / 7) + 1}`,
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      active: index === 1
-    }
-  }), [plannerPlan])
-  const plannerOptions = boardView === 'month' ? monthPlan : plannerPlan
+  const plannerOptions = plannerPlan
   const visiblePlan = useMemo(() => {
     const start = Math.min(rangeStart, rangeEnd)
     const end = Math.max(rangeStart, rangeEnd)
     return plannerOptions.slice(start, end + 1)
   }, [plannerOptions, rangeEnd, rangeStart])
-
-  function setPlannerPreset(id) {
-    setBoardView(id)
-    setRangeStart(0)
-    setRangeEnd(id === 'month' ? monthPlan.length - 1 : 6)
-    setRangePickMode('start')
-  }
+  const selectedFrom = visiblePlan[0]?.iso || addDaysIso(0)
+  const selectedTo = visiblePlan[visiblePlan.length - 1]?.iso || selectedFrom
+  const { data: shoppingData } = useBackendData(
+    () => apiRequest(`/api/meal-plans/shopping-list?from=${selectedFrom}&to=${selectedTo}`).then(mapShoppingList),
+    shoppingItems,
+    [selectedFrom, selectedTo]
+  )
+  const selected = useMemo(() => plannerPlan.find((day) => day.iso === selectedIso) || visiblePlan[0] || plannerPlan[plannerTodayIndex], [plannerPlan, selectedIso, visiblePlan])
+  const plannedDays = visiblePlan.filter((day) => day.calories > 0).length
+  const weeklyCalories = visiblePlan.reduce((total, day) => total + day.calories, 0)
+  const rangeMacros = useMemo(() => summarizeMeals(visiblePlan), [visiblePlan])
 
   function chooseRange(index) {
     if (rangePickMode === 'start') {
@@ -286,22 +298,22 @@ function ProMealPlannerPage() {
                   <Sparkles size={22} />
                   <b>AI-assisted plan</b>
                 </div>
-                <p className="mt-3 text-sm leading-6 text-on-surface-variant">Tuesday is empty. Generate a balanced plan or add meals manually.</p>
+                <p className="mt-3 text-sm leading-6 text-on-surface-variant">Pilih range tanggal, lalu tambah atau edit menu harian dari Log Food.</p>
               </div>
             </div>
             <div className="grid gap-4 border-t border-outline-variant/25 bg-surface-container-low/70 p-5 sm:grid-cols-3">
               <MetricCard value="2,450" label="Target kcal" tone="text-energy-orange" />
               <MetricCard value="185g" label="Protein goal" tone="text-primary" />
-              <MetricCard value={`${plannedDays}/7`} label="Days planned" tone="text-secondary" />
+              <MetricCard value={`${plannedDays}/${visiblePlan.length}`} label="Days planned" tone="text-secondary" />
             </div>
           </motion.div>
 
           <motion.div className="rounded-[2rem] border border-outline-variant/35 bg-white/85 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.08, duration: 0.34 }} whileHover={{ y: -3 }}>
-            <p className="text-label-md font-bold text-primary">Weekly Energy</p>
+            <p className="text-label-md font-bold text-primary">Range Energy</p>
             <p className="mt-3 font-metrics-mono text-4xl font-black text-on-surface">{formatNumber(weeklyCalories)}</p>
-            <p className="mt-2 text-on-surface-variant">planned kcal across the week</p>
+            <p className="mt-2 text-on-surface-variant">planned kcal across selected range</p>
             <div className="mt-6 h-3 overflow-hidden rounded-full bg-surface-container">
-              <motion.div className="h-full rounded-full bg-primary" initial={{ scaleX: 0 }} animate={{ scaleX: weeklyCalories / 17150 }} style={{ transformOrigin: 'left center' }} transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }} />
+              <motion.div className="h-full rounded-full bg-primary" initial={{ scaleX: 0 }} animate={{ scaleX: Math.min(1, weeklyCalories / Math.max(1, visiblePlan.length * 2450)) }} style={{ transformOrigin: 'left center' }} transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }} />
             </div>
           </motion.div>
         </section>
@@ -309,20 +321,10 @@ function ProMealPlannerPage() {
         <section className="min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-outline-variant/35 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl">
           <div className="flex flex-col gap-4 border-b border-outline-variant/25 p-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <h3 className="font-headline-md text-2xl font-black text-on-surface">7-Day Planning Board</h3>
-              <p className="mt-1 text-on-surface-variant">Pilih rentang seperti booking travel, lalu board menampilkan 7 hari atau mode bulan.</p>
+              <h3 className="font-headline-md text-2xl font-black text-on-surface">Planning Board</h3>
+              <p className="mt-1 text-on-surface-variant">Board mengikuti range tanggal yang dipilih. Tanggal lampau hanya aktif jika punya data meal plan.</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <div className="flex rounded-2xl bg-surface-container-low p-1">
-                {[
-                  ['week', '7 Hari'],
-                  ['month', 'Bulan']
-                ].map(([id, label]) => (
-                  <button className={`h-9 rounded-xl px-4 text-sm font-black transition ${boardView === id ? 'bg-white text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`} key={id} onClick={() => setPlannerPreset(id)} type="button">
-                    {label}
-                  </button>
-                ))}
-              </div>
               <Link className="inline-flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition hover:-translate-y-0.5 active:scale-[0.98]" to={`/app/log-food?planDate=${selected.iso || addDaysIso(0)}&mealType=breakfast`}>
                 <Plus size={18} />
                 Add Meals
@@ -335,11 +337,13 @@ function ProMealPlannerPage() {
           <div className="max-w-full overflow-hidden">
             <div className="custom-scrollbar flex w-full max-w-full snap-x gap-5 overflow-x-auto overscroll-x-contain p-5">
             {visiblePlan.map((day, index) => (
-              <DayColumn day={day} index={index} key={day.day} selected={selectedDay === day.day} onSelect={() => setSelectedDay(day.day)} />
+              <DayColumn day={day} index={index} key={day.iso} selected={selectedIso === day.iso} onSelect={() => setSelectedIso(day.iso)} />
             ))}
             </div>
           </div>
         </section>
+
+        <MacroDistributionCard totals={rangeMacros} label={`${formatPlannerDateRange(selectedFrom)} - ${formatPlannerDateRange(selectedTo)}`} />
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="grid gap-6 lg:grid-cols-2">
@@ -470,6 +474,7 @@ function DateRangePlanner({ options, rangeStart, rangeEnd, rangePickMode, onPick
     acc[iso] = index
     return acc
   }, {})
+  const today = addDaysIso(0)
 
   function toIso(date) {
     const year = date.getFullYear()
@@ -515,7 +520,8 @@ function DateRangePlanner({ options, rangeStart, rangeEnd, rangePickMode, onPick
                   if (!date) return <span key={`blank-${cellIndex}`} />
                   const iso = toIso(date)
                   const optionIndex = optionIndexByIso[iso]
-                  const enabled = optionIndex !== undefined
+                  const dayData = optionIndex !== undefined ? options[optionIndex] : null
+                  const enabled = optionIndex !== undefined && (iso >= today || (dayData?.meals?.length || 0) > 0)
                   const inRange = enabled && optionIndex >= start && optionIndex <= end
                   const isStart = enabled && optionIndex === rangeStart
                   const isEnd = enabled && optionIndex === rangeEnd
@@ -559,6 +565,37 @@ function MetricCard({ value, label, tone }) {
     <div className="rounded-2xl bg-white/80 px-4 py-4 text-center shadow-sm">
       <p className={`font-metrics-mono text-2xl font-black ${tone}`}>{value}</p>
       <p className="mt-1 text-xs font-black uppercase tracking-wide text-on-surface-variant">{label}</p>
+    </div>
+  )
+}
+
+function MacroDistributionCard({ totals, label }) {
+  const macroTotal = Number(totals.protein || 0) + Number(totals.carbs || 0) + Number(totals.fat || 0)
+  const pct = (value) => macroTotal ? Math.round((Number(value || 0) / macroTotal) * 100) : 0
+  return (
+    <motion.section className="relative flex min-h-56 w-full items-center justify-center overflow-hidden rounded-[2rem] border border-outline-variant/30 bg-gradient-to-br from-mint-surface to-surface-container-low p-6 shadow-inner" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12, duration: 0.34 }} whileHover={{ y: -3 }}>
+      <motion.div className="absolute h-64 w-64 rounded-full border-[18px] border-primary/20" animate={{ rotate: 360 }} transition={{ duration: 18, repeat: Infinity, ease: 'linear' }} />
+      <motion.div className="absolute h-40 w-40 rounded-full border-[14px] border-secondary/20" animate={{ rotate: -360 }} transition={{ duration: 16, repeat: Infinity, ease: 'linear' }} />
+      <div className="relative z-10 text-center">
+        <BarChartIcon />
+        <h3 className="font-headline-md text-2xl font-black text-on-primary-container">Macro Distribution</h3>
+        <p className="mt-1 text-sm font-bold text-on-surface-variant">{label} - {formatNumber(totals.calories)} kcal</p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <span className="rounded-full bg-primary/20 px-4 py-2 text-xs font-bold text-primary">Protein: {pct(totals.protein)}% ({formatNumber(totals.protein)}g)</span>
+          <span className="rounded-full bg-secondary/20 px-4 py-2 text-xs font-bold text-secondary">Carbs: {pct(totals.carbs)}% ({formatNumber(totals.carbs)}g)</span>
+          <span className="rounded-full bg-energy-orange/20 px-4 py-2 text-xs font-bold text-energy-orange">Fat: {pct(totals.fat)}% ({formatNumber(totals.fat)}g)</span>
+        </div>
+      </div>
+    </motion.section>
+  )
+}
+
+function BarChartIcon() {
+  return (
+    <div className="mx-auto mb-3 flex h-14 w-14 items-end justify-center gap-1 rounded-2xl bg-white/80 p-3 text-primary shadow-sm">
+      <span className="h-5 w-2 rounded-full bg-primary" />
+      <span className="h-8 w-2 rounded-full bg-secondary" />
+      <span className="h-6 w-2 rounded-full bg-energy-orange" />
     </div>
   )
 }
