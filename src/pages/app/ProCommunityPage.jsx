@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { apiRequest } from '../../api'
 import { useBackendData } from '../../hooks/useBackendData'
+import { getTodayLabel } from '../../utils/dateLabels'
 
 const challenges = [
   {
@@ -122,7 +123,7 @@ function ProCommunityPage() {
   )
 
   return (
-    <AppPageShell title="Community Hub" subtitle="Tuesday, October 24" showHeader={false} wide>
+    <AppPageShell title="Community Hub" subtitle={getTodayLabel()} showHeader={false} wide>
       <div className="space-y-8 pb-28">
         <motion.section className="overflow-hidden rounded-[2.5rem] border border-outline-variant/40 bg-primary/5 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl md:p-10" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
           <div className="relative z-10 flex flex-col items-center gap-10 md:flex-row">

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Activity, Apple, Check, Flame, Plus, Search, Utensils, Droplets, X } from 'lucide-react'
 import { apiRequest } from '../../api'
+import { getTodayOrdinalLabel } from '../../utils/dateLabels'
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10)
@@ -174,6 +175,7 @@ function ProLogFoodPage() {
   const consumed = sortedPlanRows.length ? groupedPlannerMeals.reduce((total, meal) => total + meal.kcal, 0) : hasLogs ? groupedLogs.reduce((total, meal) => total + meal.kcal, 0) : 1450
   const dailyGoal = 2100
   const remaining = Math.max(dailyGoal - consumed, 0)
+  const todayLabel = getTodayOrdinalLabel()
 
   const macroTotals = useMemo(() => {
     const editingIds = new Set(selectedPlanGroupRows.map((item) => item.id))
@@ -262,7 +264,7 @@ function ProLogFoodPage() {
       <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_386px] lg:items-center">
         <div>
           <h1 className="font-headline-lg text-[34px] font-black leading-tight text-on-surface md:text-[42px]">Daily Food Log</h1>
-          <p className="mt-2 font-body-md text-on-surface-variant">Tuesday, October 24th, 2023</p>
+          <p className="mt-2 font-body-md text-on-surface-variant">{todayLabel}</p>
           {logsError && <p className="mt-3 rounded-xl bg-error-red/10 px-4 py-2 text-sm font-bold text-error-red">{logsError}</p>}
         </div>
         <LogFoodSummaryCard consumed={consumed} dailyGoal={dailyGoal} remaining={remaining} />
