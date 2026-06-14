@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Edit3, Filter, Heart, Plus, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react'
+import { Edit3, Filter, Heart, ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, UploadCloud, X } from 'lucide-react'
 import { apiRequest } from '../../api'
 import { useBackendData } from '../../hooks/useBackendData'
 
@@ -249,6 +249,36 @@ function FoodCard({ food, index, onEdit }) {
   )
 }
 
+function createCroppedImage(source, crop) {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      const canvas = document.createElement('canvas')
+      const width = 900
+      const height = 620
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      if (!context) {
+        resolve(source)
+        return
+      }
+      const scale = Math.max(width / image.width, height / image.height) * Number(crop.zoom || 1)
+      const renderWidth = image.width * scale
+      const renderHeight = image.height * scale
+      const offsetX = (width - renderWidth) * (Number(crop.x || 50) / 100)
+      const offsetY = (height - renderHeight) * (Number(crop.y || 50) / 100)
+      context.fillStyle = '#f1f8f3'
+      context.fillRect(0, 0, width, height)
+      context.drawImage(image, offsetX, offsetY, renderWidth, renderHeight)
+      resolve(canvas.toDataURL('image/jpeg', 0.84))
+    }
+    image.onerror = () => reject(new Error('Gambar tidak bisa diproses.'))
+    image.src = source
+  })
+}
+
 function FoodFormModal({ food, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: food?.name || '',
@@ -266,16 +296,40 @@ function FoodFormModal({ food, onClose, onSaved }) {
     imageUrl: food?.image?.startsWith('/assets/') ? '' : food?.image || '',
     tags: ''
   })
+  const [imageDraft, setImageDraft] = useState(food?.image || '')
+  const [crop, setCrop] = useState({ x: 50, y: 50, zoom: 1 })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
+  const previewImage = imageDraft || form.imageUrl || foodImages[0]
+
+  function setCropField(key, value) {
+    setCrop((current) => ({ ...current, [key]: Number(value) }))
+  }
+
+  function handleImageUpload(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = String(reader.result || '')
+      setImageDraft(result)
+      setField('imageUrl', result)
+      setCrop({ x: 50, y: 50, zoom: 1 })
+    }
+    reader.readAsDataURL(file)
+  }
 
   async function submit(event) {
     event.preventDefault()
     setSaving(true)
     setError('')
     try {
+      let imageUrl = form.imageUrl || null
+      if (imageDraft?.startsWith('data:image/')) {
+        imageUrl = await createCroppedImage(imageDraft, crop)
+      }
       const payload = {
         ...form,
         servingSizeG: Number(form.servingSizeG),
@@ -286,7 +340,7 @@ function FoodFormModal({ food, onClose, onSaved }) {
         fiberG: Number(form.fiberG),
         sugarG: Number(form.sugarG),
         sodiumMg: Number(form.sodiumMg),
-        imageUrl: form.imageUrl || null,
+        imageUrl,
         tags: form.tags ? form.tags.split(',').map((tag) => tag.trim()).filter(Boolean) : []
       }
       await apiRequest(food?.id ? `/api/foods/${food.id}` : '/api/foods', {
@@ -333,7 +387,40 @@ function FoodFormModal({ food, onClose, onSaved }) {
           <FoodInput label="Fiber (g)" type="number" value={form.fiberG} onChange={(value) => setField('fiberG', value)} />
           <FoodInput label="Sugar (g)" type="number" value={form.sugarG} onChange={(value) => setField('sugarG', value)} />
           <FoodInput label="Sodium (mg)" type="number" value={form.sodiumMg} onChange={(value) => setField('sodiumMg', value)} />
-          <FoodInput label="Image URL lokal/online" value={form.imageUrl} onChange={(value) => setField('imageUrl', value)} />
+          <div className="grid gap-3 md:col-span-2">
+            <div className="grid gap-2">
+              <span className="text-sm font-black text-on-surface">Image URL lokal/online</span>
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
+                <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" value={form.imageUrl} onChange={(event) => {
+                  setField('imageUrl', event.target.value)
+                  setImageDraft(event.target.value)
+                }} placeholder="https://... atau /assets/..." />
+                <label className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-primary/25 bg-mint-surface px-4 font-black text-primary transition hover:bg-primary hover:text-white">
+                  <UploadCloud size={18} />
+                  Upload gambar
+                  <input className="sr-only" type="file" accept="image/*" onChange={handleImageUpload} />
+                </label>
+              </div>
+            </div>
+            <div className="grid gap-4 rounded-[1.5rem] border border-outline-variant/30 bg-surface-container-low p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-mint-surface">
+                {previewImage ? (
+                  <img className="h-full w-full object-cover transition duration-300" src={previewImage} alt="Preview makanan" style={{ objectPosition: `${crop.x}% ${crop.y}%`, transform: `scale(${crop.zoom})` }} />
+                ) : (
+                  <div className="grid h-full place-items-center text-primary">
+                    <ImagePlus size={42} />
+                  </div>
+                )}
+                <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/5" />
+              </div>
+              <div className="grid content-center gap-3">
+                <p className="text-sm font-black text-on-surface">Crop preview</p>
+                <CropSlider label="Posisi X" min="0" max="100" step="1" value={crop.x} onChange={(value) => setCropField('x', value)} />
+                <CropSlider label="Posisi Y" min="0" max="100" step="1" value={crop.y} onChange={(value) => setCropField('y', value)} />
+                <CropSlider label="Zoom" min="1" max="2" step="0.05" value={crop.zoom} onChange={(value) => setCropField('zoom', value)} />
+              </div>
+            </div>
+          </div>
           <FoodInput label="Tags, pisahkan koma" value={form.tags} onChange={(value) => setField('tags', value)} />
         </div>
 
@@ -344,6 +431,18 @@ function FoodFormModal({ food, onClose, onSaved }) {
         </div>
       </motion.form>
     </div>
+  )
+}
+
+function CropSlider({ label, value, onChange, min, max, step }) {
+  return (
+    <label className="grid gap-2">
+      <span className="flex items-center justify-between text-xs font-black uppercase tracking-wide text-on-surface-variant">
+        {label}
+        <b className="text-primary">{value}</b>
+      </span>
+      <input className="accent-primary" type="range" min={min} max={max} step={step} value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
   )
 }
 

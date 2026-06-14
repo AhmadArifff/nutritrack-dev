@@ -106,20 +106,55 @@ function ProLogFoodPage() {
   const hasLogs = logs.length > 0
   const selectedPlan = useMemo(() => planRows.find((plan) => plan.id === requestedPlanId), [planRows, requestedPlanId])
   const sortedPlanRows = useMemo(() => [...planRows].sort((a, b) => cleanTime(a.planned_time || a.plannedTime || '99:99').localeCompare(cleanTime(b.planned_time || b.plannedTime || '99:99'))), [planRows])
+  const selectedPlanGroupRows = useMemo(() => {
+    if (!selectedPlan) return []
+    const groupMealType = selectedPlan.meal_type || selectedPlan.mealType
+    const groupTime = cleanTime(selectedPlan.planned_time || selectedPlan.plannedTime)
+    return sortedPlanRows.filter((plan) => (
+      (plan.meal_type || plan.mealType) === groupMealType &&
+      cleanTime(plan.planned_time || plan.plannedTime) === groupTime
+    ))
+  }, [selectedPlan, sortedPlanRows])
 
   useEffect(() => {
     if (!selectedPlan) return
+    const groupFoodIds = selectedPlanGroupRows
+      .map((plan) => plan.food_id || plan.foodId)
+      .filter(Boolean)
     setPlanForm({
-      foodId: selectedPlan.food_id || selectedPlan.foodId || '',
-      foodIds: selectedPlan.food_id || selectedPlan.foodId ? [selectedPlan.food_id || selectedPlan.foodId] : [],
+      foodId: groupFoodIds[0] || selectedPlan.food_id || selectedPlan.foodId || '',
+      foodIds: groupFoodIds.length ? groupFoodIds : selectedPlan.food_id || selectedPlan.foodId ? [selectedPlan.food_id || selectedPlan.foodId] : [],
       mealType: selectedPlan.meal_type || selectedPlan.mealType || requestedMealType,
       plannedTime: cleanTime(selectedPlan.planned_time || selectedPlan.plannedTime),
       servingAmount: Number(selectedPlan.serving_amount || selectedPlan.servingAmount || 1),
       notes: selectedPlan.notes || ''
     })
-  }, [requestedMealType, selectedPlan])
+  }, [requestedMealType, selectedPlan, selectedPlanGroupRows])
 
-  const selectedFoods = useMemo(() => foods.filter((food) => (planForm.foodIds || []).includes(food.id)), [foods, planForm.foodIds])
+  const selectedFoodIds = planForm.foodIds || []
+  const foodOptions = useMemo(() => {
+    const existingIds = new Set(foods.map((food) => food.id))
+    const missingSelectedRows = selectedPlanGroupRows
+      .filter((row) => {
+        const rowFoodId = row.food_id || row.foodId || row.id
+        return selectedFoodIds.includes(rowFoodId) && !existingIds.has(rowFoodId)
+      })
+      .map((row) => ({
+        id: row.food_id || row.foodId || row.id,
+        foodId: row.food_id || row.foodId || null,
+        isMealPlanFallback: true,
+        name: row.food_name || row.foodName || 'Meal planner item',
+        category: row.meal_type || row.mealType || '',
+        sub_category: row.serving_unit || row.servingUnit || '',
+        serving_unit: row.serving_unit || row.servingUnit || 'porsi',
+        calories: Number(row.target_calories || row.targetCalories || row.calories || 0),
+        protein_g: Number(row.target_protein_g || row.targetProteinG || 0),
+        carbohydrates_g: Number(row.target_carbs_g || row.targetCarbsG || 0),
+        fat_g: Number(row.target_fat_g || row.targetFatG || 0)
+      }))
+    return [...missingSelectedRows, ...foods]
+  }, [foods, selectedFoodIds, selectedPlanGroupRows])
+  const selectedFoods = useMemo(() => foodOptions.filter((food) => selectedFoodIds.includes(food.id)), [foodOptions, selectedFoodIds])
 
   const groupedLogs = useMemo(() => mealOrder.map((mealType) => {
     const backendItems = logs.filter((log) => (log.meal_type || log.mealType) === mealType)
@@ -146,7 +181,8 @@ function ProLogFoodPage() {
   const remaining = Math.max(dailyGoal - consumed, 0)
 
   const macroTotals = useMemo(() => {
-    const currentRows = sortedPlanRows.filter((item) => item.id !== requestedPlanId)
+    const editingIds = new Set(selectedPlanGroupRows.map((item) => item.id))
+    const currentRows = sortedPlanRows.filter((item) => !editingIds.has(item.id))
     const stored = currentRows.reduce((total, item) => ({
       protein: total.protein + Number(item.target_protein_g || item.targetProteinG || 0),
       carbs: total.carbs + Number(item.target_carbs_g || item.targetCarbsG || 0),
@@ -167,7 +203,7 @@ function ProLogFoodPage() {
       calories: stored.calories + pending.calories,
       source: selectedFoods.length ? `${selectedFoods.length} makanan dipilih` : 'Meal planner harian'
     }
-  }, [planForm.servingAmount, requestedPlanId, selectedFoods, sortedPlanRows])
+  }, [planForm.servingAmount, selectedFoods, selectedPlanGroupRows, sortedPlanRows])
 
   async function saveMealPlan(event) {
     event.preventDefault()
@@ -184,10 +220,14 @@ function ProLogFoodPage() {
       notes: planForm.notes
     }
     try {
-      await Promise.all(selectedFoods.map((food, index) => {
+      const nextFoodIds = new Set(selectedFoods.map((food) => food.id))
+      const existingRowsByFoodId = new Map(selectedPlanGroupRows.map((row) => [row.food_id || row.foodId || row.id, row]))
+      const removedRows = selectedPlanGroupRows.filter((row) => !nextFoodIds.has(row.food_id || row.foodId || row.id))
+      await Promise.all([
+        ...selectedFoods.map((food) => {
         const body = {
           ...payload,
-          foodId: food.id,
+          foodId: food.isMealPlanFallback ? food.foodId : food.id,
           foodName: food.name,
           servingUnit: food.serving_unit || 'porsi',
           targetCalories: Number(food.calories || 0) * servingAmount,
@@ -195,12 +235,14 @@ function ProLogFoodPage() {
           targetCarbsG: Number(food.carbohydrates_g || 0) * servingAmount,
           targetFatG: Number(food.fat_g || 0) * servingAmount
         }
-        const shouldUpdate = requestedPlanId && index === 0
-        return apiRequest(shouldUpdate ? `/api/meal-plans/${requestedPlanId}` : '/api/meal-plans', {
-          method: shouldUpdate ? 'PUT' : 'POST',
+        const existingRow = existingRowsByFoodId.get(food.id)
+        return apiRequest(existingRow ? `/api/meal-plans/${existingRow.id}` : '/api/meal-plans', {
+          method: existingRow ? 'PUT' : 'POST',
           body
         })
-      }))
+        }),
+        ...removedRows.map((row) => apiRequest(`/api/meal-plans/${row.id}`, { method: 'DELETE' }))
+      ])
       setPlanRows(await apiRequest(`/api/meal-plans?from=${requestedPlanDate}&to=${requestedPlanDate}`))
       setPlanForm((current) => ({ ...current, foodId: '', foodIds: requestedPlanId ? current.foodIds : [] }))
       setPlanToast(requestedPlanId ? 'Meal plan berhasil diperbarui.' : 'Meal plan berhasil ditambahkan.')
@@ -229,7 +271,7 @@ function ProLogFoodPage() {
       </section>
 
       <MealPlanBuilderPanel
-        foods={foods}
+        foods={foodOptions}
         form={planForm}
         macroTotals={macroTotals}
         planDate={requestedPlanDate}
@@ -291,13 +333,16 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
     ['late_snack', 'Late Snack']
   ]
   const dateLabel = new Date(`${planDate}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+  const selectedIds = form.foodIds || []
   const filteredFoods = useMemo(() => {
     const keyword = foodSearch.trim().toLowerCase()
-    return foods
+    const selectedRows = foods.filter((food) => selectedIds.includes(food.id))
+    const searchRows = foods
       .filter((food) => !keyword || `${food.name} ${food.category || ''} ${food.sub_category || ''}`.toLowerCase().includes(keyword))
+      .filter((food) => !selectedIds.includes(food.id))
       .slice(0, 8)
-  }, [foodSearch, foods])
-  const selectedIds = form.foodIds || []
+    return [...selectedRows, ...searchRows]
+  }, [foodSearch, foods, selectedIds])
 
   function toggleFood(foodId) {
     onChange((current) => {
@@ -338,6 +383,7 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
           <div className="grid gap-3 sm:col-span-2">
             <div>
               <h3 className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Search Food Database</h3>
+              <p className="mt-1 text-sm font-bold text-primary">{selectedIds.length} menu dipilih untuk jam ini</p>
               <label className="relative mt-3 block">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
                 <input className="h-[52px] w-full rounded-2xl border-none bg-surface-container py-3 pl-12 pr-4 font-body-md text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary" placeholder="Search for chicken, rice, coffee..." value={foodSearch} onChange={(event) => setFoodSearch(event.target.value)} aria-label="Search food database" />

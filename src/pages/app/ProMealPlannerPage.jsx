@@ -318,6 +318,8 @@ function ProMealPlannerPage() {
           </motion.div>
         </section>
 
+        <MacroDistributionCard totals={rangeMacros} label={`${formatPlannerDateRange(selectedFrom)} - ${formatPlannerDateRange(selectedTo)}`} />
+
         <section className="min-w-0 max-w-full overflow-hidden rounded-[2rem] border border-outline-variant/35 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl">
           <div className="flex flex-col gap-4 border-b border-outline-variant/25 p-5 md:flex-row md:items-center md:justify-between">
             <div>
@@ -342,8 +344,6 @@ function ProMealPlannerPage() {
             </div>
           </div>
         </section>
-
-        <MacroDistributionCard totals={rangeMacros} label={`${formatPlannerDateRange(selectedFrom)} - ${formatPlannerDateRange(selectedTo)}`} />
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
           <div className="grid gap-6 lg:grid-cols-2">
@@ -402,6 +402,9 @@ function ProMealPlannerPage() {
 function DayColumn({ day, index, selected, onSelect }) {
   const isEmpty = day.meals.length === 0
   const planDate = day.iso || addDaysIso(index)
+  const [expanded, setExpanded] = useState(false)
+  const mealsToShow = expanded ? day.meals : day.meals.slice(0, 5)
+  const hiddenMeals = Math.max(0, day.meals.length - mealsToShow.length)
   return (
     <motion.article className={`w-[280px] shrink-0 snap-start overflow-hidden rounded-[1.75rem] border bg-white shadow-sm transition-all ${selected ? 'border-primary/40 ring-2 ring-primary/15' : 'border-outline-variant/35'}`} initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.035, duration: 0.32 }} whileHover={{ y: -4 }}>
       <button className={`flex w-full items-center justify-between gap-4 border-b px-5 py-5 text-left ${day.active || selected ? 'bg-mint-surface' : 'bg-surface-container-low'}`} onClick={onSelect} type="button">
@@ -428,7 +431,8 @@ function DayColumn({ day, index, selected, onSelect }) {
             </div>
           </div>
         ) : (
-          day.meals.map((rawMeal, mealIndex) => {
+          <>
+          {mealsToShow.map((rawMeal, mealIndex) => {
             const meal = mealToView(rawMeal, mealIndex)
             return (
             <div className="group rounded-2xl border border-outline-variant/35 bg-white p-4 transition hover:border-primary/25 hover:shadow-lg" key={meal.id || meal.title}>
@@ -445,7 +449,13 @@ function DayColumn({ day, index, selected, onSelect }) {
               </div>
             </div>
             )
-          })
+          })}
+          {day.meals.length > 5 ? (
+            <button className="rounded-2xl border border-dashed border-primary/30 bg-mint-surface/70 px-4 py-3 text-sm font-black text-primary transition hover:bg-primary hover:text-white" onClick={() => setExpanded((value) => !value)} type="button">
+              {expanded ? 'Hide extra meals' : `Show ${hiddenMeals} more meals`}
+            </button>
+          ) : null}
+          </>
         )}
       </div>
     </motion.article>
@@ -619,8 +629,8 @@ function ShoppingList({ shoppingItems }) {
           <div className="rounded-2xl bg-surface-container-low p-4" key={group}>
             <p className="mb-3 font-black text-on-surface">{group}</p>
             <div className="grid gap-2">
-              {items.map((item) => (
-                <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 shadow-sm" key={item.name}>
+              {items.map((item, itemIndex) => (
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 shadow-sm" key={`${group}-${item.name}-${itemIndex}`}>
                   <span className="min-w-0">
                     <strong className="block truncate text-sm text-on-surface">{item.name}</strong>
                     <small className="block truncate text-xs text-on-surface-variant">{item.meals}</small>
