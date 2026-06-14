@@ -1,6 +1,7 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, OrbitControls, PerspectiveCamera } from '@react-three/drei'
-import { AnimatePresence, motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { pageMotion } from './lib/pageMotion'
 import dashboardHtml from '../reference-html/dashboard.html?raw'
 import mealPlannerHtml from '../reference-html/mealplanner.html?raw'
 import progressHtml from '../reference-html/progress.html?raw'
@@ -17,12 +18,9 @@ import forgotPasswordHtml from '../reference-html/forgot-password.html?raw'
 import resetPasswordHtml from '../reference-html/reset-password.html?raw'
 import verifyEmailHtml from '../reference-html/verify-email.html?raw'
 import onboardingHtml from '../reference-html/onboarding.html?raw'
-import splashHtml from '../reference-html/splash.html?raw'
 import profileDetailHtml from '../reference-html/profiledetail.html?raw'
 import settingsHtml from '../reference-html/pengaturan.html?raw'
 import notificationsHtml from '../reference-html/notifikasi.html?raw'
-import privacyHtml from '../reference-html/privacy.html?raw'
-import termsHtml from '../reference-html/terms.html?raw'
 import {
   Activity,
   Apple,
@@ -76,10 +74,13 @@ import {
   Wrench,
   X
 } from 'lucide-react'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { apiRequest, clearStoredAuth, getStoredAuth, login, register } from './api'
+
+const LegalPage = lazy(() => import('./pages/LegalPage.jsx'))
+const SplashPage = lazy(() => import('./pages/SplashPage.jsx'))
 
 const navItems = [
   { to: '/app/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -154,10 +155,7 @@ const referencePages = {
   '/reset-password': resetPasswordHtml,
   '/verify-email': verifyEmailHtml,
   '/onboarding': onboardingHtml,
-  '/splash': splashHtml,
   '/help': helpCenterHtml,
-  '/privacy': privacyHtml,
-  '/terms': termsHtml,
   '/app/dashboard': dashboardHtml,
   '/app/log-food': logFoodHtml,
   '/app/meal-planner': mealPlannerHtml,
@@ -169,13 +167,6 @@ const referencePages = {
   '/app/profile': profileDetailHtml,
   '/app/settings': settingsHtml,
   '/app/notifications': notificationsHtml
-}
-
-const pageMotion = {
-  initial: { opacity: 0 },
-  animate: { opacity: 1 },
-  exit: { opacity: 0 },
-  transition: { duration: 0.32, ease: [0.22, 1, 0.36, 1] }
 }
 
 function formatNumber(value, fallback = '0') {
@@ -4882,136 +4873,11 @@ function StaticPage({ type }) {
   )
 }
 
-const legalPageCopy = {
-  privacy: {
-    title: 'Kebijakan Privasi',
-    label: 'Privacy',
-    intro: 'Halaman frontend statis ini merangkum bagaimana NutriTrack akan menangani data pengguna saat backend Supabase diintegrasikan.',
-    navLabel: 'Terms',
-    navTo: '/terms',
-    documentTitle: 'Kebijakan Privasi - NutriTrack',
-    sections: [
-      ['Data yang Dikumpulkan', 'Profil, target berat badan, log makanan, jadwal makan, notifikasi, dan preferensi makanan.'],
-      ['Penggunaan Data', 'Data digunakan untuk menghitung BMR, TDEE, target kalori, analisis nutrisi, dan rekomendasi meal plan.'],
-      ['Kontrol Pengguna', 'Pengguna dapat memperbarui profil, preferensi, notifikasi, dan menghapus data melalui pengaturan aplikasi.']
-    ]
-  },
-  terms: {
-    title: 'Syarat & Ketentuan',
-    label: 'Terms',
-    intro: 'NutriTrack adalah alat bantu manajemen nutrisi. Konten di aplikasi bukan pengganti konsultasi medis profesional.',
-    navLabel: 'Privacy',
-    navTo: '/privacy',
-    documentTitle: 'Syarat & Ketentuan - NutriTrack',
-    sections: [
-      ['Penggunaan Aplikasi', 'Pengguna bertanggung jawab memastikan data yang dimasukkan akurat agar perhitungan target lebih relevan.'],
-      ['Batasan Layanan', 'Rekomendasi makanan dan target kalori bersifat informatif dan perlu disesuaikan dengan kondisi pribadi.'],
-      ['Akun dan Keamanan', 'Jaga kredensial akun dan segera ubah kata sandi bila ada aktivitas yang mencurigakan.']
-    ]
-  }
-}
-
-function LegalPage({ type }) {
-  const page = legalPageCopy[type]
-  useEffect(() => {
-    document.title = page.documentTitle
-    document.body.className = ''
-  }, [page.documentTitle])
-
+function RouteFallback() {
   return (
-    <AnimatedPage className="min-h-screen bg-slate-50 font-['Plus_Jakarta_Sans'] text-slate-900">
-      <LegalHeader active={type} />
-      <main className="mx-auto max-w-5xl px-6 py-14">
-        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.36 }}>
-          <p className="mb-4 text-xs font-extrabold uppercase tracking-[0.28em] text-green-700">{page.label}</p>
-          <h1 className="mb-6 text-4xl font-black">{page.title}</h1>
-          <p className="mb-10 max-w-3xl text-slate-600">{page.intro}</p>
-        </motion.div>
-        <div className="grid gap-5">
-          {page.sections.map(([title, body], index) => (
-            <LegalSectionCard title={title} body={body} index={index} key={title} />
-          ))}
-        </div>
-      </main>
-    </AnimatedPage>
-  )
-}
-
-function LegalHeader({ active }) {
-  const secondaryLink = active === 'terms'
-    ? { label: 'Privacy', to: '/privacy' }
-    : { label: 'Terms', to: '/terms' }
-
-  return (
-    <header className="sticky top-0 z-40 h-16 border-b bg-white">
-      <div className="mx-auto flex h-full max-w-5xl items-center justify-between px-6">
-        <Link className="text-2xl font-black text-green-700 transition hover:text-green-800" to="/">NutriTrack</Link>
-        <nav className="flex gap-5 text-sm font-bold" aria-label="Navigasi legal">
-          <Link className="transition hover:text-green-700 focus:outline-none focus:ring-4 focus:ring-green-200" to="/login">Login</Link>
-          <Link className="transition hover:text-green-700 focus:outline-none focus:ring-4 focus:ring-green-200" to={secondaryLink.to}>{secondaryLink.label}</Link>
-        </nav>
-      </div>
-    </header>
-  )
-}
-
-function LegalSectionCard({ title, body, index }) {
-  return (
-    <motion.section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition hover:-translate-y-1 hover:shadow-md" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06, duration: 0.34 }} whileHover={{ y: -4 }}>
-      <h2 className="mb-3 text-xl font-black">{title}</h2>
-      <p className="text-slate-600">{body}</p>
-    </motion.section>
-  )
-}
-
-function SplashPage() {
-  useEffect(() => {
-    document.title = 'Splash - NutriTrack'
-    document.body.className = ''
-  }, [])
-
-  return (
-    <motion.main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-100 px-6 font-['Plus_Jakarta_Sans']" {...pageMotion}>
-      <motion.section className="text-center" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}>
-        <SplashLogo />
-        <motion.h1 className="mb-3 text-4xl font-black text-[#007a35]" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>NutriTrack</motion.h1>
-        <motion.p className="mb-8 text-slate-600" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Halo, Alex. Mari mulai perjalanan sehatmu.</motion.p>
-        <SplashCta />
-      </motion.section>
-    </motion.main>
-  )
-}
-
-function SplashLogo() {
-  const reduceMotion = useReducedMotion()
-
-  return (
-    <motion.div className="mx-auto mb-8 flex h-28 w-28 items-center justify-center rounded-[32px] bg-[#007a35] text-white shadow-2xl shadow-green-900/20" animate={reduceMotion ? { scale: 1, rotate: 0 } : { scale: [1, 1.08, 1], rotate: [0, 8, 0] }} transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}>
-      <MaterialSymbol className="text-7xl" aria-hidden="true">nutrition</MaterialSymbol>
-    </motion.div>
-  )
-}
-
-function SplashCta() {
-  const [highlighted, setHighlighted] = useState(false)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setHighlighted(true), 1200)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  const rememberSplash = () => {
-    try {
-      localStorage.setItem('nutritrack.hasSeenSplash', 'true')
-    } catch {
-      // Splash should continue even when storage is unavailable.
-    }
-  }
-
-  return (
-    <Link className={`inline-flex rounded-2xl bg-[#007a35] px-7 py-3 font-extrabold text-white transition hover:scale-105 active:scale-95 ${highlighted ? 'ring-4 ring-green-200' : ''}`} to="/onboarding" onClick={rememberSplash}>
-      Lanjut Onboarding
-    </Link>
+    <div className="grid min-h-screen place-items-center bg-slate-50 font-['Plus_Jakarta_Sans'] text-slate-900">
+      <div className="h-10 w-10 animate-pulse rounded-xl bg-[#007a35]" aria-label="Memuat halaman" />
+    </div>
   )
 }
 
@@ -5058,7 +4924,9 @@ export default function App() {
   if (location.pathname === '/privacy') {
     return (
       <AnimatePresence mode="wait">
-        <LegalPage key={location.pathname} type="privacy" />
+        <Suspense fallback={<RouteFallback />}>
+          <LegalPage key={location.pathname} type="privacy" />
+        </Suspense>
       </AnimatePresence>
     )
   }
@@ -5066,7 +4934,9 @@ export default function App() {
   if (location.pathname === '/terms') {
     return (
       <AnimatePresence mode="wait">
-        <LegalPage key={location.pathname} type="terms" />
+        <Suspense fallback={<RouteFallback />}>
+          <LegalPage key={location.pathname} type="terms" />
+        </Suspense>
       </AnimatePresence>
     )
   }
@@ -5074,7 +4944,9 @@ export default function App() {
   if (location.pathname === '/splash') {
     return (
       <AnimatePresence mode="wait">
-        <SplashPage key={location.pathname} />
+        <Suspense fallback={<RouteFallback />}>
+          <SplashPage key={location.pathname} />
+        </Suspense>
       </AnimatePresence>
     )
   }
