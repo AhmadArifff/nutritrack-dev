@@ -85,6 +85,10 @@ const LegalPage = lazy(() => import('./pages/LegalPage.jsx'))
 const SplashPage = lazy(() => import('./pages/SplashPage.jsx'))
 const ProDashboardRoute = lazy(() => import('./pages/app/ProDashboardPage.jsx'))
 const ProCommunityRoute = lazy(() => import('./pages/app/ProCommunityPage.jsx'))
+const ProMealPlannerRoute = lazy(() => import('./pages/app/ProMealPlannerPage.jsx'))
+const ProFoodsRoute = lazy(() => import('./pages/app/ProFoodsPage.jsx'))
+const ProFoodDetailRoute = lazy(() => import('./pages/app/ProFoodDetailPage.jsx'))
+const ForgotPasswordRoute = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'))
 
 const htmlRouteMap = {
   'index.html': '/',
@@ -724,60 +728,6 @@ function validateLoginValues({ email, password }) {
   return errors
 }
 
-function ForgotPasswordPage() {
-  const navigate = useNavigate()
-  const [email, setEmail] = useState('alex@nutritrack.app')
-  const [error, setError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-
-  function submit(event) {
-    event.preventDefault()
-    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError('Masukkan email yang valid.')
-      return
-    }
-
-    setError('')
-    setSubmitting(true)
-    window.setTimeout(() => navigate('/reset-password'), 320)
-  }
-
-  return (
-    <AuthRecoveryShell title="Forgot Password">
-      <AuthRecoveryLogo />
-      <h1 className="mb-3 text-3xl font-black">Lupa Kata Sandi</h1>
-      <p className="mb-7 text-slate-600">Masukkan email untuk menerima link reset. Demo frontend akan membuka halaman reset langsung.</p>
-
-      <form className="space-y-5" id="forgotForm" onSubmit={submit} noValidate>
-        <label className="block">
-          <span className="text-sm font-bold text-slate-700">Email</span>
-          <input
-            className={`mt-2 h-12 w-full rounded-2xl border bg-slate-50 px-4 outline-none transition focus:border-[#007a35] focus:ring-4 focus:ring-green-900/10 ${error ? 'border-red-400' : 'border-slate-200'}`}
-            required
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            inputMode="email"
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? 'forgot-email-error' : undefined}
-          />
-          {error && <p className="mt-2 text-sm font-bold text-red-600" id="forgot-email-error">{error}</p>}
-        </label>
-
-        <button className="h-12 w-full rounded-2xl bg-[#007a35] font-extrabold text-white shadow-lg shadow-green-900/10 transition hover:brightness-110 active:scale-[0.98] disabled:cursor-wait disabled:opacity-75" type="submit" disabled={submitting}>
-          {submitting ? 'Mengirim...' : 'Kirim Link Reset'}
-        </button>
-      </form>
-
-      <Link className="mt-5 inline-flex items-center gap-2 rounded-lg font-bold text-[#007a35] transition hover:underline focus:outline-none focus:ring-4 focus:ring-green-900/10" to="/login">
-        <ArrowLeft size={17} />
-        Kembali ke login
-      </Link>
-    </AuthRecoveryShell>
-  )
-}
-
 function ResetPasswordPage() {
   const navigate = useNavigate()
   const [password, setPassword] = useState('nutritrack')
@@ -1189,11 +1139,11 @@ function calculateOnboardingProgress(profile) {
 const proRoutes = {
   '/app/dashboard': ProDashboardRoute,
   '/app/log-food': ProLogFoodPage,
-  '/app/meal-planner': ProMealPlannerPage,
+  '/app/meal-planner': ProMealPlannerRoute,
   '/app/progress': ProProgressPage,
   '/app/nutrition': ProNutritionPage,
-  '/app/foods': ProFoodsPage,
-  '/app/foods/gado-gado': ProFoodDetailPage,
+  '/app/foods': ProFoodsRoute,
+  '/app/foods/gado-gado': ProFoodDetailRoute,
   '/app/community': ProCommunityRoute,
   '/app/profile': ProProfilePage,
   '/app/settings': ProSettingsPage,
@@ -2138,214 +2088,6 @@ function NutritionMacroCard({ item, index }) {
       </div>
       <p className="mt-5 text-label-sm leading-6 text-on-surface-variant">{Math.round(progress)}% target harian tercapai.</p>
     </NutritionGlassCard>
-  )
-}
-
-function ProFoodsPage() {
-  useBackendData(() => apiRequest('/api/foods?limit=9'), [], [])
-  const [activeCategory, setActiveCategory] = useState('Semua')
-  const foodCatalog = [
-    {
-      id: 'gado-gado',
-      name: 'Gado-Gado',
-      category: 'Lunch',
-      calories: 320,
-      protein: 12,
-      carbs: 38,
-      fat: 14,
-      image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=900&q=80'
-    },
-    {
-      id: 'nasi-ayam-panggang',
-      name: 'Nasi Ayam Panggang',
-      category: 'Lunch',
-      calories: 520,
-      protein: 34,
-      carbs: 58,
-      fat: 16,
-      image: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'
-    },
-    {
-      id: 'oatmeal-pisang',
-      name: 'Oatmeal Pisang',
-      category: 'Sarapan',
-      calories: 290,
-      protein: 10,
-      carbs: 51,
-      fat: 5,
-      image: 'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=900&q=80'
-    },
-    {
-      id: 'greek-yogurt-parfait',
-      name: 'Greek Yogurt Parfait',
-      category: 'Snack',
-      calories: 240,
-      protein: 18,
-      carbs: 26,
-      fat: 6,
-      image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=900&q=80'
-    },
-    {
-      id: 'tempe-bakar',
-      name: 'Tempe Bakar',
-      category: 'Lunch',
-      calories: 180,
-      protein: 16,
-      carbs: 12,
-      fat: 8,
-      image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80'
-    }
-  ]
-  const visibleFoods = foodCatalog.filter((food) => activeCategory === 'Semua' || food.category === activeCategory)
-  const categories = ['Semua', 'Sarapan', 'Lunch', 'Snack']
-
-  return (
-    <ProPage title="Food Database" subtitle="Browse, filter, favorite, and add foods" showHeader={false} wide>
-      <div className="space-y-8 pb-10">
-        <NutritionGlassCard className="p-6 md:p-8">
-          <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="mb-2 text-label-md font-medium text-on-surface-variant">Database makanan Indonesia</p>
-              <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface">Browse Foods</h1>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {categories.map((category) => (
-                <button
-                  className={`rounded-xl px-4 py-2 font-bold transition-all duration-200 active:scale-[0.98] ${activeCategory === category ? 'bg-primary text-white shadow-md shadow-primary/15' : 'bg-surface-container text-on-surface hover:bg-surface-variant'}`}
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  type="button"
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            {visibleFoods.map((food, index) => (
-              <motion.div key={food.id || food.name} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05, duration: 0.3 }}>
-                <Link className="block overflow-hidden rounded-2xl border border-outline-variant/40 bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg active:scale-[0.98]" to="/app/foods/gado-gado">
-                  <img className="h-40 w-full object-cover" src={food.image} alt={food.name} loading="lazy" />
-                  <div className="p-5">
-                    <div className="flex justify-between gap-4">
-                      <b className="min-w-0 text-on-surface">{food.name}</b>
-                      <span className="whitespace-nowrap font-bold text-primary">{formatNumber(food.calories)} kcal</span>
-                    </div>
-                    <p className="mt-2 text-sm text-on-surface-variant">Protein {formatNumber(food.protein)}g / Carbs {formatNumber(food.carbs)}g / Fat {formatNumber(food.fat)}g</p>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-
-            <motion.button className="flex min-h-[260px] flex-col items-center justify-center rounded-2xl border border-dashed border-primary/40 bg-mint-surface p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-primary/10 active:scale-[0.98]" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.3 }} type="button">
-              <Plus className="mb-4 h-12 w-12 text-primary" />
-              <b>Tambah Makanan Custom</b>
-              <p className="mt-2 text-sm leading-6 text-on-surface-variant">Frontend placeholder untuk upload foto dan data nutrisi.</p>
-            </motion.button>
-          </div>
-        </NutritionGlassCard>
-
-        <section className="grid gap-6 lg:grid-cols-3">
-          {[
-            ['Favorite Foods', 'Quick-add dari makanan yang sering disimpan.'],
-            ['Filters', 'Kategori, kalori, protein, dan tag diet.'],
-            ['Skeleton Loading', 'Slot infinite scroll untuk integrasi data nanti.']
-          ].map(([title, body], index) => (
-            <NutritionGlassCard className="p-7" key={title}>
-              <h3 className="mb-3 font-headline-md text-headline-md font-bold text-on-surface">{title}</h3>
-              <p className="leading-7 text-on-surface-variant">{body}</p>
-              <motion.div className="mt-5 h-2 rounded-full bg-surface-container" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} style={{ transformOrigin: 'left center' }} transition={{ delay: index * 0.08, duration: 0.6 }} />
-            </NutritionGlassCard>
-          ))}
-        </section>
-      </div>
-    </ProPage>
-  )
-}
-
-function ProFoodDetailPage() {
-  const [portion, setPortion] = useState(1)
-  const [isFavorite, setIsFavorite] = useState(false)
-  const food = {
-    id: 'gado-gado',
-    name: 'Gado-Gado',
-    category: 'Indonesian',
-    tags: ['Vegetarian friendly'],
-    description: 'Sayuran rebus, tahu, tempe, telur, dan saus kacang. Cocok untuk makan siang kaya serat.',
-    servingLabel: 'plate',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=1200&q=80',
-    calories: 320,
-    protein: 12,
-    carbs: 38,
-    fat: 14,
-    nutrients: [
-      ['Fiber', '8g'],
-      ['Calcium', '12%'],
-      ['Iron', '15%'],
-      ['Sodium', '420mg']
-    ]
-  }
-  const summary = [
-    ['Kalori', Math.round(food.calories * portion), 'text-primary'],
-    ['Protein', `${formatNumber(food.protein * portion)}g`, ''],
-    ['Carbs', `${formatNumber(food.carbs * portion)}g`, ''],
-    ['Fat', `${formatNumber(food.fat * portion)}g`, '']
-  ]
-
-  return (
-    <ProPage title="Food Detail" subtitle="Nutrition facts and portion calculator" showHeader={false}>
-      <div className="mx-auto w-full max-w-[1200px] space-y-8 pb-10">
-        <Link className="inline-flex items-center gap-2 font-bold text-primary transition-colors hover:text-on-primary-container" to="/app/foods">
-          <ArrowLeft size={20} />
-          Kembali ke database
-        </Link>
-
-        <section className="grid items-start gap-8 lg:grid-cols-2">
-          <motion.img className="h-[320px] w-full rounded-[2rem] object-cover shadow-xl transition-transform duration-500 hover:scale-[1.01] md:h-[460px]" src={food.image} alt={food.name} loading="lazy" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.45 }} />
-
-          <NutritionGlassCard>
-            <p className="mb-2 font-bold text-primary">{food.category} / {food.tags.join(', ')}</p>
-            <h1 className="mb-4 font-headline-lg text-headline-lg font-bold text-on-surface">{food.name}</h1>
-            <p className="mb-8 leading-7 text-on-surface-variant">{food.description}</p>
-
-            <div className="mb-8 grid grid-cols-2 gap-4">
-              {summary.map(([label, value, tone], index) => (
-                <motion.div className="rounded-2xl bg-surface-container p-4" key={label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                  <span className="text-sm text-on-surface-variant">{label}</span>
-                  <b className={`block text-2xl font-bold ${tone}`}>{value}</b>
-                </motion.div>
-              ))}
-            </div>
-
-            <label className="mb-6 block">
-              <span className="font-bold">Porsi: {formatNumber(portion)} {food.servingLabel}</span>
-              <input className="mt-3 w-full accent-primary" type="range" min="1" max="3" step="0.5" value={portion} onChange={(event) => setPortion(Number(event.target.value))} />
-            </label>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link className="flex h-12 items-center justify-center rounded-2xl bg-primary font-extrabold text-white transition-all hover:brightness-110 active:scale-[0.98]" to={`/app/log-food?foodId=${food.id}&portion=${portion}`}>
-                Tambah ke Log
-              </Link>
-              <button className={`h-12 rounded-2xl font-extrabold transition-all active:scale-[0.98] ${isFavorite ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container text-on-surface hover:bg-surface-variant'}`} type="button" aria-pressed={isFavorite} onClick={() => setIsFavorite((value) => !value)}>
-                {isFavorite ? 'Tersimpan' : 'Simpan Favorit'}
-              </button>
-            </div>
-          </NutritionGlassCard>
-        </section>
-
-        <NutritionGlassCard>
-          <h2 className="mb-6 font-headline-md text-headline-md font-bold text-on-surface">Tabel Nutrisi Lengkap</h2>
-          <div className="grid gap-4 text-sm md:grid-cols-4">
-            {food.nutrients.map(([name, value]) => (
-              <div className="rounded-xl border border-outline-variant/40 bg-white p-4 font-bold text-on-surface" key={name}>
-                <span className="text-on-surface-variant">{name}</span> {value}
-              </div>
-            ))}
-          </div>
-        </NutritionGlassCard>
-      </div>
-    </ProPage>
   )
 }
 
@@ -3538,7 +3280,9 @@ export default function App() {
   if (location.pathname === '/forgot-password') {
     return (
       <AnimatePresence mode="wait">
-        <ForgotPasswordPage key={location.pathname} />
+        <Suspense fallback={<RouteFallback />}>
+          <ForgotPasswordRoute key={location.pathname} />
+        </Suspense>
       </AnimatePresence>
     )
   }
