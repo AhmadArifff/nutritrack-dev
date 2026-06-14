@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Apple, ChevronRight, FileText, Lock, Shield, Sparkles } from 'lucide-react'
+import { Apple, FileText, Lock, Shield, Sparkles } from 'lucide-react'
 import { pageMotion } from '../lib/pageMotion'
 import { legalDocuments } from '../models/LegalDocument'
 
@@ -37,6 +37,9 @@ function LegalPage({ type }) {
             <LegalSectionCard title={title} body={body} index={index} key={title} />
           ))}
         </div>
+        <motion.div className="rounded-[2rem] border border-outline-variant/35 bg-white/80 p-5 text-sm leading-6 text-on-surface-variant shadow-sm" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18, duration: 0.34 }}>
+          Berlaku untuk pengalaman NutriTrack PWA. Untuk bantuan terkait akun, keamanan, atau data kesehatan, masuk ke Help Center setelah login.
+        </motion.div>
       </main>
     </motion.div>
   )
@@ -82,10 +85,6 @@ const LegalSectionCard = memo(function LegalSectionCard({ title, body, index }) 
         </span>
       </div>
       <p className="leading-7 text-on-surface-variant">{body}</p>
-      <Link className="mt-5 inline-flex items-center gap-2 font-black text-primary" to="/">
-        Back to NutriTrack
-        <ChevronRight size={16} />
-      </Link>
     </motion.section>
   )
 })

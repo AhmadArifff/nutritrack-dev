@@ -100,6 +100,7 @@ const OnboardingRoute = lazy(() => import('./pages/OnboardingPage.jsx'))
 const RegisterRoute = lazy(() => import('./pages/auth/RegisterPage.jsx'))
 const ForgotPasswordRoute = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'))
 const ResetPasswordRoute = lazy(() => import('./pages/auth/ResetPasswordPage.jsx'))
+const VerifyEmailRoute = lazy(() => import('./pages/auth/VerifyEmailPage.jsx'))
 
 const htmlRouteMap = {
   'index.html': '/',
@@ -3313,6 +3314,16 @@ export default function App() {
       <AnimatePresence mode="wait">
         <Suspense fallback={<RouteFallback />}>
           <ResetPasswordRoute key={location.pathname} />
+        </Suspense>
+      </AnimatePresence>
+    )
+  }
+
+  if (location.pathname === '/verify-email') {
+    return (
+      <AnimatePresence mode="wait">
+        <Suspense fallback={<RouteFallback />}>
+          <VerifyEmailRoute key={location.pathname} />
         </Suspense>
       </AnimatePresence>
     )
