@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Filter, Heart, Plus, Search, SlidersHorizontal, Sparkles } from 'lucide-react'
+import { Edit3, Filter, Heart, Plus, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react'
 import { apiRequest } from '../../api'
 import { useBackendData } from '../../hooks/useBackendData'
 
@@ -85,6 +85,14 @@ function mapBackendFood(food, index) {
     protein: food.protein_g,
     carbs: food.carbohydrates_g,
     fat: food.fat_g,
+    fiber: food.fiber_g,
+    sugar: food.sugar_g,
+    sodium: food.sodium_mg,
+    servingUnit: food.serving_unit,
+    servingSizeG: food.serving_size_g,
+    subCategory: food.sub_category,
+    categoryValue: food.category,
+    isCustom: Boolean(food.is_custom),
     image: food.image_url || foodImages[index % foodImages.length]
   }
 }
@@ -98,7 +106,9 @@ function formatNumber(value, fallback = '0') {
 function ProFoodsPage() {
   const [activeCategory, setActiveCategory] = useState('Semua')
   const [search, setSearch] = useState('')
-  const { data: foods } = useBackendData(
+  const [foodModal, setFoodModal] = useState({ open: false, food: null })
+  const [foodToast, setFoodToast] = useState('')
+  const { data: foods, setData: setFoods } = useBackendData(
     () => apiRequest('/api/foods?limit=60').then((rows) => rows.map(mapBackendFood)),
     foodCatalog,
     []
@@ -158,10 +168,10 @@ function ProFoodsPage() {
 
           <div className="grid gap-5 p-6 md:grid-cols-2 md:p-8 xl:grid-cols-3">
             {visibleFoods.map((food, index) => (
-              <FoodCard food={food} index={index} key={food.id} />
+              <FoodCard food={food} index={index} key={food.id} onEdit={() => setFoodModal({ open: true, food })} />
             ))}
 
-            <motion.button className="flex min-h-[286px] flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-primary/40 bg-mint-surface p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-primary/10 active:scale-[0.98]" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.32 }} type="button">
+            <motion.button className="flex min-h-[286px] flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-primary/40 bg-mint-surface p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:bg-primary/10 active:scale-[0.98]" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.28, duration: 0.32 }} type="button" onClick={() => setFoodModal({ open: true, food: null })}>
               <Plus className="mb-4 h-12 w-12 text-primary" />
               <b className="text-on-surface">Tambah Makanan Custom</b>
               <p className="mt-2 max-w-[230px] text-sm leading-6 text-on-surface-variant">Upload foto, isi serving, dan simpan nutrisi untuk dipakai ulang.</p>
@@ -186,15 +196,29 @@ function ProFoodsPage() {
           ))}
         </section>
       </div>
+      {foodToast && <div className="fixed bottom-6 left-1/2 z-[70] -translate-x-1/2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-white shadow-xl">{foodToast}</div>}
+      {foodModal.open && (
+        <FoodFormModal
+          food={foodModal.food}
+          onClose={() => setFoodModal({ open: false, food: null })}
+          onSaved={async (message) => {
+            setFoodModal({ open: false, food: null })
+            setFoodToast(message)
+            window.setTimeout(() => setFoodToast(''), 2200)
+            const rows = await apiRequest('/api/foods?limit=60')
+            setFoods(rows.map(mapBackendFood))
+          }}
+        />
+      )}
     </AppPageShell>
   )
 }
 
-function FoodCard({ food, index }) {
+function FoodCard({ food, index, onEdit }) {
   const to = `/app/foods/${food.id}`
 
   return (
-    <motion.article initial={{ opacity: 0, y: 18, rotateX: -5 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: index * 0.05, duration: 0.34 }} whileHover={{ y: -5, rotateX: 2 }}>
+    <motion.article className="relative" initial={{ opacity: 0, y: 18, rotateX: -5 }} animate={{ opacity: 1, y: 0, rotateX: 0 }} transition={{ delay: index * 0.05, duration: 0.34 }} whileHover={{ y: -5, rotateX: 2 }}>
       <Link className="group block h-full overflow-hidden rounded-[1.75rem] border border-outline-variant/35 bg-white shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-xl active:scale-[0.98]" to={to}>
         <div className="relative h-44 overflow-hidden bg-mint-surface">
           <img className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" src={food.image} alt={food.name} loading="lazy" />
@@ -215,7 +239,120 @@ function FoodCard({ food, index }) {
           </div>
         </div>
       </Link>
+      <button className="absolute right-4 top-16 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-on-surface-variant shadow-sm backdrop-blur transition hover:bg-primary hover:text-white" onClick={(event) => {
+        event.preventDefault()
+        onEdit()
+      }} type="button" aria-label={`Edit ${food.name}`}>
+        <Edit3 size={16} />
+      </button>
     </motion.article>
+  )
+}
+
+function FoodFormModal({ food, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    name: food?.name || '',
+    category: food?.categoryValue || 'lunch',
+    subCategory: food?.subCategory || '',
+    servingUnit: food?.servingUnit || 'porsi',
+    servingSizeG: food?.servingSizeG || 100,
+    calories: food?.calories || 0,
+    proteinG: food?.protein || 0,
+    carbohydratesG: food?.carbs || 0,
+    fatG: food?.fat || 0,
+    fiberG: food?.fiber || 0,
+    sugarG: food?.sugar || 0,
+    sodiumMg: food?.sodium || 0,
+    imageUrl: food?.image?.startsWith('/assets/') ? '' : food?.image || '',
+    tags: ''
+  })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
+
+  async function submit(event) {
+    event.preventDefault()
+    setSaving(true)
+    setError('')
+    try {
+      const payload = {
+        ...form,
+        servingSizeG: Number(form.servingSizeG),
+        calories: Number(form.calories),
+        proteinG: Number(form.proteinG),
+        carbohydratesG: Number(form.carbohydratesG),
+        fatG: Number(form.fatG),
+        fiberG: Number(form.fiberG),
+        sugarG: Number(form.sugarG),
+        sodiumMg: Number(form.sodiumMg),
+        imageUrl: form.imageUrl || null,
+        tags: form.tags ? form.tags.split(',').map((tag) => tag.trim()).filter(Boolean) : []
+      }
+      await apiRequest(food?.id ? `/api/foods/${food.id}` : '/api/foods', {
+        method: food?.id ? 'PUT' : 'POST',
+        body: payload
+      })
+      await onSaved(food?.id ? 'Makanan berhasil diperbarui.' : 'Makanan custom berhasil ditambahkan.')
+    } catch (err) {
+      setError(food?.id && !food?.isCustom ? 'Makanan publik tidak bisa diedit. Buat makanan custom baru untuk versi pribadi.' : err.message || 'Gagal menyimpan makanan.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <motion.form className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-[2rem] border border-outline-variant/30 bg-white p-5 shadow-2xl md:p-7" initial={{ opacity: 0, y: 24, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} onSubmit={submit}>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Foods CRUD</p>
+            <h2 className="mt-2 font-headline-md text-2xl font-black text-on-surface">{food ? 'Edit makanan' : 'Tambah makanan custom'}</h2>
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">Data ini akan dipakai oleh Log Food, Meal Planner, dan detail kandungan makro.</p>
+          </div>
+          <button className="grid h-10 w-10 place-items-center rounded-full bg-surface-container text-on-surface-variant transition hover:bg-error-red/10 hover:text-error-red" onClick={onClose} type="button" aria-label="Close modal">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <FoodInput label="Nama makanan" value={form.name} onChange={(value) => setField('name', value)} required />
+          <label className="grid gap-2">
+            <span className="text-sm font-black text-on-surface">Kategori</span>
+            <select className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none focus:border-primary focus:ring-4 focus:ring-primary/10" value={form.category} onChange={(event) => setField('category', event.target.value)}>
+              {['breakfast', 'lunch', 'dinner', 'snack', 'drink', 'supplement', 'other'].map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </label>
+          <FoodInput label="Sub kategori" value={form.subCategory} onChange={(value) => setField('subCategory', value)} />
+          <FoodInput label="Serving unit" value={form.servingUnit} onChange={(value) => setField('servingUnit', value)} />
+          <FoodInput label="Serving size (g)" type="number" value={form.servingSizeG} onChange={(value) => setField('servingSizeG', value)} />
+          <FoodInput label="Kalori" type="number" value={form.calories} onChange={(value) => setField('calories', value)} required />
+          <FoodInput label="Protein (g)" type="number" value={form.proteinG} onChange={(value) => setField('proteinG', value)} />
+          <FoodInput label="Carbs (g)" type="number" value={form.carbohydratesG} onChange={(value) => setField('carbohydratesG', value)} />
+          <FoodInput label="Fat (g)" type="number" value={form.fatG} onChange={(value) => setField('fatG', value)} />
+          <FoodInput label="Fiber (g)" type="number" value={form.fiberG} onChange={(value) => setField('fiberG', value)} />
+          <FoodInput label="Sugar (g)" type="number" value={form.sugarG} onChange={(value) => setField('sugarG', value)} />
+          <FoodInput label="Sodium (mg)" type="number" value={form.sodiumMg} onChange={(value) => setField('sodiumMg', value)} />
+          <FoodInput label="Image URL lokal/online" value={form.imageUrl} onChange={(value) => setField('imageUrl', value)} />
+          <FoodInput label="Tags, pisahkan koma" value={form.tags} onChange={(value) => setField('tags', value)} />
+        </div>
+
+        {error && <p className="mt-5 rounded-2xl bg-error-red/10 px-4 py-3 text-sm font-bold text-error-red">{error}</p>}
+        <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button className="h-12 rounded-2xl bg-surface-container px-6 font-black text-on-surface transition hover:bg-surface-container-high" onClick={onClose} type="button">Batal</button>
+          <button className="h-12 rounded-2xl bg-primary px-7 font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 disabled:opacity-60" disabled={saving} type="submit">{saving ? 'Menyimpan...' : 'Simpan makanan'}</button>
+        </div>
+      </motion.form>
+    </div>
+  )
+}
+
+function FoodInput({ label, value, onChange, type = 'text', required = false }) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-black text-on-surface">{label}</span>
+      <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" required={required} type={type} value={value} onChange={(event) => onChange(event.target.value)} />
+    </label>
   )
 }
 

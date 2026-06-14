@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Apple, CalendarDays, Check, ChevronRight, Clock, Flame, Plus, ShoppingBasket, Sparkles, Utensils } from 'lucide-react'
+import { Apple, CalendarDays, Check, ChevronLeft, ChevronRight, Clock, Edit3, Flame, Plus, ShoppingBasket, Sparkles, Utensils } from 'lucide-react'
 import { apiRequest } from '../../api'
 import { useBackendData } from '../../hooks/useBackendData'
 
@@ -90,6 +90,15 @@ const insightItems = [
 ]
 
 const calendarWeekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const calendarWeekdaysId = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+const defaultMealTimes = {
+  breakfast: '07:30',
+  morning_snack: '10:00',
+  lunch: '12:30',
+  afternoon_snack: '15:30',
+  dinner: '19:00',
+  late_snack: '21:00'
+}
 
 function formatNumber(value, fallback = '0') {
   const number = Number(value)
@@ -107,6 +116,16 @@ function formatMealDate(dateValue) {
   const date = new Date(dateValue)
   if (Number.isNaN(date.getTime())) return 'Today'
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+function formatPlannerDateRange(dateValue) {
+  const date = new Date(`${dateValue}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return 'Tanggal'
+  return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+function cleanTime(value) {
+  return String(value || '').slice(0, 5)
 }
 
 function mealLabel(mealType = '') {
@@ -141,12 +160,20 @@ function mapMealPlans(rows) {
     if (!day) return
     const calories = Number(plan.target_calories || plan.targetCalories || 0)
     const protein = Number(plan.target_protein_g || plan.targetProteinG || 0)
+    const mealType = plan.meal_type || plan.mealType
     day.calories += calories
-    day.meals.push([
-      mealLabel(plan.meal_type || plan.mealType),
-      plan.food_name || plan.foodName,
-      `${formatNumber(calories)} kcal${protein ? ` - ${formatNumber(protein)}g Protein` : ''}`
-    ])
+    day.meals.push({
+      id: plan.id,
+      mealType,
+      type: mealLabel(mealType),
+      time: cleanTime(plan.planned_time || plan.plannedTime || defaultMealTimes[mealType]),
+      title: plan.food_name || plan.foodName,
+      meta: `${formatNumber(calories)} kcal${protein ? ` - ${formatNumber(protein)}g Protein` : ''}`,
+      calories,
+      protein,
+      carbs: Number(plan.target_carbs_g || plan.targetCarbsG || 0),
+      fat: Number(plan.target_fat_g || plan.targetFatG || 0)
+    })
   })
 
   return days
@@ -165,6 +192,24 @@ function mapShoppingList(rows) {
     return acc
   }, {})
   return Object.entries(grouped)
+}
+
+function mealToView(meal, index = 0) {
+  if (Array.isArray(meal)) {
+    return {
+      id: `${meal[0]}-${meal[1]}`,
+      mealType: index === 0 ? 'breakfast' : index === 1 ? 'lunch' : 'dinner',
+      type: meal[0],
+      time: index === 0 ? '07:30' : index === 1 ? '12:30' : '19:00',
+      title: meal[1],
+      meta: meal[2],
+      calories: Number(String(meal[2]).match(/\d+/)?.[0] || 0),
+      protein: 0,
+      carbs: 0,
+      fat: 0
+    }
+  }
+  return meal
 }
 
 function ProMealPlannerPage() {
@@ -278,7 +323,7 @@ function ProMealPlannerPage() {
                   </button>
                 ))}
               </div>
-              <Link className="inline-flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition hover:-translate-y-0.5 active:scale-[0.98]" to="/app/log-food">
+              <Link className="inline-flex h-11 items-center gap-2 rounded-2xl bg-primary px-5 font-black text-white shadow-[0_14px_30px_rgba(0,110,47,0.18)] transition hover:-translate-y-0.5 active:scale-[0.98]" to={`/app/log-food?planDate=${selected.iso || addDaysIso(0)}&mealType=breakfast`}>
                 <Plus size={18} />
                 Add Meals
               </Link>
@@ -352,6 +397,7 @@ function ProMealPlannerPage() {
 
 function DayColumn({ day, index, selected, onSelect }) {
   const isEmpty = day.meals.length === 0
+  const planDate = day.iso || addDaysIso(index)
   return (
     <motion.article className={`w-[280px] shrink-0 snap-start overflow-hidden rounded-[1.75rem] border bg-white shadow-sm transition-all ${selected ? 'border-primary/40 ring-2 ring-primary/15' : 'border-outline-variant/35'}`} initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.035, duration: 0.32 }} whileHover={{ y: -4 }}>
       <button className={`flex w-full items-center justify-between gap-4 border-b px-5 py-5 text-left ${day.active || selected ? 'bg-mint-surface' : 'bg-surface-container-low'}`} onClick={onSelect} type="button">
@@ -372,24 +418,30 @@ function DayColumn({ day, index, selected, onSelect }) {
                 <Utensils size={32} />
               </div>
               <p className="mt-5 font-bold text-on-surface-variant">Plan is currently empty</p>
-              <button className="mt-5 rounded-2xl bg-primary-container/30 px-6 py-3 font-black text-on-primary-container transition hover:bg-primary hover:text-white active:scale-[0.98]" type="button">
+              <Link className="mt-5 inline-flex rounded-2xl bg-primary-container/30 px-6 py-3 font-black text-on-primary-container transition hover:bg-primary hover:text-white active:scale-[0.98]" to={`/app/log-food?planDate=${planDate}&mealType=breakfast`}>
                 Add Meals
-              </button>
+              </Link>
             </div>
           </div>
         ) : (
-          day.meals.map(([type, title, meta]) => (
-            <div className="group rounded-2xl border border-outline-variant/35 bg-white p-4 transition hover:border-primary/25 hover:shadow-lg" key={title}>
+          day.meals.map((rawMeal, mealIndex) => {
+            const meal = mealToView(rawMeal, mealIndex)
+            return (
+            <div className="group rounded-2xl border border-outline-variant/35 bg-white p-4 transition hover:border-primary/25 hover:shadow-lg" key={meal.id || meal.title}>
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-on-surface-variant">{type}</p>
-                  <h5 className="mt-3 font-headline-md text-base font-black text-on-surface">{title}</h5>
-                  <p className="mt-2 text-sm text-on-surface-variant">{meta}</p>
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-on-surface-variant">{meal.time} - {meal.type}</p>
+                  <h5 className="mt-3 font-headline-md text-base font-black text-on-surface">{meal.title}</h5>
+                  <p className="mt-2 text-sm text-on-surface-variant">{meal.meta}</p>
+                  <p className="mt-2 text-xs font-bold text-primary">P {formatNumber(meal.protein)}g - C {formatNumber(meal.carbs)}g - F {formatNumber(meal.fat)}g</p>
                 </div>
-                <Check className="h-5 w-5 shrink-0 text-primary opacity-0 transition group-hover:opacity-100" />
+                <Link className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface-container text-on-surface-variant opacity-0 transition group-hover:opacity-100 hover:bg-primary hover:text-white" to={`/app/log-food?planDate=${planDate}&mealType=${meal.mealType}&planId=${meal.id || ''}`} aria-label={`Edit ${meal.title}`}>
+                  <Edit3 size={16} />
+                </Link>
               </div>
             </div>
-          ))
+            )
+          })
         )}
       </div>
     </motion.article>
@@ -398,12 +450,34 @@ function DayColumn({ day, index, selected, onSelect }) {
 
 function DateRangePlanner({ options, rangeStart, rangeEnd, rangePickMode, onPick }) {
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [monthOffset, setMonthOffset] = useState(0)
   const start = Math.min(rangeStart, rangeEnd)
   const end = Math.max(rangeStart, rangeEnd)
-  const dateLabel = (date) => {
-    const [month, day] = String(date || '').split(' ')
-    return `${day || ''} ${month || ''} 2023`.trim()
+  const startIso = options[start]?.iso || addDaysIso(start)
+  const endIso = options[end]?.iso || addDaysIso(end)
+  const monthDate = new Date(`${addDaysIso(0)}T00:00:00`)
+  monthDate.setMonth(monthDate.getMonth() + monthOffset)
+  const monthTitle = monthDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
+  const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1)
+  const leadingBlanks = (monthStart.getDay() + 6) % 7
+  const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate()
+  const cells = [
+    ...Array.from({ length: leadingBlanks }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, day) => new Date(monthDate.getFullYear(), monthDate.getMonth(), day + 1))
+  ]
+  const optionIndexByIso = options.reduce((acc, day, index) => {
+    const iso = day.iso || addDaysIso(index)
+    acc[iso] = index
+    return acc
+  }, {})
+
+  function toIso(date) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
+
   return (
     <div className="border-b border-outline-variant/20 bg-gradient-to-r from-mint-surface via-white to-secondary-fixed/35 px-5 py-5">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
@@ -415,38 +489,61 @@ function DateRangePlanner({ options, rangeStart, rangeEnd, rangePickMode, onPick
           <p className="mt-1 text-sm font-bold text-on-surface-variant">Klik field tanggal, lalu pilih tanggal pertama sebagai parameter mulai dan tanggal kedua sebagai parameter selesai.</p>
         </div>
         <div className="relative">
-          <button className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-left text-sm font-bold text-white shadow-lg shadow-slate-950/10 outline-none transition hover:border-energy-orange/70 hover:bg-slate-800 active:scale-[0.99]" onClick={() => setCalendarOpen((value) => !value)} type="button">
-            <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Tanggal Meal Plan</span>
-            <span className="mt-1 block">{dateLabel(options[start]?.date)} - {dateLabel(options[end]?.date)}</span>
+          <button className="w-full rounded-2xl border border-slate-700 bg-slate-800 px-4 py-3 text-left text-sm font-bold text-white shadow-lg shadow-slate-950/10 outline-none transition hover:border-orange-500/70 hover:bg-slate-800 active:scale-[0.99]" onClick={() => setCalendarOpen((value) => !value)} type="button" data-tour="meal-planner-date-filter">
+            <span className="block text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Tanggal Meal Plan</span>
+            <span className="mt-1 block">{formatPlannerDateRange(startIso)} - {formatPlannerDateRange(endIso)}</span>
           </button>
 
           {calendarOpen ? (
-            <motion.div className="absolute right-0 top-[calc(100%+10px)] z-30 w-full overflow-hidden rounded-[1.5rem] border border-outline-variant/25 bg-white p-4 shadow-2xl shadow-slate-900/15 lg:w-[520px]" initial={{ opacity: 0, y: -8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.18 }}>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-on-surface">Pilih rentang tanggal</p>
-                  <p className="text-xs font-bold text-on-surface-variant">{rangePickMode === 'start' ? 'Pilih tanggal mulai' : 'Pilih tanggal selesai'}</p>
-                </div>
-                <span className="rounded-full bg-mint-surface px-3 py-1 text-xs font-black text-primary">{options.length} hari</span>
+            <motion.div className="absolute left-0 top-full z-40 mt-2 w-[min(340px,calc(100vw-2rem))] overflow-hidden rounded-3xl border border-slate-700 bg-slate-900 p-4 shadow-2xl shadow-black/40" initial={{ opacity: 0, y: -8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.18 }}>
+              <div className="flex items-center justify-between gap-3">
+                <button className="grid h-9 w-9 place-items-center rounded-full bg-slate-800 text-white transition hover:bg-slate-700" onClick={() => setMonthOffset((value) => value - 1)} type="button" aria-label="Bulan sebelumnya">
+                  <ChevronLeft size={18} />
+                </button>
+                <strong className="text-sm capitalize text-white">{monthTitle}</strong>
+                <button className="grid h-9 w-9 place-items-center rounded-full bg-slate-800 text-white transition hover:bg-slate-700" onClick={() => setMonthOffset((value) => value + 1)} type="button" aria-label="Bulan berikutnya">
+                  <ChevronRight size={18} />
+                </button>
               </div>
-              <div className="grid grid-cols-7 gap-1.5">
-                {calendarWeekdays.map((weekday) => (
-                  <div className="py-1 text-center text-[10px] font-black uppercase tracking-[0.12em] text-on-surface-variant" key={weekday}>{weekday}</div>
+              <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase text-slate-500">
+                {calendarWeekdaysId.map((weekday) => (
+                  <span key={weekday}>{weekday}</span>
                 ))}
-                {options.map((day, index) => {
-                  const inRange = index >= start && index <= end
-                  const isStart = index === rangeStart
-                  const isEnd = index === rangeEnd
+              </div>
+              <div className="mt-2 grid grid-cols-7 gap-1">
+                {cells.map((date, cellIndex) => {
+                  if (!date) return <span key={`blank-${cellIndex}`} />
+                  const iso = toIso(date)
+                  const optionIndex = optionIndexByIso[iso]
+                  const enabled = optionIndex !== undefined
+                  const inRange = enabled && optionIndex >= start && optionIndex <= end
+                  const isStart = enabled && optionIndex === rangeStart
+                  const isEnd = enabled && optionIndex === rangeEnd
                   const isEdge = isStart || isEnd
-                  const dateNumber = day.date.replace(/^[A-Za-z]+\s/, '')
+                  const className = enabled
+                    ? isEdge
+                      ? 'bg-orange-500 text-white'
+                      : inRange
+                        ? 'bg-orange-500/15 text-orange-200'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    : 'cursor-not-allowed bg-slate-950/60 text-slate-700'
                   return (
-                    <button className={`relative min-h-14 rounded-xl border px-2 py-2 text-center transition hover:-translate-y-0.5 active:scale-95 ${isEdge ? 'border-primary bg-primary text-white shadow-md shadow-primary/20' : inRange ? 'border-primary/20 bg-mint-surface text-primary' : 'border-outline-variant/35 bg-white text-on-surface-variant hover:border-primary/25'}`} key={`${day.day}-${day.date}`} onClick={() => onPick(index)} type="button">
-                      <span className="block font-metrics-mono text-base font-black">{dateNumber}</span>
-                      <span className="mt-1 block text-[9px] font-black uppercase tracking-wide">{day.day.slice(0, 3)}</span>
-                      {isEdge ? <span className="mt-1 inline-block rounded-full bg-white/20 px-1.5 py-0.5 text-[9px] font-black">{isStart ? 'Start' : 'End'}</span> : null}
+                    <button className={`h-10 rounded-xl text-sm font-black transition ${className}`} key={iso} onClick={() => enabled && onPick(optionIndex)} disabled={!enabled} type="button">
+                      {date.getDate()}
                     </button>
                   )
                 })}
+              </div>
+              <div className="mt-4 flex gap-2">
+                <button className="flex-1 rounded-xl bg-slate-800 px-3 py-2 text-xs font-black text-slate-200 transition hover:bg-slate-700" onClick={() => {
+                  const todayIndex = optionIndexByIso[addDaysIso(0)]
+                  if (todayIndex !== undefined) onPick(todayIndex)
+                }} type="button">
+                  Hari Ini
+                </button>
+                <button className="flex-1 rounded-xl bg-orange-500 px-3 py-2 text-xs font-black text-white transition hover:bg-orange-400" onClick={() => setCalendarOpen(false)} type="button">
+                  Terapkan
+                </button>
               </div>
             </motion.div>
           ) : null}
@@ -532,6 +629,7 @@ function InsightsPanel() {
 }
 
 function SelectedDayCard({ day }) {
+  const planDate = day.iso || addDaysIso(0)
   return (
     <motion.aside className="rounded-[2rem] border border-outline-variant/40 bg-white/85 p-6 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.18, duration: 0.34 }} whileHover={{ y: -4 }}>
       <div className="mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-mint-surface text-primary">
@@ -540,14 +638,30 @@ function SelectedDayCard({ day }) {
       <p className="text-label-md font-bold text-primary">Selected day</p>
       <h3 className="mt-1 font-headline-md text-2xl font-black text-on-surface">{day.day}</h3>
       <p className="mt-2 text-on-surface-variant">{day.date} - {formatNumber(day.calories)} kcal planned</p>
+      <Link className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-primary font-black text-white shadow-lg shadow-primary/15 transition hover:-translate-y-0.5 active:scale-[0.98]" to={`/app/log-food?planDate=${planDate}&mealType=breakfast`}>
+        <Plus size={17} />
+        Add meal for this day
+      </Link>
       <div className="mt-6 grid gap-3">
-        {(day.meals.length ? day.meals : [['Open slot', 'Add breakfast, lunch, and dinner', '0 kcal']]).map(([type, title, meta]) => (
-          <div className="rounded-2xl bg-surface-container-low p-4" key={title}>
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">{type}</p>
-            <p className="mt-2 font-black text-on-surface">{title}</p>
-            <p className="mt-1 text-sm text-on-surface-variant">{meta}</p>
-          </div>
-        ))}
+        {(day.meals.length ? day.meals : [['Open slot', 'Add breakfast, lunch, and dinner', '0 kcal']]).map((rawMeal, index) => {
+          const meal = mealToView(rawMeal, index)
+          return (
+            <div className="rounded-2xl bg-surface-container-low p-4" key={meal.id || meal.title}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">{meal.time} - {meal.type}</p>
+                  <p className="mt-2 font-black text-on-surface">{meal.title}</p>
+                  <p className="mt-1 text-sm text-on-surface-variant">{meal.meta}</p>
+                </div>
+                {meal.id ? (
+                  <Link className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-white text-on-surface-variant transition hover:bg-primary hover:text-white" to={`/app/log-food?planDate=${planDate}&mealType=${meal.mealType}&planId=${meal.id}`} aria-label={`Edit ${meal.title}`}>
+                    <Edit3 size={15} />
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </motion.aside>
   )
