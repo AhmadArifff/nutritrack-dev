@@ -97,7 +97,9 @@ const ProNutritionRoute = lazy(() => import('./pages/app/ProNutritionPage.jsx'))
 const ProProfileRoute = lazy(() => import('./pages/app/ProProfilePage.jsx'))
 const ProSettingsRoute = lazy(() => import('./pages/app/ProSettingsPage.jsx'))
 const OnboardingRoute = lazy(() => import('./pages/OnboardingPage.jsx'))
+const RegisterRoute = lazy(() => import('./pages/auth/RegisterPage.jsx'))
 const ForgotPasswordRoute = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'))
+const ResetPasswordRoute = lazy(() => import('./pages/auth/ResetPasswordPage.jsx'))
 
 const htmlRouteMap = {
   'index.html': '/',
@@ -3296,10 +3298,22 @@ export default function App() {
     )
   }
 
+  if (location.pathname === '/register') {
+    return (
+      <AnimatePresence mode="wait">
+        <Suspense fallback={<RouteFallback />}>
+          <RegisterRoute key={location.pathname} />
+        </Suspense>
+      </AnimatePresence>
+    )
+  }
+
   if (location.pathname === '/reset-password') {
     return (
       <AnimatePresence mode="wait">
-        <ResetPasswordPage key={location.pathname} />
+        <Suspense fallback={<RouteFallback />}>
+          <ResetPasswordRoute key={location.pathname} />
+        </Suspense>
       </AnimatePresence>
     )
   }
