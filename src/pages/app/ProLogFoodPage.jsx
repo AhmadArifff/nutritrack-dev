@@ -108,12 +108,7 @@ function ProLogFoodPage() {
   const sortedPlanRows = useMemo(() => [...planRows].sort((a, b) => cleanTime(a.planned_time || a.plannedTime || '99:99').localeCompare(cleanTime(b.planned_time || b.plannedTime || '99:99'))), [planRows])
   const selectedPlanGroupRows = useMemo(() => {
     if (!selectedPlan) return []
-    const groupMealType = selectedPlan.meal_type || selectedPlan.mealType
-    const groupTime = cleanTime(selectedPlan.planned_time || selectedPlan.plannedTime)
-    return sortedPlanRows.filter((plan) => (
-      (plan.meal_type || plan.mealType) === groupMealType &&
-      cleanTime(plan.planned_time || plan.plannedTime) === groupTime
-    ))
+    return sortedPlanRows
   }, [selectedPlan, sortedPlanRows])
 
   useEffect(() => {
@@ -225,21 +220,24 @@ function ProLogFoodPage() {
       const removedRows = selectedPlanGroupRows.filter((row) => !nextFoodIds.has(row.food_id || row.foodId || row.id))
       await Promise.all([
         ...selectedFoods.map((food) => {
-        const body = {
-          ...payload,
-          foodId: food.isMealPlanFallback ? food.foodId : food.id,
-          foodName: food.name,
-          servingUnit: food.serving_unit || 'porsi',
-          targetCalories: Number(food.calories || 0) * servingAmount,
-          targetProteinG: Number(food.protein_g || 0) * servingAmount,
-          targetCarbsG: Number(food.carbohydrates_g || 0) * servingAmount,
-          targetFatG: Number(food.fat_g || 0) * servingAmount
-        }
-        const existingRow = existingRowsByFoodId.get(food.id)
-        return apiRequest(existingRow ? `/api/meal-plans/${existingRow.id}` : '/api/meal-plans', {
-          method: existingRow ? 'PUT' : 'POST',
-          body
-        })
+          const existingRow = existingRowsByFoodId.get(food.id)
+          const keepExistingSchedule = existingRow && existingRow.id !== requestedPlanId
+          const body = {
+            ...payload,
+            mealType: keepExistingSchedule ? existingRow.meal_type || existingRow.mealType || payload.mealType : payload.mealType,
+            plannedTime: keepExistingSchedule ? cleanTime(existingRow.planned_time || existingRow.plannedTime || payload.plannedTime) : payload.plannedTime,
+            foodId: food.isMealPlanFallback ? food.foodId : food.id,
+            foodName: food.name,
+            servingUnit: food.serving_unit || 'porsi',
+            targetCalories: Number(food.calories || 0) * servingAmount,
+            targetProteinG: Number(food.protein_g || 0) * servingAmount,
+            targetCarbsG: Number(food.carbohydrates_g || 0) * servingAmount,
+            targetFatG: Number(food.fat_g || 0) * servingAmount
+          }
+          return apiRequest(existingRow ? `/api/meal-plans/${existingRow.id}` : '/api/meal-plans', {
+            method: existingRow ? 'PUT' : 'POST',
+            body
+          })
         }),
         ...removedRows.map((row) => apiRequest(`/api/meal-plans/${row.id}`, { method: 'DELETE' }))
       ])
@@ -383,7 +381,7 @@ function MealPlanBuilderPanel({ foods, form, macroTotals, planDate, planRows, sa
           <div className="grid gap-3 sm:col-span-2">
             <div>
               <h3 className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Search Food Database</h3>
-              <p className="mt-1 text-sm font-bold text-primary">{selectedIds.length} menu dipilih untuk jam ini</p>
+              <p className="mt-1 text-sm font-bold text-primary">{selectedIds.length} menu dipilih untuk tanggal ini</p>
               <label className="relative mt-3 block">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
                 <input className="h-[52px] w-full rounded-2xl border-none bg-surface-container py-3 pl-12 pr-4 font-body-md text-on-surface outline-none ring-1 ring-outline-variant/30 transition-all focus:ring-2 focus:ring-primary" placeholder="Search for chicken, rice, coffee..." value={foodSearch} onChange={(event) => setFoodSearch(event.target.value)} aria-label="Search food database" />

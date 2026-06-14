@@ -297,6 +297,7 @@ function FoodFormModal({ food, onClose, onSaved }) {
     tags: ''
   })
   const [imageDraft, setImageDraft] = useState(food?.image || '')
+  const [imageFileName, setImageFileName] = useState('')
   const [crop, setCrop] = useState({ x: 50, y: 50, zoom: 1 })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -316,9 +317,17 @@ function FoodFormModal({ food, onClose, onSaved }) {
       const result = String(reader.result || '')
       setImageDraft(result)
       setField('imageUrl', result)
+      setImageFileName(file.name)
       setCrop({ x: 50, y: 50, zoom: 1 })
     }
     reader.readAsDataURL(file)
+  }
+
+  function resetImage() {
+    setImageDraft('')
+    setImageFileName('')
+    setField('imageUrl', '')
+    setCrop({ x: 50, y: 50, zoom: 1 })
   }
 
   async function submit(event) {
@@ -327,8 +336,12 @@ function FoodFormModal({ food, onClose, onSaved }) {
     setError('')
     try {
       let imageUrl = form.imageUrl || null
-      if (imageDraft?.startsWith('data:image/')) {
-        imageUrl = await createCroppedImage(imageDraft, crop)
+      if (imageDraft && !imageDraft.startsWith('/assets/')) {
+        try {
+          imageUrl = await createCroppedImage(imageDraft, crop)
+        } catch {
+          imageUrl = form.imageUrl || imageDraft || null
+        }
       }
       const payload = {
         ...form,
@@ -390,16 +403,26 @@ function FoodFormModal({ food, onClose, onSaved }) {
           <div className="grid gap-3 md:col-span-2">
             <div className="grid gap-2">
               <span className="text-sm font-black text-on-surface">Image URL lokal/online</span>
+              <p className="text-xs font-bold leading-5 text-on-surface-variant">Tempel URL gambar atau upload file lokal. Preview di bawah mengikuti crop, posisi, dan zoom sebelum disimpan.</p>
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
                 <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" value={form.imageUrl} onChange={(event) => {
                   setField('imageUrl', event.target.value)
                   setImageDraft(event.target.value)
+                  setImageFileName('')
                 }} placeholder="https://... atau /assets/..." />
                 <label className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border border-primary/25 bg-mint-surface px-4 font-black text-primary transition hover:bg-primary hover:text-white">
                   <UploadCloud size={18} />
                   Upload gambar
                   <input className="sr-only" type="file" accept="image/*" onChange={handleImageUpload} />
                 </label>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-container-low px-4 py-3 text-xs font-bold text-on-surface-variant">
+                <span>{imageFileName ? `File lokal: ${imageFileName}` : imageDraft ? 'Sumber gambar siap dipreview' : 'Belum ada gambar dipilih'}</span>
+                {imageDraft || form.imageUrl ? (
+                  <button className="rounded-full bg-white px-3 py-1 font-black text-error-red transition hover:bg-error-red/10" onClick={resetImage} type="button">
+                    Hapus gambar
+                  </button>
+                ) : null}
               </div>
             </div>
             <div className="grid gap-4 rounded-[1.5rem] border border-outline-variant/30 bg-surface-container-low p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
