@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Edit3, Filter, Heart, ImagePlus, Plus, Search, SlidersHorizontal, Sparkles, UploadCloud, X } from 'lucide-react'
@@ -295,6 +295,8 @@ function FoodFormModal({ food, onClose, onSaved }) {
     sodiumMg: food?.sodium || 0,
     imageUrl: food?.image?.startsWith('/assets/') ? '' : food?.image || '',
     tags: ''
+    ,
+    ingredients: food?.ingredients || []
   })
   const [imageDraft, setImageDraft] = useState(food?.image || '')
   const [imageFileName, setImageFileName] = useState('')
@@ -304,6 +306,40 @@ function FoodFormModal({ food, onClose, onSaved }) {
 
   const setField = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const previewImage = imageDraft || form.imageUrl || foodImages[0]
+
+  useEffect(() => {
+    // When editing an existing food, fetch full details to get `ingredients`.
+    let mounted = true
+    async function fetchDetails() {
+      if (!food?.id) return
+      try {
+        const details = await apiRequest(`/api/foods/${food.id}`)
+        if (!mounted) return
+        setForm((current) => ({ ...current, ingredients: details?.ingredients || current.ingredients || [] }))
+        setImageDraft(details?.image_url || details?.image || imageDraft)
+      } catch (err) {
+        // ignore - keep existing minimal data
+      }
+    }
+    fetchDetails()
+    return () => { mounted = false }
+  }, [food?.id])
+
+  function addIngredient() {
+    setForm((current) => ({ ...current, ingredients: [...(current.ingredients || []), { name: '', quantity: 1, unit: current.servingUnit || 'porsi', category: current.subCategory || current.category || 'Groceries' }] }))
+  }
+
+  function updateIngredient(index, key, value) {
+    setForm((current) => {
+      const copy = (current.ingredients || []).slice()
+      copy[index] = { ...copy[index], [key]: value }
+      return { ...current, ingredients: copy }
+    })
+  }
+
+  function removeIngredient(index) {
+    setForm((current) => ({ ...current, ingredients: (current.ingredients || []).filter((_, i) => i !== index) }))
+  }
 
   function setCropField(key, value) {
     setCrop((current) => ({ ...current, [key]: Number(value) }))
@@ -355,6 +391,15 @@ function FoodFormModal({ food, onClose, onSaved }) {
         sodiumMg: Number(form.sodiumMg),
         imageUrl,
         tags: form.tags ? form.tags.split(',').map((tag) => tag.trim()).filter(Boolean) : []
+      }
+      // include ingredients in payload (normalize types)
+      if (form.ingredients && form.ingredients.length) {
+        payload.ingredients = form.ingredients.map((it) => ({
+          name: it.name || '',
+          quantity: Number(it.quantity) || 0,
+          unit: it.unit || form.servingUnit || 'porsi',
+          category: it.category || form.subCategory || form.category || 'Groceries'
+        }))
       }
       await apiRequest(food?.id ? `/api/foods/${food.id}` : '/api/foods', {
         method: food?.id ? 'PUT' : 'POST',
@@ -445,6 +490,24 @@ function FoodFormModal({ food, onClose, onSaved }) {
             </div>
           </div>
           <FoodInput label="Tags, pisahkan koma" value={form.tags} onChange={(value) => setField('tags', value)} />
+          <div className="md:col-span-2 grid gap-2">
+            <span className="text-sm font-black text-on-surface">Ingredients</span>
+            <p className="text-xs font-bold leading-5 text-on-surface-variant">Tambah bahan untuk Smart Shopping List. Tidak wajib; biarkan kosong untuk menggunakan nama menu saja.</p>
+            <div className="grid gap-2">
+              {(form.ingredients || []).map((ing, idx) => (
+                <div className="grid grid-cols-12 gap-2" key={idx}>
+                  <input className="col-span-5 h-10 rounded-2xl border border-outline-variant/35 bg-white px-3 font-bold outline-none" placeholder="Nama bahan" value={ing.name || ''} onChange={(e) => updateIngredient(idx, 'name', e.target.value)} />
+                  <input className="col-span-2 h-10 rounded-2xl border border-outline-variant/35 bg-white px-3 font-bold outline-none" type="number" min={0} value={ing.quantity == null ? '' : ing.quantity} onChange={(e) => updateIngredient(idx, 'quantity', Number(e.target.value))} />
+                  <input className="col-span-3 h-10 rounded-2xl border border-outline-variant/35 bg-white px-3 font-bold outline-none" placeholder="Unit (e.g. gram)" value={ing.unit || ''} onChange={(e) => updateIngredient(idx, 'unit', e.target.value)} />
+                  <input className="col-span-1 h-10 rounded-2xl border border-outline-variant/35 bg-white px-3 font-bold outline-none" placeholder="Cat" value={ing.category || ''} onChange={(e) => updateIngredient(idx, 'category', e.target.value)} />
+                  <button type="button" className="col-span-1 rounded-2xl bg-error-red/10 px-2 font-black text-error-red" onClick={() => removeIngredient(idx)}>Hapus</button>
+                </div>
+              ))}
+              <div>
+                <button type="button" className="h-10 rounded-2xl bg-primary px-4 font-black text-white" onClick={addIngredient}>Tambah ingredient</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {error && <p className="mt-5 rounded-2xl bg-error-red/10 px-4 py-3 text-sm font-bold text-error-red">{error}</p>}

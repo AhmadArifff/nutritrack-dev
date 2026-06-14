@@ -34,6 +34,13 @@ const fallbackImage = '/assets/remote/remote-023-0e803ca2b2.jpg'
 
 function mapFoodDetail(item) {
   const tags = Array.isArray(item.tags) ? item.tags : []
+  const ingredients = Array.isArray(item.ingredients) && item.ingredients.length
+    ? item.ingredients.map((ingredient) => {
+        const quantity = Number(ingredient.quantity || 0)
+        const amount = quantity ? `${formatNumber(quantity)} ${ingredient.unit || ''}`.trim() : ingredient.unit || ''
+        return amount ? `${ingredient.name} - ${amount}` : ingredient.name
+      })
+    : tags.length ? tags : [item.sub_category || item.category || 'Food', item.serving_unit || 'Portion']
   return {
     id: item.id,
     name: item.name,
@@ -56,7 +63,7 @@ function mapFoodDetail(item) {
       ['Indonesian', item.is_indonesian ? 'Yes' : 'No'],
       ['Calories', `${formatNumber(item.calories)} kcal`]
     ],
-    ingredients: tags.length ? tags : [item.sub_category || item.category || 'Food', item.serving_unit || 'Portion']
+    ingredients
   }
 }
 
