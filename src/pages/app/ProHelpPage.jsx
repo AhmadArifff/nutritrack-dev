@@ -3,6 +3,11 @@ import { motion } from 'framer-motion'
 import { Apple, ArrowRight, ChevronRight, CreditCard, Headphones, Mail, MessageCircle, Play, Search, Send, Settings, Shield, Utensils, User } from 'lucide-react'
 
 const popularLinks = ['Tingkatan langganan', 'Dasar pelacakan makro', 'Menghubungkan perangkat']
+const supportStats = [
+  ['24/7', 'Live support'],
+  ['2 jam', 'Rata-rata respon'],
+  ['98%', 'Artikel membantu']
+]
 
 const categories = [
   {
@@ -89,6 +94,14 @@ function ProHelpPage() {
                   <a className="font-bold text-primary transition hover:underline" href="#faq">{link}</a>
                   {index < popularLinks.length - 1 && <span className="text-outline-variant/60">-</span>}
                 </span>
+              ))}
+            </div>
+            <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
+              {supportStats.map(([value, label], index) => (
+                <motion.div className="rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm backdrop-blur-xl" key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 + index * 0.05, duration: 0.28 }}>
+                  <p className="font-metrics-mono text-xl font-black text-primary">{value}</p>
+                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-on-surface-variant">{label}</p>
+                </motion.div>
               ))}
             </div>
           </div>

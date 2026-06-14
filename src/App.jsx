@@ -91,6 +91,7 @@ const ProFoodsRoute = lazy(() => import('./pages/app/ProFoodsPage.jsx'))
 const ProFoodDetailRoute = lazy(() => import('./pages/app/ProFoodDetailPage.jsx'))
 const ProLogFoodRoute = lazy(() => import('./pages/app/ProLogFoodPage.jsx'))
 const ProHelpRoute = lazy(() => import('./pages/app/ProHelpPage.jsx'))
+const ProNotificationsRoute = lazy(() => import('./pages/app/ProNotificationsPage.jsx'))
 const ForgotPasswordRoute = lazy(() => import('./pages/auth/ForgotPasswordPage.jsx'))
 
 const htmlRouteMap = {
@@ -1150,7 +1151,7 @@ const proRoutes = {
   '/app/community': ProCommunityRoute,
   '/app/profile': ProProfilePage,
   '/app/settings': ProSettingsPage,
-  '/app/notifications': ProNotificationsPage,
+  '/app/notifications': ProNotificationsRoute,
   '/help': ProHelpRoute
 }
 
@@ -2746,16 +2747,6 @@ function ActivityHubDrawer({ shellData, open, onClose }) {
         </>,
         document.body
       )
-}
-
-function ProNotificationsPage({ shellData }) {
-  const navigate = useNavigate()
-  return (
-    <ProPage title="Notifications" subtitle="Activity Hub" showHeader={false}>
-      <div className="min-h-[50vh]" />
-      <ActivityHubDrawer shellData={shellData} open onClose={() => navigate('/app/dashboard')} />
-    </ProPage>
-  )
 }
 
 function ActivityNotificationCard({ item }) {
