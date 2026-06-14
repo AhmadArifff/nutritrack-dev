@@ -821,6 +821,84 @@ h3 {
   color: rgba(255, 255, 255, 0.86) !important;
 }
 
+.pro-theme .help-center-page {
+  color: #0b1c30;
+}
+
+.pro-theme .help-center-page .help-hero {
+  background: #f0fdf4 !important;
+}
+
+.pro-theme .help-center-page .bg-secondary\/5 {
+  background-color: rgba(0, 88, 190, 0.05) !important;
+}
+
+.pro-theme .help-center-page .help-search,
+.pro-theme .help-center-page .help-glass-card,
+.pro-theme .help-center-page .help-category-card {
+  border: 1px solid rgba(226, 232, 240, 0.5) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 110, 47, 0.05) !important;
+  backdrop-filter: blur(12px);
+}
+
+.pro-theme .help-center-page .help-search {
+  min-height: 64px;
+}
+
+.pro-theme .help-center-page .help-category-card:hover {
+  transform: translateY(-4px);
+}
+
+.pro-theme .help-center-page .help-category-icon {
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.pro-theme .help-center-page .help-category-account .help-category-icon {
+  color: #006e2f !important;
+  background: rgba(0, 110, 47, 0.1) !important;
+}
+
+.pro-theme .help-center-page .help-category-account:hover .help-category-icon {
+  color: #ffffff !important;
+  background: #006e2f !important;
+}
+
+.pro-theme .help-center-page .help-category-nutrition .help-category-icon {
+  color: #9e4036 !important;
+  background: rgba(255, 139, 124, 0.2) !important;
+}
+
+.pro-theme .help-center-page .help-category-nutrition:hover .help-category-icon {
+  color: #ffffff !important;
+  background: #9e4036 !important;
+}
+
+.pro-theme .help-center-page .help-category-technical .help-category-icon {
+  color: #0058be !important;
+  background: rgba(33, 112, 228, 0.1) !important;
+}
+
+.pro-theme .help-center-page .help-category-technical:hover .help-category-icon {
+  color: #ffffff !important;
+  background: #0058be !important;
+}
+
+.pro-theme .help-center-page .help-category-subscription .help-category-icon {
+  color: #f97316 !important;
+  background: rgba(249, 115, 22, 0.1) !important;
+}
+
+.pro-theme .help-center-page .help-category-subscription:hover .help-category-icon {
+  color: #ffffff !important;
+  background: #f97316 !important;
+}
+
+.pro-theme .help-center-page .achievement-gradient {
+  background: linear-gradient(135deg, #a855f7 0%, #f97316 100%) !important;
+  box-shadow: 0 24px 56px rgba(168, 85, 247, 0.18), 0 18px 44px rgba(249, 115, 22, 0.16) !important;
+}
+
 .pro-theme .font-metrics-mono {
   font-family: "JetBrains Mono", monospace;
 }

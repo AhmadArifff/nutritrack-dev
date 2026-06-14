@@ -1,89 +1,105 @@
 import { memo, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Apple, ArrowRight, ChevronRight, CreditCard, Headphones, Mail, MessageCircle, Play, Search, Send, Settings, Shield, Utensils, User } from 'lucide-react'
+import { Apple, ArrowRight, ChevronRight, CreditCard, Mail, MessageCircle, Play, Search, Send, Settings, Shield, Utensils, User } from 'lucide-react'
 import { apiRequest } from '../../api'
 import { useBackendData } from '../../hooks/useBackendData'
 
 const popularLinks = ['Tingkatan langganan', 'Dasar pelacakan makro', 'Menghubungkan perangkat']
-const supportStats = [
-  ['24/7', 'Live support'],
-  ['2 jam', 'Rata-rata respon'],
-  ['98%', 'Artikel membantu']
-]
-
 const categories = [
   {
     title: 'Akun',
-    description: 'Kelola profil, keamanan, preferensi, dan pengaturan personal Anda.',
+    description: 'Pengaturan profil, pemulihan kata sandi, dan keamanan.',
     Icon: User,
-    iconClass: 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white'
+    toneClass: 'help-category-account'
   },
   {
     title: 'Nutrisi',
-    description: 'Pahami kalori, makro, meal plan, dan rekomendasi nutrisi harian.',
+    description: 'Perencanaan makan, pelacakan kalori, dan target harian.',
     Icon: Utensils,
-    iconClass: 'bg-tertiary-container/20 text-tertiary group-hover:bg-tertiary group-hover:text-white'
+    toneClass: 'help-category-nutrition'
   },
   {
     title: 'Teknis',
-    description: 'Sinkronisasi perangkat, bug, cache PWA, dan pengalaman aplikasi.',
+    description: 'Sinkronisasi perangkat, bug aplikasi, dan tips performa.',
     Icon: Settings,
-    iconClass: 'bg-secondary-container/10 text-secondary group-hover:bg-secondary group-hover:text-white'
+    toneClass: 'help-category-technical'
   },
   {
     title: 'Langganan',
-    description: 'Riwayat tagihan, fitur Premium, dan perpanjangan paket.',
+    description: 'Riwayat tagihan, fitur Premium, dan perpanjangan.',
     Icon: CreditCard,
-    iconClass: 'bg-energy-orange/10 text-energy-orange group-hover:bg-energy-orange group-hover:text-white'
+    toneClass: 'help-category-subscription'
   }
 ]
 
 const tutorials = [
   {
-    title: 'Melacak makanan pertama Anda',
-    description: 'Pelajari cara menambahkan makanan, mengubah porsi, dan membaca ringkasan kalori.',
-    duration: '2:14',
+    title: 'Mencatat makanan pertama Anda',
+    description: 'Pelajari cara menggunakan alat pengenalan foto AI kami.',
+    duration: '2:45',
     image: '/assets/remote/remote-029-69c4ae2e87.jpg'
   },
   {
-    title: 'Membangun meal plan mingguan',
-    description: 'Gunakan planner untuk menjaga protein, karbohidrat, dan jadwal makan tetap rapi.',
-    duration: '3:42',
+    title: 'Menghubungkan Google Fit',
+    description: 'Sinkronkan langkah dan menit aktif Anda dengan mulus.',
+    duration: '3:12',
     image: '/assets/remote/remote-030-d0fc0b3c3b.jpg'
   },
   {
-    title: 'Membaca tren progress',
-    description: 'Pahami grafik berat badan, BMI, milestone, dan konsistensi mingguan.',
-    duration: '4:08',
+    title: 'Menyesuaikan Dashboard Anda',
+    description: 'Buat NutriTrack bekerja sesuai dengan tujuan spesifik Anda.',
+    duration: '1:50',
     image: '/assets/remote/remote-031-8ae40fa277.jpg'
   }
 ]
 
 const faqs = [
-  ['Bagaimana cara mengubah target kalori harian?', 'Buka Settings, pilih Nutrition Goals, lalu sesuaikan target kalori, protein, karbohidrat, dan lemak sesuai kebutuhan.'],
-  ['Apakah data saya aman?', 'Ya. NutriTrack dirancang dengan autentikasi token, validasi backend, dan kontrol data akun agar riwayat nutrisi tetap terlindungi.'],
+  ['Bagaimana cara membatalkan langganan Premium saya?', 'Anda dapat membatalkan langganan kapan saja melalui menu Pengaturan > Langganan di aplikasi. Jika Anda berlangganan melalui App Store atau Google Play, Anda harus mengelola pembatalan melalui alat manajemen langganan mereka masing-masing.'],
   ['Apakah NutriTrack sinkron dengan MyFitnessPal?', 'Saat ini NutriTrack berjalan sebagai ekosistem independen. Ekspor data akan disiapkan untuk integrasi lanjutan.'],
   ['Bisakah saya melacak puasa intermiten?', 'Fitur protokol puasa disiapkan untuk paket Premium dengan timer 16:8, 20:4, dan jendela khusus.'],
   ['Apa yang terjadi jika saya menghapus aplikasi?', 'Menghapus PWA dari perangkat tidak menghapus akun. Data tetap tersimpan selama akun belum dihapus dari pengaturan.']
 ]
 
 const iconMap = { User, Utensils, Settings, CreditCard, Shield }
+const categoryToneClass = {
+  Akun: 'help-category-account',
+  Nutrisi: 'help-category-nutrition',
+  Teknis: 'help-category-technical',
+  Perangkat: 'help-category-technical',
+  Langganan: 'help-category-subscription',
+  Pembayaran: 'help-category-subscription'
+}
+const categoryLabel = {
+  Perangkat: 'Teknis',
+  Pembayaran: 'Langganan'
+}
+const categoryDescription = {
+  Akun: 'Pengaturan profil, pemulihan kata sandi, dan keamanan.',
+  Nutrisi: 'Perencanaan makan, pelacakan kalori, dan target harian.',
+  Perangkat: 'Sinkronisasi perangkat, bug aplikasi, dan tips performa.',
+  Teknis: 'Sinkronisasi perangkat, bug aplikasi, dan tips performa.',
+  Pembayaran: 'Riwayat tagihan, fitur Premium, dan perpanjangan.',
+  Langganan: 'Riwayat tagihan, fitur Premium, dan perpanjangan.'
+}
 
 function mapHelpData(payload) {
+  const sourceTutorials = payload.tutorials?.length >= tutorials.length ? payload.tutorials : tutorials
+  const sourceFaqs = payload.faqs?.length >= faqs.length ? payload.faqs : faqs.map(([question, answer]) => ({ question, answer }))
+
   return {
     categories: (payload.categories || []).map((item) => ({
-      title: item.title,
-      description: item.description,
+      title: categoryLabel[item.title] || item.title,
+      description: categoryDescription[item.title] || item.description,
       Icon: iconMap[item.icon] || User,
-      iconClass: item.tone || 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white'
+      toneClass: categoryToneClass[item.title] || 'help-category-account'
     })),
-    tutorials: (payload.tutorials || []).map((item) => ({
+    tutorials: sourceTutorials.map((item) => ({
       title: item.title,
       description: item.description,
       duration: item.duration || '3 min',
       image: item.image_url || item.image
     })),
-    faqs: (payload.faqs || []).map((item) => [item.question, item.answer])
+    faqs: sourceFaqs.map((item) => [item.question, item.answer])
   }
 }
 
@@ -101,16 +117,13 @@ function ProHelpPage() {
   }, [data.faqs, query])
 
   return (
-    <motion.main className="mx-auto grid max-w-[1400px] gap-8 px-5 py-7 pb-24 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
-      <section className="overflow-hidden rounded-[2rem] bg-mint-surface">
-        <div className="relative flex flex-col items-center justify-center overflow-hidden px-4 py-20 text-center md:py-24">
+    <motion.main className="help-center-page mx-auto grid max-w-[1400px] gap-0 px-5 py-0 pb-24 lg:px-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+      <section className="help-hero relative -mx-5 flex flex-col items-center justify-center overflow-hidden px-4 py-20 text-center md:py-24 lg:-mx-8">
           <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
           <div className="absolute bottom-0 left-0 h-64 w-64 rounded-full bg-secondary/5 blur-3xl" />
-          <motion.div className="absolute left-10 top-10 hidden h-16 w-16 rounded-[1.25rem] border border-white/70 bg-white/50 backdrop-blur md:block" animate={{ y: [0, -10, 0], rotate: [0, 5, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute bottom-12 right-16 hidden h-20 w-20 rounded-full border border-primary/10 bg-white/50 backdrop-blur md:block" animate={{ y: [0, 12, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }} />
           <div className="relative z-10 w-full max-w-3xl">
-            <h2 className="mb-8 font-headline-xl text-4xl font-black text-on-background md:text-[48px]">Apa yang bisa kami bantu?</h2>
-            <label className="group mx-auto flex min-h-16 w-full items-center gap-4 rounded-3xl border border-white/70 bg-white/85 px-6 text-left shadow-xl shadow-primary/5 backdrop-blur-xl transition-all focus-within:ring-4 focus-within:ring-primary/10">
+            <h1 className="mb-8 font-headline-xl text-headline-xl font-bold text-on-background">Apa yang bisa kami bantu?</h1>
+            <label className="help-search group mx-auto flex min-h-16 w-full items-center gap-4 rounded-3xl px-6 text-left shadow-xl transition-all focus-within:ring-4 focus-within:ring-primary/10">
               <Search className="h-8 w-8 flex-shrink-0 text-primary" />
               <input className="min-w-0 flex-1 border-0 bg-transparent p-0 text-body-lg text-on-surface outline-none ring-0 placeholder:text-on-surface-variant/70 focus:ring-0" placeholder="Cari artikel, tutorial, dan lainnya..." value={query} onChange={(event) => setQuery(event.target.value)} />
             </label>
@@ -119,27 +132,18 @@ function ProHelpPage() {
               {popularLinks.map((link, index) => (
                 <span className="flex items-center gap-4" key={link}>
                   <a className="font-bold text-primary transition hover:underline" href="#faq">{link}</a>
-                  {index < popularLinks.length - 1 && <span className="text-outline-variant/60">-</span>}
+                  {index < popularLinks.length - 1 && <span className="text-outline-variant/40">•</span>}
                 </span>
               ))}
             </div>
-            <div className="mx-auto mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              {supportStats.map(([value, label], index) => (
-                <motion.div className="rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm backdrop-blur-xl" key={label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 + index * 0.05, duration: 0.28 }}>
-                  <p className="font-metrics-mono text-xl font-black text-primary">{value}</p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-on-surface-variant">{label}</p>
-                </motion.div>
-              ))}
-            </div>
           </div>
-        </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {data.categories.map(({ title, description, Icon, iconClass }, index) => (
-          <motion.button className="group flex min-h-[220px] flex-col justify-between rounded-[1.5rem] border border-slate-200/50 bg-white/85 p-6 text-left shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl transition-transform hover:-translate-y-1" key={title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06, duration: 0.32 }} whileHover={{ y: -4 }} type="button">
+      <section className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-6 py-16 sm:grid-cols-2 lg:grid-cols-4">
+        {data.categories.map(({ title, description, Icon, toneClass }, index) => (
+          <motion.button className={`help-category-card ${toneClass} group flex min-h-[220px] flex-col justify-between rounded-[1.5rem] p-6 text-left transition-transform hover:-translate-y-1`} key={title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06, duration: 0.32 }} whileHover={{ y: -4 }} type="button">
             <div className="mb-10 flex items-start justify-between">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${iconClass}`}>
+              <div className="help-category-icon flex h-12 w-12 items-center justify-center rounded-xl transition-colors">
                 <Icon size={28} />
               </div>
               <ArrowRight className="text-on-surface-variant/40 transition group-hover:translate-x-1 group-hover:text-primary" size={22} />
@@ -165,7 +169,7 @@ function ProHelpPage() {
           </div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {data.tutorials.map((item, index) => (
-              <motion.article className="group overflow-hidden rounded-3xl border border-slate-200/50 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl" key={item.title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07, duration: 0.32 }} whileHover={{ y: -4 }}>
+              <motion.article className="help-glass-card group overflow-hidden rounded-3xl" key={item.title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.07, duration: 0.32 }} whileHover={{ y: -4 }}>
                 <div className="relative h-48 overflow-hidden bg-surface-dim">
                   <img className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" src={item.image} alt={item.title} loading="lazy" />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors group-hover:bg-black/10">
@@ -189,7 +193,7 @@ function ProHelpPage() {
         <h2 className="mb-12 text-center font-headline-lg text-headline-lg font-bold text-on-background">Pertanyaan yang Sering Diajukan</h2>
         <div className="mx-auto max-w-3xl space-y-6">
           {filteredFaqs.length ? filteredFaqs.map(([question, answer]) => (
-            <details className="group overflow-hidden rounded-2xl border border-slate-200/50 bg-white/85 shadow-[0_10px_25px_-5px_rgba(0,110,47,0.05)] backdrop-blur-xl transition-all duration-300 open:ring-2 open:ring-primary/20" key={question}>
+            <details className="help-glass-card group overflow-hidden rounded-2xl transition-all duration-300 open:ring-2 open:ring-primary/20" key={question}>
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-6">
                 <span className="font-headline-md text-lg font-bold text-on-surface">{question}</span>
                 <ChevronRight className="flex-shrink-0 text-primary transition-transform duration-300 group-open:rotate-90" size={22} />
@@ -202,13 +206,13 @@ function ProHelpPage() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-[1200px] pb-12">
-        <motion.div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-achievement-purple to-energy-orange p-10 text-center text-white shadow-2xl md:p-20" whileHover={{ y: -3 }}>
+      <section className="mx-auto w-full max-w-[1200px] pb-20">
+        <motion.div className="achievement-gradient relative overflow-hidden rounded-[2.5rem] p-10 text-center text-white shadow-2xl md:p-20" whileHover={{ y: -3 }}>
           <div className="absolute -left-24 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-primary-container/20 blur-3xl" />
           <div className="relative z-10 mx-auto max-w-2xl">
             <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
-              <Headphones size={48} />
+              <span className="material-symbols-outlined text-5xl">support_agent</span>
             </div>
             <h2 className="mb-6 font-headline-lg text-4xl font-bold">Masih butuh bantuan?</h2>
             <p className="mb-12 font-body-lg text-white/90">Tim dukungan kami tersedia 24/7 untuk memastikan perjalanan kesehatan Anda tetap di jalurnya. Pilih cara yang Anda sukai untuk terhubung.</p>
