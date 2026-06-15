@@ -1,12 +1,15 @@
-export default function createCroppedImage(source, crop) {
+export default function createCroppedImage(source) {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.crossOrigin = 'anonymous'
     image.onload = () => {
       try {
         const canvas = document.createElement('canvas')
-        const width = 760
-        const height = 520
+        const maxWidth = 960
+        const maxHeight = 960
+        const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height)
+        const width = Math.max(1, Math.round(image.width * scale))
+        const height = Math.max(1, Math.round(image.height * scale))
         canvas.width = width
         canvas.height = height
         const context = canvas.getContext('2d')
@@ -15,23 +18,8 @@ export default function createCroppedImage(source, crop) {
           return
         }
 
-        const zoom = Number(crop?.zoom) || 1
-        const baseScale = Math.max(width / image.width, height / image.height)
-        // Ensure the final scale never makes the image smaller than required to cover
-        const scale = baseScale * Math.max(1, zoom)
-
-        const renderWidth = Math.round(image.width * scale)
-        const renderHeight = Math.round(image.height * scale)
-
-        const px = Number(crop?.x ?? 50) / 100
-        const py = Number(crop?.y ?? 50) / 100
-        const offsetX = Math.round((width - renderWidth) * px)
-        const offsetY = Math.round((height - renderHeight) * py)
-
-        context.fillStyle = '#f7faf8'
-        context.fillRect(0, 0, width, height)
-        context.drawImage(image, offsetX, offsetY, renderWidth, renderHeight)
-        resolve(canvas.toDataURL('image/jpeg', 0.76))
+        context.drawImage(image, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
       } catch (err) {
         reject(err)
       }

@@ -1,23 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Image, Send, X } from 'lucide-react'
-import createCroppedImage from '../../../lib/createCroppedImage'
+import { Send, X } from 'lucide-react'
+import createPostImage from '../../../lib/createCroppedImage'
 import { validateStoryForm } from '../utils/communityValidators'
-
-function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
 
 export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial = null }) {
   const [form, setForm] = useState({ content: '', postType: 'story', visibility: 'public', imageFile: null, imageUrl: '' })
   const [errors, setErrors] = useState({})
   const [previewSrc, setPreviewSrc] = useState('')
   const [imageDraft, setImageDraft] = useState('')
-  const [crop, setCrop] = useState({ x: 50, y: 50, zoom: 1 })
 
   // populate initial when editing
   useEffect(() => {
@@ -59,11 +49,11 @@ export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial =
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length) return
 
-    // generate cropped/resized image if draft exists
+    // Resize and compress the image while preserving the full original frame.
     let imageUrl = null
     if (imageDraft) {
       try {
-        imageUrl = await createCroppedImage(imageDraft, crop)
+        imageUrl = await createPostImage(imageDraft)
       } catch (err) {
         // fallback to raw data url
         imageUrl = imageDraft
@@ -126,7 +116,7 @@ export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial =
         <div className="grid gap-3 md:col-span-2">
           <div className="grid gap-2">
             <span className="text-sm font-black text-on-surface">Image URL lokal/online</span>
-            <p className="text-xs font-bold leading-5 text-on-surface-variant">Tempel URL gambar atau upload file lokal. Preview di bawah mengikuti crop, posisi, dan zoom sebelum disimpan.</p>
+            <p className="text-xs font-bold leading-5 text-on-surface-variant">Tempel URL gambar atau upload file lokal. Gambar disimpan utuh, hanya di-resize agar ringan dan tidak terpotong.</p>
             <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px]">
               <input className="h-12 rounded-2xl border border-outline-variant/35 bg-white px-4 font-bold outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10" placeholder="https://... atau /assets/..." value={form.imageUrl} onChange={(e) => {
                 const val = e.target.value
@@ -164,35 +154,21 @@ export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial =
             </div>
           </div>
 
-          <div className="grid gap-4 rounded-[1.5rem] border border-outline-variant/30 bg-surface-container-low p-4 lg:grid-cols-[260px_minmax(0,1fr)]">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-mint-surface">
+          <div className="rounded-[1.5rem] border border-outline-variant/30 bg-surface-container-low p-4">
+            <div className="relative flex min-h-[220px] overflow-hidden rounded-[1.25rem] bg-mint-surface">
               {previewSrc ? (
                 <img
                   src={previewSrc}
                   alt="Preview"
                   onError={(e) => { e.currentTarget.style.display = 'none' }}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${crop.x}% ${crop.y}%`, transform: `scale(${crop.zoom})`, display: 'block' }}
+                  className="max-h-[420px] w-full object-contain"
                 />
               ) : (
-                <div className="grid h-full place-items-center text-primary">Preview kosong</div>
+                <div className="grid min-h-[220px] w-full place-items-center text-primary">Preview kosong</div>
               )}
               <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-black/5" />
             </div>
-            <div className="grid content-center gap-3">
-              <p className="text-sm font-black text-on-surface">Crop preview</p>
-              <label className="grid gap-2">
-                <span className="flex items-center justify-between text-xs font-black uppercase tracking-wide text-on-surface-variant">Posisi X <b className="text-primary">{crop.x}</b></span>
-                <input className="accent-primary" type="range" min="0" max="100" step="1" value={crop.x} onChange={(e) => setCrop((c) => ({ ...c, x: Number(e.target.value) }))} />
-              </label>
-              <label className="grid gap-2">
-                <span className="flex items-center justify-between text-xs font-black uppercase tracking-wide text-on-surface-variant">Posisi Y <b className="text-primary">{crop.y}</b></span>
-                <input className="accent-primary" type="range" min="0" max="100" step="1" value={crop.y} onChange={(e) => setCrop((c) => ({ ...c, y: Number(e.target.value) }))} />
-              </label>
-              <label className="grid gap-2">
-                <span className="flex items-center justify-between text-xs font-black uppercase tracking-wide text-on-surface-variant">Zoom <b className="text-primary">{crop.zoom}</b></span>
-                <input className="accent-primary" type="range" min="1" max="2" step="0.05" value={crop.zoom} onChange={(e) => setCrop((c) => ({ ...c, zoom: Number(e.target.value) }))} />
-              </label>
-            </div>
+            <p className="mt-3 text-xs font-bold leading-5 text-on-surface-variant">Preview ini memakai mode gambar utuh, jadi sisi atas, bawah, kiri, dan kanan tetap ikut tersimpan.</p>
           </div>
         </div>
         {errors.general ? <p className="mt-2 text-sm font-bold text-error-red">{errors.general}</p> : null}
