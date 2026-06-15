@@ -176,6 +176,37 @@ export function useCommunityHub() {
     }
   }, [])
 
+  const updatePost = useCallback(async (postId, payload) => {
+    setMutationKey(`update:${postId}`)
+    try {
+      await communityApi.updatePost(postId, payload)
+      setCommunity((prev) => ({
+        ...prev,
+        feed: prev.feed.map((p) => (p.id === postId ? { ...p, content: payload.content || p.content, imageUrl: payload.imageUrl || p.imageUrl, postType: payload.postType || p.postType, visibility: payload.visibility || p.visibility } : p))
+      }))
+      setToast('Post berhasil diperbarui.')
+    } catch (err) {
+      setToast(err.message || 'Gagal memperbarui post.')
+      throw err
+    } finally {
+      setMutationKey('')
+    }
+  }, [])
+
+  const deletePost = useCallback(async (postId) => {
+    setMutationKey(`delete:${postId}`)
+    try {
+      await communityApi.deletePost(postId)
+      setCommunity((prev) => ({ ...prev, feed: prev.feed.filter((p) => p.id !== postId) }))
+      setToast('Post berhasil dihapus.')
+    } catch (err) {
+      setToast(err.message || 'Gagal menghapus post.')
+      throw err
+    } finally {
+      setMutationKey('')
+    }
+  }, [])
+
   const requestBuddy = useCallback(async (buddyId) => {
     setMutationKey(`buddy:${buddyId}`)
     const previous = community.buddies
@@ -221,6 +252,7 @@ export function useCommunityHub() {
     joinChallenge,
     requestBuddy,
     sharePost
+    , updatePost, deletePost
   }), [addComment, closeComments, createPost, joinChallenge, loadMoreFeed, openComments, refreshCommunity, requestBuddy, sharePost, toggleCheer])
 
   return {

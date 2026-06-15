@@ -15,6 +15,7 @@ export default function CommunityPage() {
   const buddiesRef = useRef(null)
   const feedRef = useRef(null)
   const [storyOpen, setStoryOpen] = useState(false)
+  const [editingPost, setEditingPost] = useState(null)
   const {
     overview,
     feed,
@@ -87,6 +88,8 @@ export default function CommunityPage() {
                   onCheer={actions.toggleCheer}
                   onOpenComments={actions.openComments}
                   onShare={actions.sharePost}
+                  onEdit={(p) => setEditingPost(p)}
+                  onDelete={(id) => actions.deletePost(id)}
                 />
               )) : <CommunityEmptyState title="Belum ada cerita komunitas." actionLabel="Buat Story Pertama" onAction={() => setStoryOpen(true)} />}
               {hasMoreFeed ? (
@@ -123,7 +126,21 @@ export default function CommunityPage() {
         </motion.button>
       </div>
 
-      <NewStoryModal open={storyOpen} isSubmitting={mutationKey === 'create-post'} onClose={() => setStoryOpen(false)} onSubmit={actions.createPost} />
+      <NewStoryModal
+        open={storyOpen || Boolean(editingPost)}
+        initial={editingPost}
+        isSubmitting={mutationKey === 'create-post' || mutationKey?.startsWith('update:')}
+        onClose={() => { setStoryOpen(false); setEditingPost(null) }}
+        onSubmit={async (payload) => {
+          if (editingPost) {
+            await actions.updatePost(editingPost.id, payload)
+            setEditingPost(null)
+          } else {
+            await actions.createPost(payload)
+            setStoryOpen(false)
+          }
+        }}
+      />
       <CommentDrawer drawer={commentDrawer} isSubmitting={mutationKey === `comment:${commentDrawer.post?.id}`} onClose={actions.closeComments} onAddComment={actions.addComment} />
     </AppPageShell>
   )
