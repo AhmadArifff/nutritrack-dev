@@ -2,10 +2,14 @@ import { motion } from 'framer-motion'
 import { Heart, MessageCircle, MoreHorizontal, Share2, Edit3, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { formatRelativeTime } from '../utils/communityMappers'
+import { getStoredAuth } from '../../../api'
 
 export function FeedPostCard({ post, onCheer, onOpenComments, onShare, onEdit, onDelete, isCheering }) {
   const [menuOpen, setMenuOpen] = useState(false)
   function toggleMenu() { setMenuOpen((v) => !v) }
+  const storedAuth = getStoredAuth()
+  const currentUserId = storedAuth?.user?.id || storedAuth?.id
+  const isOwner = Boolean(currentUserId && post.authorId && String(currentUserId) === String(post.authorId))
   async function handleDelete() {
     if (!confirm('Hapus post ini? Tindakan ini tidak dapat dibatalkan.')) return
     try {
@@ -31,12 +35,16 @@ export function FeedPostCard({ post, onCheer, onOpenComments, onShare, onEdit, o
           </div>
         </div>
         <div className="relative">
-          <button className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-surface-variant" type="button" aria-label="Post actions" onClick={toggleMenu}><MoreHorizontal size={20} /></button>
-          {menuOpen ? (
-            <div className="absolute right-0 top-12 z-50 w-40 rounded-lg border border-outline-variant/40 bg-white p-2 shadow-lg">
-              <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-bold hover:bg-surface-container" type="button" onClick={handleEdit}><Edit3 size={16} />Edit</button>
-              <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-bold text-error-red hover:bg-error-red/10" type="button" onClick={handleDelete}><Trash2 size={16} />Hapus</button>
-            </div>
+          {isOwner ? (
+            <>
+              <button className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-surface-variant" type="button" aria-label="Post actions" onClick={toggleMenu}><MoreHorizontal size={20} /></button>
+              {menuOpen ? (
+                <div className="absolute right-0 top-12 z-50 w-40 rounded-lg border border-outline-variant/40 bg-white p-2 shadow-lg">
+                  <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-bold hover:bg-surface-container" type="button" onClick={handleEdit}><Edit3 size={16} />Edit</button>
+                  <button className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-bold text-error-red hover:bg-error-red/10" type="button" onClick={handleDelete}><Trash2 size={16} />Hapus</button>
+                </div>
+              ) : null}
+            </>
           ) : null}
         </div>
       </div>

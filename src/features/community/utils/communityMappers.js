@@ -18,6 +18,8 @@ export function formatRelativeTime(value) {
 
 export function mapChallengeToCard(item = {}) {
   const participantCount = item.participantCount ?? item.participant_count ?? item.joined_count ?? 0
+  const reward = item.reward || {}
+  const progress = item.progress || {}
   return {
     id: item.id,
     title: item.title,
@@ -26,21 +28,41 @@ export function mapChallengeToCard(item = {}) {
     iconName: item.iconName || item.icon_name || 'nutrition',
     badgeLabel: item.badgeLabel || item.badge_label || item.badge || 'New',
     badgeVariant: item.badgeVariant || item.badge_variant || (item.badgeTone === 'purple' ? 'high_impact' : 'hot'),
+    category: item.category || 'Community Wellness',
+    difficulty: item.difficulty || 'medium',
+    durationDays: Number(item.durationDays || item.duration_days || 7),
     participantCount,
     participantLabel: item.participantLabel || item.participants || `+${formatCompactNumber(participantCount)}`,
     isJoined: Boolean(item.isJoined || item.is_joined),
-    isPremium: Boolean(item.isPremium || item.is_premium)
+    isPremium: Boolean(item.isPremium || item.is_premium),
+    status: item.status || item.member_status || (item.isJoined || item.is_joined ? 'joined' : 'available'),
+    progress: {
+      percent: Number(progress.percent || item.progress_percent || 0),
+      totalTasks: Number(progress.totalTasks || item.total_tasks || 0),
+      completedTasks: Number(progress.completedTasks || item.completed_tasks || 0),
+      currentDay: Number(progress.currentDay || item.current_day || 1),
+      earnedPoints: Number(progress.earnedPoints || item.earned_points || 0)
+    },
+    reward: {
+      points: Number(reward.points || item.reward_points || 100),
+      badge: reward.badge || item.reward_badge || `${item.title || 'Challenge'} Badge`,
+      achievementCode: reward.achievementCode || item.reward_achievement_code || 'CHALLENGE_FINISHER'
+    },
+    nextUrl: item.nextUrl || item.next_url || `/app/community/challenges/${item.id}`
   }
 }
 
 export function mapPostToCard(item = {}) {
   return {
     id: item.id,
+    authorId: item.author?.id || item.author_id || item.authorId || item.user_id || item.userId,
     authorName: item.author?.name || item.author_name || item.authorName || 'NutriTrack Member',
     authorAvatarUrl: item.author?.avatarUrl || item.author_avatar_url || item.authorAvatar || '/assets/remote/remote-018-77400e5ef4.png',
     achievementLabel: item.author?.badge || item.achievementLabel || item.achievement_label || item.author_badge || item.authorBadge || 'Community Member',
     content: item.content || item.body || '',
     imageUrl: item.imageUrl || item.image_url || item.image,
+    postType: item.postType || item.post_type || 'story',
+    relatedChallengeId: item.relatedChallengeId || item.related_challenge_id,
     createdAt: item.createdAt || item.created_at,
     cheersCount: item.cheersCount ?? item.cheers_count ?? 0,
     commentsCount: item.commentsCount ?? item.comments_count ?? 0,

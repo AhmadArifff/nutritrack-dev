@@ -86,6 +86,7 @@ const SplashPage = lazy(() => import('./pages/SplashPage.jsx'))
 const LandingRoute = lazy(() => import('./pages/LandingPage.jsx'))
 const ProDashboardRoute = lazy(() => import('./pages/app/ProDashboardPage.jsx'))
 const ProCommunityRoute = lazy(() => import('./pages/app/ProCommunityPage.jsx'))
+const ProChallengeDetailRoute = lazy(() => import('./pages/app/ProChallengeDetailPage.jsx'))
 const ProMealPlannerRoute = lazy(() => import('./pages/app/ProMealPlannerPage.jsx'))
 const ProProgressRoute = lazy(() => import('./pages/app/ProProgressPage.jsx'))
 const ProFoodsRoute = lazy(() => import('./pages/app/ProFoodsPage.jsx'))
@@ -1174,7 +1175,11 @@ function ProAppLayout() {
   const [shellError, setShellError] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const metaKey = location.pathname.startsWith('/app/foods/') ? '/app/foods/gado-gado' : location.pathname
+  const metaKey = location.pathname.startsWith('/app/foods/')
+    ? '/app/foods/gado-gado'
+    : location.pathname.startsWith('/app/community/challenges/')
+      ? '/app/community'
+      : location.pathname
   const meta = proPageMeta[metaKey] || proPageMeta['/app/dashboard']
 
   useEffect(() => {
@@ -1355,7 +1360,11 @@ function ProAppLayout() {
 
 function ProAppRoutes({ shellData }) {
   const location = useLocation()
-  const Page = location.pathname.startsWith('/app/foods/') ? ProFoodDetailRoute : proRoutes[location.pathname] || ProDashboardRoute
+  const Page = location.pathname.startsWith('/app/foods/')
+    ? ProFoodDetailRoute
+    : location.pathname.startsWith('/app/community/challenges/')
+      ? ProChallengeDetailRoute
+      : proRoutes[location.pathname] || ProDashboardRoute
   return (
     <AnimatePresence mode="wait">
       <Suspense fallback={<RouteFallback />}>

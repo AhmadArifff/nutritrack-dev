@@ -24,7 +24,9 @@ function AppSidebar({ currentPath, mobileOpen, navItems, onCloseMobile, onLogout
 
       <nav className="mt-8 grid gap-2">
         {navItems.map(({ to, label, icon: Icon }) => {
-          const active = currentPath === to || (to === '/app/foods' && currentPath.startsWith('/app/foods/'))
+          const active = currentPath === to ||
+            (to === '/app/foods' && currentPath.startsWith('/app/foods/')) ||
+            (to === '/app/community' && currentPath.startsWith('/app/community/'))
           return (
             <NavLink
               className={({ isActive }) =>

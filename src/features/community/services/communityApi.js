@@ -2,8 +2,11 @@ import { apiRequest } from '../../../api'
 
 export const communityApi = {
   getOverview: () => apiRequest('/api/community/overview'),
-  getFeed: ({ page = 1, limit = 10, type = 'all' } = {}) =>
-    apiRequest(`/api/community/feed?page=${page}&limit=${limit}&type=${encodeURIComponent(type)}`),
+  getFeed: ({ page = 1, limit = 10, type = 'all', challengeId = '' } = {}) =>
+    apiRequest(`/api/community/feed?page=${page}&limit=${limit}&type=${encodeURIComponent(type)}${challengeId ? `&challengeId=${encodeURIComponent(challengeId)}` : ''}`),
+  getChallengeDetail: (challengeId) => apiRequest(`/api/community/challenges/${challengeId}`),
+  syncChallengeProgress: (challengeId) => apiRequest(`/api/community/challenges/${challengeId}/sync`, { method: 'POST' }),
+  checkInChallengeTask: (challengeId, taskId, payload = {}) => apiRequest(`/api/community/challenges/${challengeId}/tasks/${taskId}/check-in`, { method: 'POST', body: payload }),
   createPost: (payload) => apiRequest('/api/community/posts', { method: 'POST', body: payload }),
   toggleCheer: (postId) => apiRequest(`/api/community/posts/${postId}/cheer`, { method: 'POST' }),
   sharePost: (postId) => apiRequest(`/api/community/posts/${postId}/share`, { method: 'PATCH' }),

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Lightbulb, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ChevronRight, Lightbulb, Plus, Trophy } from 'lucide-react'
 import { ChallengeCard } from '../components/ChallengeCard'
 import { CommentDrawer } from '../components/CommentDrawer'
 import { CommunityHero } from '../components/CommunityHero'
@@ -37,6 +38,8 @@ export default function CommunityPage() {
     ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  const activeChallenges = challenges.filter((challenge) => challenge.isJoined)
+
   if (isLoading) {
     return (
       <AppPageShell wide>
@@ -56,6 +59,37 @@ export default function CommunityPage() {
         ) : null}
 
         <CommunityHero hero={overview.hero} stats={overview.hero?.stats} onFindBuddies={() => scrollTo(buddiesRef)} onGlobalFeed={() => scrollTo(feedRef)} />
+
+        {activeChallenges.length ? (
+          <motion.section className="rounded-[2.5rem] border border-primary/15 bg-gradient-to-br from-primary to-primary-container p-6 text-white shadow-2xl shadow-primary/15 md:p-8" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-white/70">My Active Challenges</p>
+                <h3 className="mt-1 font-headline-md text-2xl font-black">Continue your wellness missions</h3>
+              </div>
+              <span className="rounded-full bg-white/20 px-4 py-2 text-sm font-black backdrop-blur-md">{activeChallenges.length} active</span>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              {activeChallenges.slice(0, 4).map((challenge) => (
+                <Link className="group rounded-[1.5rem] border border-white/20 bg-white/14 p-4 backdrop-blur-md transition hover:bg-white/22" key={challenge.id} to={challenge.nextUrl}>
+                  <div className="flex items-start gap-4">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white text-primary shadow-lg"><Trophy size={22} /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <h4 className="truncate font-black">{challenge.title}</h4>
+                        <ChevronRight className="shrink-0 transition group-hover:translate-x-1" size={18} />
+                      </div>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/20">
+                        <motion.div className="h-full rounded-full bg-white" initial={{ width: 0 }} animate={{ width: `${challenge.progress?.percent || 0}%` }} />
+                      </div>
+                      <p className="mt-2 text-xs font-bold text-white/75">{challenge.progress?.completedTasks || 0}/{challenge.progress?.totalTasks || 0} tasks - {challenge.reward?.badge}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.section>
+        ) : null}
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="space-y-8 lg:col-span-8">

@@ -3,7 +3,7 @@ import { Send, X } from 'lucide-react'
 import createPostImage from '../../../lib/createCroppedImage'
 import { validateStoryForm } from '../utils/communityValidators'
 
-export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial = null }) {
+export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial = null, challengeContext = null }) {
   const [form, setForm] = useState({ content: '', postType: 'story', visibility: 'public', imageFile: null, imageUrl: '' })
   const [errors, setErrors] = useState({})
   const [previewSrc, setPreviewSrc] = useState('')
@@ -22,6 +22,15 @@ export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial =
     setPreviewSrc(initial.imageUrl || initial.image || '')
     setImageDraft(initial.imageUrl || initial.image || '')
   }, [initial])
+
+  useEffect(() => {
+    if (!open || initial || !challengeContext) return
+    setForm((prev) => ({
+      ...prev,
+      postType: 'challenge_update',
+      visibility: 'public'
+    }))
+  }, [challengeContext, initial, open])
 
   useEffect(() => {
     // update preview when user selects file or pastes image URL
@@ -67,7 +76,8 @@ export function NewStoryModal({ open, onClose, onSubmit, isSubmitting, initial =
         postType: form.postType,
         visibility: form.visibility,
         imageUrl,
-        achievementLabel: form.postType === 'win' ? 'Community Win' : 'Community Story'
+        relatedChallengeId: challengeContext?.id || initial?.relatedChallengeId || null,
+        achievementLabel: form.postType === 'win' ? 'Community Win' : form.postType === 'challenge_update' ? 'Challenge Update' : 'Community Story'
       })
       setForm({ content: '', postType: 'story', visibility: 'public', imageFile: null, imageUrl: '' })
       setErrors({})
